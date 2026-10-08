@@ -34,7 +34,10 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
+      if (!Array.isArray(parsed)) {
+        storageError = true;
+        return [];
+      }
       return parsed.filter(isValidTask);
     } catch (err) {
       console.error('loadTasks failed', err);
@@ -63,8 +66,8 @@
       typeof t === 'object' &&
       typeof t.id === 'string' &&
       typeof t.title === 'string' &&
-      typeof t.status === 'string' &&
-      typeof t.priority === 'string'
+      STATUS_LABELS[t.status] !== undefined &&
+      PRIORITY_LABELS[t.priority] !== undefined
     );
   }
 
@@ -141,6 +144,7 @@
       const bp = PRIORITY_RANK[b.priority] ?? 1;
       if (ap !== bp) return ap - bp;
 
+      if (a.createdAt === b.createdAt) return 0;
       return a.createdAt < b.createdAt ? 1 : -1;
     });
   }

@@ -147,6 +147,15 @@ ok(
   sorted.join(' > ')
 );
 
+// Comparator must return 0 on full ties (M2 regression)
+const tied = [
+  { id: 'a', title: 'A', status: 'todo', priority: 'medium', dueDate: null, createdAt: '2026-01-01T00:00:00Z' },
+  { id: 'b', title: 'B', status: 'todo', priority: 'medium', dueDate: null, createdAt: '2026-01-01T00:00:00Z' },
+  { id: 'c', title: 'C', status: 'todo', priority: 'medium', dueDate: null, createdAt: '2026-01-01T00:00:00Z' },
+];
+const tiedSorted = API.sortTasks(tied).map((t) => t.id);
+ok('sort: equal keys keep stable order', tiedSorted.join('') === 'abc', tiedSorted.join(''));
+
 // ——— Filter / search (visibleTasks) ———
 // visibleTasks uses filters closure — we re-eval would reset. Instead test sort + manual filter contract via loadTasks.
 const all = API.loadTasks();
@@ -160,23 +169,37 @@ const search = all.filter((t) => t.title.toLowerCase().includes('overdue'));
 ok('search title substring works', search.length === 1 && search[0].title === 'B overdue high');
 
 // ——— isValidTask / corrupt storage ———
+// Non-array payload must flag storageError (M1)
+store.set(API.STORAGE_KEY, '{"not":"array"}');
+const nonArray = API.loadTasks();
+ok('non-array payload yields empty + storageError', Array.isArray(nonArray) && nonArray.length === 0);
+
 store.set(API.STORAGE_KEY, '{not json');
 const afterCorrupt = API.loadTasks();
 ok('corrupt JSON yields empty list + storageError path', Array.isArray(afterCorrupt) && afterCorrupt.length === 0);
 
-store.set(API.STORAGE_KEY, JSON.stringify([{ id: 1 }, { id: 'x', title: 'ok', status: 'todo', priority: 'medium' }]));
+store.set(API.STORAGE_KEY, JSON.stringify([
+  { id: 1 },
+  { id: 'x', title: 'ok', status: 'todo', priority: 'medium' },
+  { id: 'y', title: 'bad-status', status: 'nope', priority: 'medium' },
+  { id: 'z', title: 'bad-priority', status: 'todo', priority: 'nope' },
+]));
 const filtered = API.loadTasks();
 ok('invalid items filtered out', filtered.length === 1 && filtered[0].title === 'ok');
 
 // ——— Tauri scaffold presence ———
 const tauriConf = JSON.parse(fs.readFileSync(path.join(ROOT, 'src-tauri', 'tauri.conf.json'), 'utf8'));
 ok('tauri.conf identifier', tauriConf.identifier === 'com.worktodo.app');
-ok('tauri.conf frontendDist is parent', tauriConf.build.frontendDist === '..');
+ok('tauri.conf frontendDist is dist', tauriConf.build.frontendDist === '../dist');
 ok('tauri.conf productName', tauriConf.productName === 'WorkTodo');
 
 const cargo = fs.readFileSync(path.join(ROOT, 'src-tauri', 'Cargo.toml'), 'utf8');
 ok('Cargo.toml has tauri', cargo.includes('tauri'));
 ok('Cargo.toml package name', cargo.includes('name = "worktodo"'));
+ok('Cargo.toml has [lib] name=worktodo_lib', cargo.includes('name = "worktodo_lib"'));
+
+const tauriMain = fs.readFileSync(path.join(ROOT, 'src-tauri', 'src', 'main.rs'), 'utf8');
+ok('main.rs uses worktodo_lib', tauriMain.includes('worktodo_lib::run'));
 
 const buildDoc = fs.readFileSync(path.join(ROOT, 'docs', 'BUILD.md'), 'utf8');
 ok('BUILD.md documents Windows', buildDoc.includes('Windows'));

@@ -48,10 +48,10 @@ cargo tauri icon /path/to/icon.png
 ### 构建命令
 
 ```bash
-# 开发（热更新前端）
+# 开发（加载 dist/ 中的静态前端，无 HMR）
 cargo tauri dev
 
-# 产出安装包
+# 产出安装包（自动先执行 scripts/prepare-dist.js 拷贝前端）
 cargo tauri build
 ```
 
@@ -71,9 +71,13 @@ workTodo/
 ├── index.html          # Web 入口（浏览器预览）
 ├── styles.css
 ├── app.js              # 任务 CRUD / 筛选 / localStorage
+├── dist/               # 构建产物：上述三文件的拷贝（Tauri frontendDist）
+├── scripts/
+│   ├── prepare-dist.js # 打包前拷贝前端到 dist/
+│   └── smoke-test.js   # Node 数据层冒烟
 ├── src-tauri/          # Tauri 桌面壳
-│   ├── Cargo.toml
-│   ├── tauri.conf.json # frontendDist 指向仓库根目录
+│   ├── Cargo.toml      # 含 [lib] name = "worktodo_lib"
+│   ├── tauri.conf.json # frontendDist = "../dist"
 │   └── src/
 │       ├── main.rs
 │       └── lib.rs
