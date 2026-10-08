@@ -1,7 +1,9 @@
 # Build artifacts
 src-tauri/target/
+src-tauri/gen/
 node_modules/
 dist/
+desktop-app-screenshot.png
 
 # OS / editor
 .DS_Store
@@ -15,3 +17,4 @@ Thumbs.db
 
 # Playwright artifacts
 .playwright-cli/
+release/
