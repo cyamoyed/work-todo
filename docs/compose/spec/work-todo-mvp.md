@@ -1,20 +1,20 @@
 ---
 feature: work-todo-mvp
-status: in-progress
+status: delivered
 updated: 2026-10-08
 branch: feat/work-todo-mvp
-commits: 
+commits: a242a2f..5c835b5
 ---
 
 # Work Todo MVP
 
 ## Report
 
-**What was built** — 详见 [S2]；核心是根目录纯静态 SPA（`index.html` / `styles.css` / `app.js`）+ Tauri 2 桌面壳脚手架。
+**What was built** — 一个轻量工作待办应用：根目录纯静态 SPA（`index.html` / `styles.css` / `app.js`，浏览器可直接打开）+ Tauri 2 桌面壳脚手架。功能覆盖任务 CRUD、状态（待办/进行中/已完成）、优先级（高/中/低）、截止日期、状态/优先级筛选、标题搜索、过期「已过期」标识、删除确认，数据存 `localStorage`（键 `worktodo.tasks.v1`）。排序规则：未完成在前，按截止日期升序（空日期靠后），再按优先级、创建时间倒序。Tauri 侧提供 `src-tauri/`（`[lib] name = "worktodo_lib"` 与 `main.rs` 对齐）、`frontendDist: "../dist"` + `scripts/prepare-dist.js`、`docs/BUILD.md` 打包说明；桌面包需在本机装 Rust 后执行 `cargo tauri build`。
 
 **Verification**（2026-10-08）
 - `node --check app.js` — PASS
-- `node scripts/smoke-test.js` — PASS（46 passed, 0 failed）：HTML 结构、CRUD、排序（含等键稳定序）、筛选/搜索、非数组与损坏 JSON 恢复、非法枚举过滤、Tauri 配置与 `[lib]` 对齐
+- `node scripts/smoke-test.js` — PASS（48 passed, 0 failed）：HTML 结构、CRUD、排序（含等键/缺 createdAt 稳定序）、筛选/搜索、非数组与损坏 JSON 恢复、非法/原型键枚举过滤、Tauri 配置（`[lib]`、`frontendDist`、hook 路径）对齐
 - `node scripts/prepare-dist.js` — PASS（dist/ 含 index.html, styles.css, app.js）
 - Playwright UI 冒烟（http://127.0.0.1:5173）— PASS 全链路：
   - 空态「还没有任务」
@@ -30,9 +30,10 @@ commits:
 
 **Journey log**
 1. 首版 Tauri `Cargo.toml` 漏掉 `[lib] name = "worktodo_lib"`，与 `main.rs` 不对齐会导致 `cargo tauri dev/build` 无法编译；已补并加入 smoke 断言。
-2. 排序比较器原式 `a<b?1:-1` 在等键时双向返回 -1，同毫秒创建顺序不稳定；已改为等键返回 0。
+2. 排序比较器原式 `a<b?1:-1` 在等键时双向返回 -1，同毫秒创建顺序不稳定；已改为等键返回 0，缺 `createdAt` 时以空串参与比较。
 3. `frontendDist: ".."` 会把整个仓库打进包；改为 `../dist` + `scripts/prepare-dist.js`，根目录 `index.html` 仍供浏览器预览。
-4. smoke 里 filter/search 曾用测试内 `.filter()` 复刻逻辑而非调用 `visibleTasks`（闭包 `filters` 不可外设）；T6 的真实覆盖以 Playwright 为准。
+4. 复审指出 hook 路径 `node ../scripts/...` 按 Tauri cwd（frontend 根）会指到仓库外；正确写法是 `node scripts/prepare-dist.js`。配置类断言必须覆盖 hook 命令字符串，不能只测 `frontendDist`。
+5. smoke 里 filter/search 曾用测试内 `.filter()` 复刻逻辑而非调用 `visibleTasks`（闭包 `filters` 不可外设）；T6 的真实覆盖以 Playwright 为准。
 
 ## [S1] Problem
 
