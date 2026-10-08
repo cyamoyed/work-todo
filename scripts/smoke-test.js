@@ -183,14 +183,27 @@ store.set(API.STORAGE_KEY, JSON.stringify([
   { id: 'x', title: 'ok', status: 'todo', priority: 'medium' },
   { id: 'y', title: 'bad-status', status: 'nope', priority: 'medium' },
   { id: 'z', title: 'bad-priority', status: 'todo', priority: 'nope' },
+  { id: 'p', title: 'proto-status', status: 'constructor', priority: 'medium' },
 ]));
 const filtered = API.loadTasks();
 ok('invalid items filtered out', filtered.length === 1 && filtered[0].title === 'ok');
+
+// Missing createdAt must not blow up sort and must stay stable
+const noCreated = [
+  { id: 'n2', title: 'B', status: 'todo', priority: 'medium', dueDate: null },
+  { id: 'n1', title: 'A', status: 'todo', priority: 'medium', dueDate: null },
+];
+ok('sort: missing createdAt is stable', API.sortTasks(noCreated).map((t) => t.id).join('') === 'n2n1');
 
 // ——— Tauri scaffold presence ———
 const tauriConf = JSON.parse(fs.readFileSync(path.join(ROOT, 'src-tauri', 'tauri.conf.json'), 'utf8'));
 ok('tauri.conf identifier', tauriConf.identifier === 'com.worktodo.app');
 ok('tauri.conf frontendDist is dist', tauriConf.build.frontendDist === '../dist');
+ok(
+  'tauri.conf hooks use repo-root-relative paths',
+  tauriConf.build.beforeDevCommand === 'node scripts/prepare-dist.js' &&
+    tauriConf.build.beforeBuildCommand === 'node scripts/prepare-dist.js'
+);
 ok('tauri.conf productName', tauriConf.productName === 'WorkTodo');
 
 const cargo = fs.readFileSync(path.join(ROOT, 'src-tauri', 'Cargo.toml'), 'utf8');

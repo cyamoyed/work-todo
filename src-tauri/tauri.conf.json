@@ -5,8 +5,8 @@
   "identifier": "com.worktodo.app",
   "build": {
     "frontendDist": "../dist",
-    "beforeDevCommand": "node ../scripts/prepare-dist.js",
-    "beforeBuildCommand": "node ../scripts/prepare-dist.js"
+    "beforeDevCommand": "node scripts/prepare-dist.js",
+    "beforeBuildCommand": "node scripts/prepare-dist.js"
   },
   "app": {
     "windows": [

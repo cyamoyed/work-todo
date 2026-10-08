@@ -66,8 +66,8 @@
       typeof t === 'object' &&
       typeof t.id === 'string' &&
       typeof t.title === 'string' &&
-      STATUS_LABELS[t.status] !== undefined &&
-      PRIORITY_LABELS[t.priority] !== undefined
+      Object.hasOwn(STATUS_LABELS, t.status) &&
+      Object.hasOwn(PRIORITY_LABELS, t.priority)
     );
   }
 
@@ -144,8 +144,10 @@
       const bp = PRIORITY_RANK[b.priority] ?? 1;
       if (ap !== bp) return ap - bp;
 
-      if (a.createdAt === b.createdAt) return 0;
-      return a.createdAt < b.createdAt ? 1 : -1;
+      const aCreated = a.createdAt || '';
+      const bCreated = b.createdAt || '';
+      if (aCreated === bCreated) return 0;
+      return aCreated < bCreated ? 1 : -1;
     });
   }
 
