@@ -44,7 +44,7 @@ function fakeEl() {
     value: '',
     className: '',
     style: {},
-    classList: { add() {}, remove() {}, contains: () => false },
+    classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
     setAttribute() {},
     addEventListener() {},
     appendChild() {},
@@ -60,7 +60,10 @@ function fakeEl() {
 global.document = {
   readyState: 'complete',
   querySelector: () => fakeEl(),
+  querySelectorAll: () => [],
+  getElementById: () => fakeEl(),
   createElement: () => fakeEl(),
+  createElementNS: () => fakeEl(),
   addEventListener: (t, fn) => {
     listeners[t] = fn;
   },
@@ -86,6 +89,10 @@ ok('index.html has confirm-backdrop', html.includes('id="confirm-backdrop"'));
 ok('index.html lang zh-CN', html.includes('lang="zh-CN"'));
 ok('index.html has status-filter', html.includes('id="status-filter"'));
 ok('index.html has priority-filter', html.includes('id="priority-filter"'));
+ok('index.html has btn-export', html.includes('id="btn-export"'));
+ok('index.html has field-notes', html.includes('id="field-notes"'));
+ok('index.html has quick-add-form', html.includes('id="quick-add-form"'));
+ok('index.html delete copy is undoable', html.includes('可撤销'));
 
 // ——— CSS presence ———
 const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
@@ -197,7 +204,7 @@ ok('sort: missing createdAt is stable', API.sortTasks(noCreated).map((t) => t.id
 
 // ——— Tauri scaffold presence ———
 const tauriConf = JSON.parse(fs.readFileSync(path.join(ROOT, 'src-tauri', 'tauri.conf.json'), 'utf8'));
-ok('tauri.conf identifier', tauriConf.identifier === 'com.worktodo.app');
+ok('tauri.conf identifier', tauriConf.identifier === 'com.worktodo.desktop');
 ok('tauri.conf frontendDist is dist', tauriConf.build.frontendDist === '../dist');
 ok(
   'tauri.conf hooks use repo-root-relative paths',

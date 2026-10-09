@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WorkTodo · 三套视觉方向</title>
+<style>
+  :root {
+    --ink: #18181b;
+    --muted: #71717a;
+    --faint: #a1a1aa;
+    --line: #e4e4e7;
+    --page: #f4f4f5;
+    --white: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body {
+    font-family: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  /* Gallery chrome */
+  .gallery-nav {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 28px;
+    background: rgba(244,244,245,.92);
+    backdrop-filter: saturate(140%) blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .gallery-nav strong {
+    font-size: 13px; font-weight: 600; letter-spacing: .02em;
+    margin-right: 12px;
+  }
+  .gallery-nav a {
+    font-size: 12.5px; color: var(--muted); text-decoration: none;
+    padding: 6px 12px; border-radius: 999px;
+  }
+  .gallery-nav a:hover { background: #e4e4e7; color: var(--ink); }
+  .gallery-nav .spacer { flex: 1; }
+  .gallery-nav .hint { font-size: 12px; color: var(--faint); }
+
+  .dir {
+    padding: 56px 28px 72px;
+    border-bottom: 1px solid var(--line);
+  }
+  .dir:last-child { border-bottom: none; }
+  .dir-head {
+    max-width: 1440px; margin: 0 auto 20px;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
+  }
+  .dir-kicker {
+    font-size: 11px; font-weight: 600; letter-spacing: .14em;
+    color: var(--faint); text-transform: uppercase;
+  }
+  .dir-title {
+    font-size: 28px; font-weight: 650; letter-spacing: -.025em;
+    margin-top: 6px;
+  }
+  .dir-desc {
+    max-width: 520px; font-size: 13.5px; color: var(--muted); line-height: 1.7;
+    text-align: right;
+  }
+
+  .frame-wrap {
+    max-width: 1440px; margin: 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--white);
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 40px rgba(0,0,0,.06);
+  }
+  .frame {
+    width: 1440px;
+    transform-origin: top left;
+    margin: 0 auto;
+  }
+  .frame-scale {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .notes {
+    max-width: 1440px; margin: 18px auto 0;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  }
+  .note {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .note h4 {
+    font-size: 11px; font-weight: 600; letter-spacing: .08em;
+    color: var(--faint); text-transform: uppercase; margin-bottom: 6px;
+  }
+  .note p { font-size: 12.5px; color: #3f3f46; line-height: 1.65; }
+
+  /* ========== Shared UI atoms (inside mockups) ========== */
+  .app {
+    display: grid;
+    min-height: 920px;
+    background: var(--white);
+    color: var(--ink);
+    font-size: 14px;
+  }
+  .app * { font-family: inherit; }
+
+  /* ——— Direction A: Precision Workspace ——— */
+  .a {
+    grid-template-columns: 228px 1fr;
+    background: #fafafa;
+  }
+  .a-side {
+    background: #f4f4f5;
+    border-right: 1px solid #e4e4e7;
+    padding: 28px 18px;
+    display: flex; flex-direction: column;
+  }
+  .a-logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 10px 28px;
+  }
+  .a-logo-mark {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: #18181b;
+  }
+  .a-logo-text {
+    font-size: 14px; font-weight: 650; letter-spacing: -.01em;
+  }
+  .a-nav { display: flex; flex-direction: column; gap: 2px; }
+  .a-nav-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 6px;
+    font-size: 13.5px; color: #52525b; cursor: default;
+  }
+  .a-nav-item.active {
+    background: #e4e4e7;
+    color: #18181b; font-weight: 550;
+  }
+  .a-nav-item .n {
+    font-size: 11.5px; color: #a1a1aa; font-variant-numeric: tabular-nums;
+  }
+  .a-nav-item.active .n { color: #71717a; }
+  .a-side-foot { margin-top: auto; padding: 10px; }
+  .a-side-foot p {
+    font-size: 11px; color: #a1a1aa; line-height: 1.6;
+    padding-top: 16px; border-top: 1px solid #e4e4e7;
+  }
+  .a-side-foot .ops {
+    display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px;
+  }
+  .a-side-foot .ops span {
+    font-size: 12.5px; color: #71717a; padding: 6px 8px; border-radius: 6px;
+  }
+  .a-side-foot .ops span:hover { background: #e4e4e7; color: #18181b; }
+
+  .a-main { display: flex; flex-direction: column; min-width: 0; }
+  .a-top {
+    display: flex; align-items: center; gap: 12px;
+    padding: 22px 36px 18px;
+    border-bottom: 1px solid #ececee;
+    background: #fff;
+  }
+  .a-search {
+    flex: 1; max-width: 420px;
+    display: flex; align-items: center; gap: 8px;
+    height: 36px; padding: 0 12px;
+    border: 1px solid #e4e4e7; border-radius: 8px;
+    background: #fafafa;
+    color: #a1a1aa; font-size: 13px;
+  }
+  .a-search kbd {
+    margin-left: auto;
+    font-size: 11px; font-family: inherit;
+    color: #a1a1aa;
+    border: 1px solid #e4e4e7; border-radius: 4px;
+    padding: 1px 5px; background: #fff;
+  }
+  .a-btn {
+    height: 36px; padding: 0 14px;
+    border-radius: 8px; border: 1px solid #e4e4e7;
+    background: #fff; color: #3f3f46;
+    font-size: 13px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .a-btn.primary {
+    background: #4f46e5; border-color: #4f46e5; color: #fff;
+    padding: 0 16px;
+  }
+  .a-body { padding: 28px 36px 40px; }
+  .a-status {
+    display: flex; align-items: baseline; gap: 18px;
+    margin-bottom: 22px;
+  }
+  .a-status .lead {
+    font-size: 13px; color: #3f3f46; font-weight: 500;
+  }
+  .a-status .lead b { color: #18181b; font-weight: 650; }
+  .a-status .sep { width: 1px; height: 12px; background: #e4e4e7; }
+  .a-status .meta { font-size: 13px; color: #71717a; }
+  .a-status .meta.alert { color: #b42318; }
+
+  .a-list {
+    background: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .a-row {
+    display: grid;
+    grid-template-columns: 28px minmax(0,1fr) 160px 120px 72px;
+    align-items: center;
+    gap: 14px;
+    padding: 0 18px;
+    height: 64px;
+    border-bottom: 1px solid #f0f0f2;
+  }
+  .a-row:last-child { border-bottom: none; }
+  .a-row:hover { background: #fafafa; }
+  .a-check {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.5px solid #d4d4d8;
+  }
+  .a-check.doing {
+    border-color: #4f46e5;
+    background:
+      linear-gradient(90deg, #4f46e5 50%, transparent 50%);
+  }
+  .a-check.done {
+    border-color: #4f46e5; background: #4f46e5;
+  }
+  .a-title {
+    font-size: 14px; font-weight: 550; color: #18181b;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .a-note {
+    font-size: 12px; color: #a1a1aa; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .a-prio {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: #71717a;
+  }
+  .a-prio i {
+    width: 6px; height: 6px; border-radius: 50%; display: inline-block;
+  }
+  .a-prio.high i { background: #b42318; }
+  .a-prio.mid i { background: #b45309; }
+  .a-prio.low i { background: #a1a1aa; }
+  .a-status-tag {
+    font-size: 12px; color: #71717a;
+  }
+  .a-due {
+    font-size: 12.5px; color: #71717a; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .a-due.late { color: #b42318; font-weight: 550; }
+  .a-due.today { color: #18181b; font-weight: 550; }
+  .a-collapse {
+    margin-top: 14px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: #71717a;
+  }
+  .a-collapse span {
+    border: 1px solid #e4e4e7; border-radius: 999px;
+    padding: 5px 12px; background: #fff;
+  }
+
+  /* ——— Direction B: Quiet Desk ——— */
+  .b {
+    background: #fff;
+    grid-template-columns: 1fr;
+  }
+  .b-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 48px 80px;
+  }
+  .b-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 48px;
+  }
+  .b-brand {
+    font-size: 13px; font-weight: 600; letter-spacing: .04em;
+    color: #18181b;
+  }
+  .b-actions { display: flex; align-items: center; gap: 6px; }
+  .b-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #71717a; font-size: 13px;
+  }
+  .b-icon:hover { background: #f4f4f5; color: #18181b; }
+  .b-icon.primary {
+    width: auto; padding: 0 14px; gap: 6px;
+    background: #18181b; color: #fff; font-weight: 550; font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .b-date {
+    font-size: 13px; font-weight: 500; color: #a1a1aa;
+    letter-spacing: .02em;
+    margin-bottom: 10px;
+  }
+  .b-h1 {
+    font-size: 40px; font-weight: 700; letter-spacing: -.035em;
+    color: #18181b; line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .b-sub {
+    font-size: 15px; color: #71717a; line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .b-sub b { color: #18181b; font-weight: 600; }
+  .b-sub .warn { color: #b42318; font-weight: 550; }
+
+  .b-quick {
+    display: flex; align-items: center; gap: 12px;
+    height: 48px; padding: 0 4px 0 16px;
+    border: 1px solid #e4e4e7; border-radius: 10px;
+    background: #fafafa;
+    margin-bottom: 36px;
+  }
+  .b-quick .ph { flex: 1; font-size: 14px; color: #a1a1aa; }
+  .b-quick .go {
+    height: 36px; padding: 0 14px; border-radius: 8px;
+    background: #18181b; color: #fff;
+    font-size: 13px; font-weight: 550;
+    display: inline-flex; align-items: center;
+  }
+
+  .b-tabs {
+    display: flex; gap: 4px;
+    border-bottom: 1px solid #ececee;
+    margin-bottom: 8px;
+  }
+  .b-tab {
+    padding: 10px 14px 12px;
+    font-size: 13.5px; color: #71717a;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .b-tab.active {
+    color: #18181b; font-weight: 600;
+    border-bottom-color: #18181b;
+  }
+  .b-tab .c {
+    font-size: 11.5px; color: #a1a1aa; margin-left: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .b-list { padding-top: 8px; }
+  .b-row {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 16px 4px;
+    border-bottom: 1px solid #f4f4f5;
+  }
+  .b-row:last-child { border-bottom: none; }
+  .b-check {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid #d4d4d8; margin-top: 1px; flex-shrink: 0;
+  }
+  .b-check.doing {
+    border-color: #18181b;
+    background: linear-gradient(90deg, #18181b 50%, transparent 50%);
+  }
+  .b-row-main { flex: 1; min-width: 0; }
+  .b-row-title {
+    font-size: 15px; font-weight: 550; color: #18181b;
+    letter-spacing: -.01em;
+  }
+  .b-row-meta {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 5px; font-size: 12.5px; color: #a1a1aa;
+  }
+  .b-row-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: #d4d4d8; }
+  .b-row-meta .p-high { color: #b42318; font-weight: 550; }
+  .b-row-meta .p-mid { color: #a16207; }
+  .b-row-right {
+    font-size: 13px; color: #71717a;
+    font-variant-numeric: tabular-nums;
+    padding-top: 2px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .b-row-right.late { color: #b42318; font-weight: 600; }
+  .b-row-right.today { color: #18181b; font-weight: 550; }
+
+  .b-foot {
+    margin-top: 28px; padding-top: 16px;
+    border-top: 1px solid #f0f0f2;
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: #a1a1aa;
+  }
+  .b-foot .keys {
+    display: flex; gap: 12px;
+  }
+  .b-foot kbd {
+    font-family: inherit; font-size: 11px;
+    border: 1px solid #e4e4e7; border-radius: 4px;
+    padding: 1px 5px; margin-right: 4px; color: #71717a;
+  }
+
+  /* ——— Direction C: Dayline Agenda ——— */
+  .c {
+    grid-template-columns: 1fr;
+    background: #fff;
+  }
+  .c-top {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 32px;
+    border-bottom: 1px solid #ececee;
+  }
+  .c-logo {
+    font-size: 14px; font-weight: 650; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .c-logo i {
+    width: 20px; height: 20px; border-radius: 5px;
+    background: #0b6bcb;
+  }
+  .c-tabs {
+    display: flex; gap: 2px; margin-left: 28px;
+  }
+  .c-tab {
+    padding: 7px 12px; border-radius: 7px;
+    font-size: 13px; color: #71717a;
+  }
+  .c-tab.active {
+    background: #eff6ff; color: #0b6bcb; font-weight: 550;
+  }
+  .c-search {
+    margin-left: auto;
+    width: 280px; height: 34px;
+    border: 1px solid #e4e4e7; border-radius: 8px;
+    background: #fafafa;
+    display: flex; align-items: center; padding: 0 12px;
+    font-size: 13px; color: #a1a1aa;
+  }
+  .c-new {
+    height: 34px; padding: 0 14px;
+    background: #0b6bcb; color: #fff;
+    border-radius: 8px; font-size: 13px; font-weight: 550;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  .c-body {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    min-height: 850px;
+  }
+  .c-agenda { padding: 28px 32px 48px; border-right: 1px solid #f0f0f2; }
+  .c-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .c-toolbar h2 {
+    font-size: 20px; font-weight: 650; letter-spacing: -.02em;
+  }
+  .c-toolbar .range {
+    display: flex; gap: 4px;
+  }
+  .c-chip {
+    padding: 5px 11px; border-radius: 999px;
+    font-size: 12.5px; color: #71717a;
+    border: 1px solid transparent;
+  }
+  .c-chip.active {
+    background: #fff; border-color: #d4d4d8;
+    color: #18181b; font-weight: 550;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+
+  .c-group { margin-bottom: 28px; }
+  .c-group-head {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .c-group-head h3 {
+    font-size: 12px; font-weight: 650; letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .c-group-head h3.late { color: #b42318; }
+  .c-group-head h3.today { color: #0b6bcb; }
+  .c-group-head .hint { font-size: 12px; color: #a1a1aa; }
+
+  .c-item {
+    display: grid;
+    grid-template-columns: 64px 20px minmax(0,1fr) 110px;
+    gap: 12px;
+    align-items: start;
+    padding: 13px 8px 13px 4px;
+    border-bottom: 1px solid #f4f4f5;
+  }
+  .c-item:last-child { border-bottom: none; }
+  .c-time {
+    font-size: 12px; color: #71717a;
+    font-variant-numeric: tabular-nums;
+    padding-top: 3px; text-align: right;
+  }
+  .c-time.late { color: #b42318; font-weight: 550; }
+  .c-item .c-check {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.5px solid #d4d4d8; margin-top: 2px;
+  }
+  .c-item .c-check.doing {
+    border-color: #0b6bcb;
+    background: linear-gradient(90deg, #0b6bcb 50%, transparent 50%);
+  }
+  .c-item-title {
+    font-size: 14px; font-weight: 550; color: #18181b;
+  }
+  .c-item-note {
+    font-size: 12px; color: #a1a1aa; margin-top: 3px;
+  }
+  .c-item-prio {
+    font-size: 12px; color: #71717a; text-align: right; padding-top: 3px;
+  }
+  .c-item-prio.high { color: #b42318; }
+  .c-item-prio.mid { color: #a16207; }
+
+  .c-side {
+    padding: 28px 24px;
+    background: #fafafa;
+  }
+  .c-side h3 {
+    font-size: 11px; font-weight: 650; letter-spacing: .1em;
+    color: #a1a1aa; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .c-stat {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 11px 0; border-bottom: 1px solid #ececee;
+  }
+  .c-stat .k { font-size: 13px; color: #52525b; }
+  .c-stat .v {
+    font-size: 18px; font-weight: 650; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .c-stat .v.alert { color: #b42318; }
+  .c-stat .v.blue { color: #0b6bcb; }
+
+  .c-side-block { margin-top: 28px; }
+  .c-mini {
+    background: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .c-mini .t {
+    font-size: 13px; font-weight: 550; color: #18181b;
+  }
+  .c-mini .m {
+    font-size: 12px; color: #a1a1aa; margin-top: 3px;
+    display: flex; gap: 8px;
+  }
+
+  /* responsive scale helper */
+  .scaler {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (max-width: 1100px) {
+    .notes { grid-template-columns: 1fr; }
+    .dir-head { flex-direction: column; align-items: flex-start; }
+    .dir-desc { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="gallery-nav">
+  <strong>WorkTodo 视觉方向</strong>
+  <a href="#dir-a">A 精密工作台</a>
+  <a href="#dir-b">B 静桌</a>
+  <a href="#dir-c">C 日程轴</a>
+  <div class="spacer"></div>
+  <div class="hint">仅为视觉与交互方向稿 · 未改产品代码</div>
+</nav>
+
+<!-- ================= A ================= -->
+<section class="dir" id="dir-a">
+  <div class="dir-head">
+    <div>
+      <div class="dir-kicker">Direction A</div>
+      <h2 class="dir-title">精密工作台</h2>
+    </div>
+    <p class="dir-desc">
+      冷静、克制、偏工程师气质。侧栏负责视图切换，主区是高密度任务台账。
+      适合把 WorkTodo 当成每天开着的桌面工具，追求效率与秩序。
+    </p>
+  </div>
+
+  <div class="frame-wrap">
+    <div class="frame-scale">
+      <div class="app a">
+        <aside class="a-side">
+          <div class="a-logo">
+            <div class="a-logo-mark"></div>
+            <div class="a-logo-text">WorkTodo</div>
+          </div>
+          <nav class="a-nav">
+            <div class="a-nav-item active">今天 <span class="n">4</span></div>
+            <div class="a-nav-item">本周 <span class="n">7</span></div>
+            <div class="a-nav-item">全部 <span class="n">12</span></div>
+            <div class="a-nav-item">已完成 <span class="n">3</span></div>
+          </nav>
+          <div class="a-side-foot">
+            <div class="ops">
+              <span>导出数据</span>
+              <span>导入数据</span>
+            </div>
+            <p>本地存储 · 可导出 JSON<br/>快捷键 N 新建 · / 搜索</p>
+          </div>
+        </aside>
+
+        <div class="a-main">
+          <div class="a-top">
+            <div class="a-search">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#a1a1aa" stroke-width="1.4"/><path d="M10.5 10.5L14 14" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round"/></svg>
+              搜索任务或备注
+              <kbd>/</kbd>
+            </div>
+            <button class="a-btn">筛选</button>
+            <button class="a-btn primary">新建任务</button>
+          </div>
+
+          <div class="a-body">
+            <div class="a-status">
+              <div class="lead"><b>3</b> 项待推进</div>
+              <div class="sep"></div>
+              <div class="meta">今日到期 2</div>
+              <div class="sep"></div>
+              <div class="meta alert">逾期 1</div>
+              <div class="sep"></div>
+              <div class="meta">已完成 2</div>
+            </div>
+
+            <div class="a-list">
+              <div class="a-row">
+                <div class="a-check"></div>
+                <div>
+                  <div class="a-title">修复登录超时问题</div>
+                  <div class="a-note">复现路径见日志 10.02 · 需要对照网关超时配置</div>
+                </div>
+                <div class="a-prio high"><i></i>高优先级</div>
+                <div class="a-status-tag">待办</div>
+                <div class="a-due late">逾期 2 天</div>
+              </div>
+              <div class="a-row">
+                <div class="a-check doing"></div>
+                <div>
+                  <div class="a-title">评审 v2.2 发布清单</div>
+                  <div class="a-note">核对回滚方案与灰度名单</div>
+                </div>
+                <div class="a-prio high"><i></i>高优先级</div>
+                <div class="a-status-tag">进行中</div>
+                <div class="a-due today">今天 15:00</div>
+              </div>
+              <div class="a-row">
+                <div class="a-check"></div>
+                <div>
+                  <div class="a-title">整理客户需求纪要</div>
+                  <div class="a-note">输出三页摘要，同步给产品</div>
+                </div>
+                <div class="a-prio mid"><i></i>中优先级</div>
+                <div class="a-status-tag">待办</div>
+                <div class="a-due today">今天</div>
+              </div>
+              <div class="a-row">
+                <div class="a-check"></div>
+                <div>
+                  <div class="a-title">周报初稿</div>
+                  <div class="a-note"></div>
+                </div>
+                <div class="a-prio low"><i></i>低优先级</div>
+                <div class="a-status-tag">待办</div>
+                <div class="a-due">明天 18:00</div>
+              </div>
+              <div class="a-row">
+                <div class="a-check"></div>
+                <div>
+                  <div class="a-title">确认供应商合同条款</div>
+                  <div class="a-note">法务批注已回，确认付款节点</div>
+                </div>
+                <div class="a-prio mid"><i></i>中优先级</div>
+                <div class="a-status-tag">待办</div>
+                <div class="a-due">本周五</div>
+              </div>
+            </div>
+            <div class="a-collapse">
+              <span>已完成 2 项 · 展开</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4>布局</h4>
+      <p>固定侧栏 + 单一列表主区。信息密度高但不挤，用发丝线分行，不用卡片套卡片。</p>
+    </div>
+    <div class="note">
+      <h4>交互</h4>
+      <p>侧栏切换今天/本周/全部；行内圆形状态控件点击弹出三态菜单；列表头可切换排序与批量清理。</p>
+    </div>
+    <div class="note">
+      <h4>气质</h4>
+      <p>冷灰中性 + 靛青一个强调色。像 Linear、Superhuman——工具感强，适合全天挂机。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= B ================= -->
+<section class="dir" id="dir-b">
+  <div class="dir-head">
+    <div>
+      <div class="dir-kicker">Direction B</div>
+      <h2 class="dir-title">静桌</h2>
+    </div>
+    <p class="dir-desc">
+      把「今天」当成一页正在写的桌面便签。大留白、大标题、极简控件，
+      强调安心与专注，而不是仪表盘。像 Things、Apple 备忘录的克制。
+    </p>
+  </div>
+
+  <div class="frame-wrap">
+    <div class="frame-scale">
+      <div class="app b">
+        <div class="b-inner">
+          <div class="b-topbar">
+            <div class="b-brand">WorkTodo</div>
+            <div class="b-actions">
+              <div class="b-icon">搜索</div>
+              <div class="b-icon">···</div>
+              <div class="b-icon primary">＋ 新建</div>
+            </div>
+          </div>
+
+          <div class="b-date">2026年10月9日 · 星期五</div>
+          <h1 class="b-h1">今天</h1>
+          <p class="b-sub">
+            <b>3</b> 件待办，其中 <span class="warn">1 件已逾期</span>。先处理最紧的那件。
+          </p>
+
+          <div class="b-quick">
+            <div class="ph">快速记一笔，按 Enter 存入今天…</div>
+            <div class="go">存入</div>
+          </div>
+
+          <div class="b-tabs">
+            <div class="b-tab active">今天 <span class="c">4</span></div>
+            <div class="b-tab">本周 <span class="c">7</span></div>
+            <div class="b-tab">收件箱 <span class="c">12</span></div>
+            <div class="b-tab">已完成 <span class="c">3</span></div>
+          </div>
+
+          <div class="b-list">
+            <div class="b-row">
+              <div class="b-check"></div>
+              <div class="b-row-main">
+                <div class="b-row-title">修复登录超时问题</div>
+                <div class="b-row-meta">
+                  <span class="p-high">高</span>
+                  <span class="dot"></span>
+                  <span>复现路径见日志 10.02</span>
+                </div>
+              </div>
+              <div class="b-row-right late">逾期 2 天</div>
+            </div>
+            <div class="b-row">
+              <div class="b-check doing"></div>
+              <div class="b-row-main">
+                <div class="b-row-title">评审 v2.2 发布清单</div>
+                <div class="b-row-meta">
+                  <span class="p-high">高</span>
+                  <span class="dot"></span>
+                  <span>核对回滚方案与灰度名单</span>
+                </div>
+              </div>
+              <div class="b-row-right today">15:00</div>
+            </div>
+            <div class="b-row">
+              <div class="b-check"></div>
+              <div class="b-row-main">
+                <div class="b-row-title">整理客户需求纪要</div>
+                <div class="b-row-meta">
+                  <span class="p-mid">中</span>
+                  <span class="dot"></span>
+                  <span>输出三页摘要</span>
+                </div>
+              </div>
+              <div class="b-row-right">今天</div>
+            </div>
+            <div class="b-row">
+              <div class="b-check"></div>
+              <div class="b-row-main">
+                <div class="b-row-title">周报初稿</div>
+                <div class="b-row-meta">
+                  <span>低</span>
+                </div>
+              </div>
+              <div class="b-row-right">明天 18:00</div>
+            </div>
+          </div>
+
+          <div class="b-foot">
+            <div>已完成 3 项 · 展开</div>
+            <div class="keys">
+              <div><kbd>N</kbd>新建</div>
+              <div><kbd>/</kbd>搜索</div>
+              <div><kbd>Esc</kbd>关闭</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4>布局</h4>
+      <p>单栏、最大宽度约 760px 居中。页面本身就是列表，没有侧栏、没有仪表盘。</p>
+    </div>
+    <div class="note">
+      <h4>交互</h4>
+      <p>顶部快速添加常驻；Tab 切换范围；点任务行展开备注与编辑；状态用圆形勾选一步完成。</p>
+    </div>
+    <div class="note">
+      <h4>气质</h4>
+      <p>纯白纸面、墨色标题、一个近黑主按钮。安静、高级、去装饰，接近苹果原生质感。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= C ================= -->
+<section class="dir" id="dir-c">
+  <div class="dir-head">
+    <div>
+      <div class="dir-kicker">Direction C</div>
+      <h2 class="dir-title">日程轴</h2>
+    </div>
+    <p class="dir-desc">
+      以时间为主轴组织任务：逾期、今天、明天、本周稍后。
+      右侧是今日节奏概览。适合「按时间推进」而非「按清单勾选」的工作方式。
+    </p>
+  </div>
+
+  <div class="frame-wrap">
+    <div class="frame-scale">
+      <div class="app c">
+        <div class="c-top">
+          <div class="c-logo"><i></i>WorkTodo</div>
+          <div class="c-tabs">
+            <div class="c-tab active">日程</div>
+            <div class="c-tab">清单</div>
+            <div class="c-tab">已完成</div>
+          </div>
+          <div class="c-search">搜索任务或备注</div>
+          <div class="c-new">＋ 新建任务</div>
+        </div>
+
+        <div class="c-body">
+          <div class="c-agenda">
+            <div class="c-toolbar">
+              <h2>2026年10月</h2>
+              <div class="range">
+                <div class="c-chip active">今天</div>
+                <div class="c-chip">本周</div>
+                <div class="c-chip">全部</div>
+              </div>
+            </div>
+
+            <div class="c-group">
+              <div class="c-group-head">
+                <h3 class="late">逾期</h3>
+                <div class="hint">1 项</div>
+              </div>
+              <div class="c-item">
+                <div class="c-time late">逾期 2 天</div>
+                <div class="c-check"></div>
+                <div>
+                  <div class="c-item-title">修复登录超时问题</div>
+                  <div class="c-item-note">复现路径见日志 10.02</div>
+                </div>
+                <div class="c-item-prio high">高</div>
+              </div>
+            </div>
+
+            <div class="c-group">
+              <div class="c-group-head">
+                <h3 class="today">今天 · 10月9日 星期五</h3>
+                <div class="hint">3 项</div>
+              </div>
+              <div class="c-item">
+                <div class="c-time">15:00</div>
+                <div class="c-check doing"></div>
+                <div>
+                  <div class="c-item-title">评审 v2.2 发布清单</div>
+                  <div class="c-item-note">核对回滚方案与灰度名单</div>
+                </div>
+                <div class="c-item-prio high">高</div>
+              </div>
+              <div class="c-item">
+                <div class="c-time">全天</div>
+                <div class="c-check"></div>
+                <div>
+                  <div class="c-item-title">整理客户需求纪要</div>
+                  <div class="c-item-note">输出三页摘要，同步给产品</div>
+                </div>
+                <div class="c-item-prio mid">中</div>
+              </div>
+              <div class="c-item">
+                <div class="c-time">18:00</div>
+                <div class="c-check"></div>
+                <div>
+                  <div class="c-item-title">同步接口联调进度</div>
+                  <div class="c-item-note"></div>
+                </div>
+                <div class="c-item-prio">低</div>
+              </div>
+            </div>
+
+            <div class="c-group">
+              <div class="c-group-head">
+                <h3>明天 · 10月10日</h3>
+                <div class="hint">1 项</div>
+              </div>
+              <div class="c-item">
+                <div class="c-time">18:00</div>
+                <div class="c-check"></div>
+                <div>
+                  <div class="c-item-title">周报初稿</div>
+                  <div class="c-item-note"></div>
+                </div>
+                <div class="c-item-prio">低</div>
+              </div>
+            </div>
+
+            <div class="c-group">
+              <div class="c-group-head">
+                <h3>本周稍后</h3>
+                <div class="hint">1 项</div>
+              </div>
+              <div class="c-item">
+                <div class="c-time">周五</div>
+                <div class="c-check"></div>
+                <div>
+                  <div class="c-item-title">确认供应商合同条款</div>
+                  <div class="c-item-note">法务批注已回，确认付款节点</div>
+                </div>
+                <div class="c-item-prio mid">中</div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="c-side">
+            <h3>今日节奏</h3>
+            <div class="c-stat">
+              <div class="k">待推进</div>
+              <div class="v">3</div>
+            </div>
+            <div class="c-stat">
+              <div class="k">今日到期</div>
+              <div class="v blue">2</div>
+            </div>
+            <div class="c-stat">
+              <div class="k">已逾期</div>
+              <div class="v alert">1</div>
+            </div>
+            <div class="c-stat">
+              <div class="k">今日完成</div>
+              <div class="v">2</div>
+            </div>
+
+            <div class="c-side-block">
+              <h3>接下来</h3>
+              <div class="c-mini">
+                <div class="t">评审 v2.2 发布清单</div>
+                <div class="m"><span>今天 15:00</span><span>高</span></div>
+              </div>
+              <div class="c-mini">
+                <div class="t">整理客户需求纪要</div>
+                <div class="m"><span>今天</span><span>中</span></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4>布局</h4>
+      <p>左时间轴主区 + 右节奏侧栏。任务按日期分段，时间点在列首，一眼看到推进顺序。</p>
+    </div>
+    <div class="note">
+      <h4>交互</h4>
+      <p>时间范围 chip 切换；点分段标题收起/展开；拖拽可改期（原型阶段可先点击改期）；右侧「接下来」可快速跳转。</p>
+    </div>
+    <div class="note">
+      <h4>气质</h4>
+      <p>日历工具的清晰感，湖蓝强调色。比 A 更「时间」，比 B 更「结构」。</p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

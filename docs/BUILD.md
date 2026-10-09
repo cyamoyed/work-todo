@@ -91,3 +91,15 @@ workTodo/
 - 存储：WebView 的 `localStorage`
 - 键名：`worktodo.tasks.v1`
 - Windows/macOS 桌面包内数据独立于浏览器，各自持久化。
+
+## v0.2 数据与备份
+
+- **导出**：顶栏「导出」下载 `worktodo-YYYYMMDD.json`，含 `schemaVersion`、`exportedAt`、`tasks`。
+- **导入**：顶栏「导入」选择 JSON；默认按 `id` 合并（同 id 取 `updatedAt` 较新者），导入前有确认，导入后可撤销。
+- **浏览器数据**：`localStorage` 键 `worktodo.tasks.v1`。
+- **桌面数据**：Tauri 应用数据目录下的 `tasks.json`（通过 `load_tasks` / `save_tasks` 命令读写）。首次启动若检测到 localStorage 为空会尝试从桌面文件恢复。
+- **测试**：`node tests/run-all.js`（含 unit-features / e2e-ui）。
+
+## 版本
+
+- 当前前端功能版本：**0.2.0**（导出导入、备注、今日视图、快速添加、排序、批量清理、截止时间、移动端 FAB）。

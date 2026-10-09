@@ -17,4 +17,14 @@ Thumbs.db
 
 # Playwright artifacts
 .playwright-cli/
+.playwright-mcp/
 release/
+
+# Scratch / QA output
+output/
+e2e-out.txt
+evidence-live.png
+probe-banner.png
+tests/reports/
+design/output/
+design/*.png

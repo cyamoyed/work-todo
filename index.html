@@ -8,54 +8,201 @@
 </head>
 <body>
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <h1>工作待办</h1>
+    <aside class="side">
+      <div class="logo">
+        <div class="logo-mark" aria-hidden="true"></div>
+        <div class="logo-text">WorkTodo</div>
       </div>
-      <div class="search-wrap">
-        <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-          <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        <input id="search-input" type="search" placeholder="搜索任务标题…" autocomplete="off" />
-      </div>
-      <button id="btn-new" class="btn btn-primary" type="button">＋ 新建任务</button>
-    </header>
 
-    <section class="filters" aria-label="筛选">
-      <div class="filter-group">
-        <span class="filter-label">状态</span>
-        <div class="segmented" id="status-filter" role="group" aria-label="状态筛选">
-          <button type="button" data-value="all" class="active">全部</button>
-          <button type="button" data-value="todo">待办</button>
-          <button type="button" data-value="in-progress">进行中</button>
-          <button type="button" data-value="done">已完成</button>
+      <nav class="nav" id="nav" aria-label="视图">
+        <button type="button" class="nav-item active" data-view="today">今天 <span class="n" id="nav-count-today">0</span></button>
+        <button type="button" class="nav-item" data-view="week">本周 <span class="n" id="nav-count-week">0</span></button>
+        <button type="button" class="nav-item" data-view="dayline">日程 <span class="n" id="nav-count-dayline">0</span></button>
+        <button type="button" class="nav-item" data-view="all">全部 <span class="n" id="nav-count-all">0</span></button>
+        <button type="button" class="nav-item" data-view="done">已完成 <span class="n" id="nav-count-done">0</span></button>
+        <button type="button" class="nav-item" data-view="review">本周回顾 <span class="n" id="nav-count-review">0</span></button>
+      </nav>
+
+      <div class="side-sec" id="project-section">
+        <div class="side-sec-head">
+          <span>项目</span>
+          <button type="button" id="btn-new-project" aria-label="新建项目">+</button>
+        </div>
+        <div id="project-list"></div>
+        <div class="proj-progress" id="project-progress" hidden><i style="width:0%"></i></div>
+      </div>
+
+      <div class="side-foot">
+        <div class="side-ops">
+          <button type="button" id="btn-export">导出数据</button>
+          <button type="button" id="btn-import">导入数据</button>
+          <input id="import-file" type="file" accept="application/json,.json" hidden aria-label="选择要导入的 JSON 文件" />
+        </div>
+        <div class="side-hint">
+          本地存储 · JSON 可导出<br />
+          <kbd>N</kbd> 新建 · <kbd>/</kbd> 搜索 · <kbd>Esc</kbd> 关闭
         </div>
       </div>
-      <div class="filter-group">
-        <span class="filter-label">优先级</span>
-        <div class="segmented" id="priority-filter" role="group" aria-label="优先级筛选">
-          <button type="button" data-value="all" class="active">全部</button>
-          <button type="button" data-value="high">高</button>
-          <button type="button" data-value="medium">中</button>
-          <button type="button" data-value="low">低</button>
+    </aside>
+
+    <main class="main">
+      <div class="top">
+        <button type="button" id="btn-mobile-menu" class="btn-icon mobile-menu-btn" aria-label="打开菜单" aria-expanded="false" aria-controls="mobile-drawer">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="brand-mobile" aria-hidden="true">WorkTodo</div>
+        <div class="search" role="search">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="7" cy="7" r="4.75" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <input
+            id="search-input"
+            type="text"
+            placeholder="搜索任务或备注…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="搜索任务标题与备注"
+          />
+          <button type="button" id="btn-clear-search" class="search-clear" hidden aria-label="清空搜索">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <kbd class="search-kbd" aria-hidden="true">/</kbd>
         </div>
+
+        <div class="pop-anchor">
+          <button type="button" id="btn-filter" class="btn" aria-haspopup="true">筛选</button>
+          <div class="pop" id="filter-pop" hidden>
+            <h4>状态</h4>
+            <div class="chipbar" id="pop-status">
+              <button type="button" class="chip active" data-value="all">全部</button>
+              <button type="button" class="chip" data-value="todo">待办</button>
+              <button type="button" class="chip" data-value="in-progress">进行中</button>
+              <button type="button" class="chip" data-value="done">已完成</button>
+            </div>
+            <h4>优先级</h4>
+            <div class="chipbar" id="pop-priority">
+              <button type="button" class="chip active" data-value="all">全部</button>
+              <button type="button" class="chip prio high" data-value="high"><i></i>高</button>
+              <button type="button" class="chip prio medium" data-value="medium"><i></i>中</button>
+              <button type="button" class="chip prio low" data-value="low"><i></i>低</button>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" id="btn-new" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <span>新建任务</span>
+        </button>
       </div>
-    </section>
 
-    <div id="error-banner" class="error-banner" hidden role="alert"></div>
+      <div class="body">
+        <!-- legacy ids kept for tests / stats -->
+        <span id="today-label" hidden></span>
+        <span id="stat-done" hidden></span>
+        <span id="stat-total" hidden></span>
+        <span id="stat-active" hidden></span>
+        <span id="stat-todo" hidden></span>
+        <span id="stat-overdue" hidden></span>
+        <div id="progress-fill" hidden></div>
+        <p id="overview-sub" hidden></p>
 
-    <section id="task-list" class="task-list" aria-live="polite"></section>
+        <div class="strip" id="strip" aria-label="今日概览"></div>
 
-    <footer class="footer">
-      <span id="task-stats"></span>
-    </footer>
+        <form id="quick-add-form" class="quick" autocomplete="off">
+          <input
+            id="quick-title"
+            type="text"
+            maxlength="120"
+            placeholder="快速记一笔，Enter 存入今天…"
+            aria-label="快速添加任务标题"
+          />
+          <button type="submit" class="btn btn-primary">存入</button>
+        </form>
+
+        <section class="filters" aria-label="筛选">
+          <div class="chipbar" id="range-filter" role="group" aria-label="时间范围">
+            <button type="button" class="chip active" data-value="today">今天</button>
+            <button type="button" class="chip" data-value="week">本周</button>
+            <button type="button" class="chip" data-value="all">全部</button>
+          </div>
+          <div class="chipbar" id="status-filter" role="group" aria-label="状态筛选">
+            <button type="button" class="chip active" data-value="all">全部 <span class="chip-count" data-count="all">0</span></button>
+            <button type="button" class="chip" data-value="todo">待办 <span class="chip-count" data-count="todo">0</span></button>
+            <button type="button" class="chip" data-value="in-progress">进行中 <span class="chip-count" data-count="in-progress">0</span></button>
+            <button type="button" class="chip" data-value="done">已完成 <span class="chip-count" data-count="done">0</span></button>
+          </div>
+          <div class="chipbar" id="priority-filter" role="group" aria-label="优先级筛选">
+            <button type="button" class="chip active" data-value="all">优先级</button>
+            <button type="button" class="chip prio high" data-value="high"><i></i>高</button>
+            <button type="button" class="chip prio medium" data-value="medium"><i></i>中</button>
+            <button type="button" class="chip prio low" data-value="low"><i></i>低</button>
+          </div>
+          <div class="toolbar-right">
+            <div class="pop-anchor">
+              <input type="hidden" id="sort-select" value="due" />
+              <button type="button" id="btn-sort" class="btn sm" aria-haspopup="listbox" aria-label="排序方式">
+                <span id="sort-label-text">按截止日</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="pop pop-menu" id="sort-pop" hidden>
+                <button type="button" data-value="due" class="pop-item active">按截止日</button>
+                <button type="button" data-value="priority" class="pop-item">按优先级</button>
+                <button type="button" data-value="created" class="pop-item">按创建时间</button>
+              </div>
+            </div>
+            <button type="button" id="btn-clear-done" class="btn sm" hidden>清除已完成</button>
+          </div>
+        </section>
+
+        <div id="error-banner" class="error-banner" hidden role="alert"></div>
+
+        <section class="list-section" aria-label="任务列表">
+          <div class="list-head">
+            <h2 class="list-title" id="list-title">任务台账</h2>
+            <p class="list-meta" id="list-meta"></p>
+          </div>
+          <div id="task-list" class="task-list" aria-live="polite">
+            <div id="done-toggle-bar" class="collapse-bar done-toggle-bar" hidden>
+              <button type="button" id="done-toggle" class="btn-pill">已完成 0 项 · 展开</button>
+            </div>
+            <div id="done-list" class="done-list" hidden></div>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <span id="task-stats"></span>
+        </footer>
+      </div>
+    </main>
   </div>
 
+  <button type="button" id="fab-new" class="fab-new" aria-label="新建任务">
+    <svg width="22" height="22" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <!-- Create / Edit modal -->
   <div id="modal-backdrop" class="modal-backdrop" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <h2 id="modal-title">新建任务</h2>
+      <div class="modal-header">
+        <h2 id="modal-title">新建任务</h2>
+        <button type="button" class="modal-close" id="btn-close-modal" aria-label="关闭">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
       <form id="task-form" novalidate>
         <label class="field">
           <span class="field-label">标题</span>
@@ -63,52 +210,198 @@
           <span class="field-error" id="title-error" hidden>标题不能为空</span>
         </label>
 
+        <label class="field">
+          <span class="field-label">备注</span>
+          <textarea id="field-notes" name="notes" maxlength="2000" rows="3" placeholder="补充背景、链接或验收要点（可选）"></textarea>
+        </label>
+
+        <div class="field">
+          <span class="field-label" id="project-label">项目</span>
+          <div class="select" id="field-project-wrap" data-select>
+            <input type="hidden" id="field-project" value="" />
+            <button type="button" class="select-trigger" id="btn-project" aria-haspopup="listbox" aria-labelledby="project-label">
+              <span class="select-text" id="field-project-label">无项目</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <div class="select-pop" id="project-pop" hidden role="listbox" aria-label="选择项目"></div>
+          </div>
+        </div>
+
         <div class="field-row">
-          <label class="field">
+          <div class="field">
             <span class="field-label">状态</span>
-            <select id="field-status" name="status">
-              <option value="todo">待办</option>
-              <option value="in-progress">进行中</option>
-              <option value="done">已完成</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span class="field-label">优先级</span>
-            <select id="field-priority" name="priority">
-              <option value="high">高</option>
-              <option value="medium" selected>中</option>
-              <option value="low">低</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span class="field-label">截止日期</span>
-            <div class="date-row">
-              <input id="field-due" name="dueDate" type="date" />
-              <button type="button" id="btn-clear-date" class="btn btn-ghost" title="清除日期">清除</button>
+            <div class="segmented" id="field-status-wrap" role="group" aria-label="状态">
+              <button type="button" data-status="todo" class="active">待办</button>
+              <button type="button" data-status="in-progress">进行中</button>
+              <button type="button" data-status="done">已完成</button>
             </div>
-          </label>
+            <input type="hidden" id="field-status" name="status" value="todo" />
+          </div>
+
+          <div class="field">
+            <span class="field-label">优先级</span>
+            <div class="segmented" id="field-priority-wrap" role="group" aria-label="优先级">
+              <button type="button" data-priority="high"><span class="prio-dot prio-high"></span>高</button>
+              <button type="button" data-priority="medium" class="active"><span class="prio-dot prio-medium"></span>中</button>
+              <button type="button" data-priority="low"><span class="prio-dot prio-low"></span>低</button>
+            </div>
+            <input type="hidden" id="field-priority" name="priority" value="medium" />
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">标签</span>
+          <input id="field-tags" type="text" maxlength="80" placeholder="用空格或逗号分隔，最多 5 个（可选）" autocomplete="off" />
+        </div>
+
+        <div class="field">
+          <span class="field-label" id="repeat-label">重复</span>
+          <select id="field-repeat" aria-labelledby="repeat-label" class="field-select">
+            <option value="">不重复</option>
+            <option value="daily">每天</option>
+            <option value="weekday">工作日</option>
+            <option value="weekly">每周</option>
+            <option value="monthly">每月</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <span class="field-label" id="due-label">截止日期</span>
+          <div class="date-row">
+            <div class="date-picker" id="date-picker">
+              <button type="button" id="btn-due" class="select-trigger" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="due-label">
+                <svg class="date-trigger-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.35"/>
+                  <path d="M2 6.5h12M5.5 1.8v2.4M10.5 1.8v2.4" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
+                </svg>
+                <span id="field-due-label" class="select-text">选择日期</span>
+                <svg class="date-trigger-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <input type="hidden" id="field-due" name="dueDate" value="" />
+              <div class="calendar" id="calendar" hidden role="dialog" aria-label="选择截止日期">
+                <div class="calendar-header">
+                  <button type="button" class="cal-nav" id="cal-prev" aria-label="上一月">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <div class="calendar-title" id="cal-title" aria-live="polite"></div>
+                  <button type="button" class="cal-nav" id="cal-next" aria-label="下一月">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <path d="M5.5 3L9.5 7L5.5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="calendar-weekdays" aria-hidden="true">
+                  <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+                </div>
+                <div class="calendar-grid" id="cal-grid" role="grid"></div>
+                <div class="calendar-footer">
+                  <button type="button" class="cal-text-btn" id="cal-today">今天</button>
+                  <button type="button" class="cal-text-btn" id="cal-clear">清除</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="select time-select" id="field-due-time-wrap">
+              <input type="hidden" id="field-due-time" value="" />
+              <button type="button" id="btn-due-time" class="select-trigger" aria-haspopup="listbox" aria-label="截止时间（可选）">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.35"/>
+                  <path d="M8 5v3.2l2 1.3" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
+                </svg>
+                <span class="select-text" id="field-due-time-label">时间</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="select-pop time-pop" id="time-pop" hidden role="listbox" aria-label="选择时间"></div>
+            </div>
+
+            <button type="button" id="btn-clear-date" class="btn btn-ghost" title="清除日期">清除</button>
+          </div>
         </div>
 
         <div class="modal-actions">
           <button type="button" id="btn-cancel" class="btn btn-ghost">取消</button>
+          <button type="submit" class="btn btn-primary"><span>保存</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Project modal -->
+  <div id="project-backdrop" class="modal-backdrop" hidden>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+      <div class="modal-header">
+        <h2 id="project-modal-title">新建项目</h2>
+        <button type="button" class="modal-close" id="btn-close-project" aria-label="关闭">✕</button>
+      </div>
+      <form id="project-form" novalidate>
+        <label class="field">
+          <span class="field-label">项目名称</span>
+          <input id="field-project-name" type="text" maxlength="40" placeholder="例如：v2.2 发布" autocomplete="off" />
+          <span class="field-error" id="project-title-error" hidden>请填写项目名称</span>
+        </label>
+        <div class="field">
+          <span class="field-label">识别色</span>
+          <div class="segmented" id="field-project-color-wrap" role="group" aria-label="识别色">
+            <button type="button" data-color="slate" class="active"><span class="swatch" style="background:#a1a1aa"></span>灰</button>
+            <button type="button" data-color="ink"><span class="swatch" style="background:#3f3f46"></span>墨</button>
+            <button type="button" data-color="indigo"><span class="swatch" style="background:#6366f1"></span>靛</button>
+            <button type="button" data-color="amber"><span class="swatch" style="background:#a16207"></span>褐</button>
+          </div>
+          <input type="hidden" id="field-project-color" value="slate" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel-project" class="btn btn-ghost">取消</button>
           <button type="submit" class="btn btn-primary">保存</button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- Delete / confirm -->
   <div id="confirm-backdrop" class="modal-backdrop" hidden>
     <div class="modal modal-sm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
-      <h2 id="confirm-title">删除任务</h2>
-      <p id="confirm-message">确定删除该任务吗？删除后无法恢复。</p>
+      <div class="modal-header">
+        <h2 id="confirm-title">确认操作</h2>
+      </div>
+      <p id="confirm-message">确定删除该任务吗？删除后 15 秒内可撤销。</p>
       <div class="modal-actions">
         <button type="button" id="btn-confirm-cancel" class="btn btn-ghost">取消</button>
-        <button type="button" id="btn-confirm-ok" class="btn btn-danger">删除</button>
+        <button type="button" id="btn-confirm-ok" class="btn btn-danger">确定</button>
       </div>
     </div>
   </div>
+
+  <!-- Mobile nav drawer -->
+  <div id="mobile-drawer-backdrop" class="drawer-backdrop" hidden></div>
+  <aside id="mobile-drawer" class="mobile-drawer" hidden aria-label="移动菜单">
+    <div class="drawer-head">
+      <strong>WorkTodo</strong>
+      <button type="button" id="btn-close-drawer" class="btn-icon" aria-label="关闭菜单">✕</button>
+    </div>
+    <nav class="nav" id="nav-mobile" aria-label="移动视图">
+      <button type="button" class="nav-item active" data-view="today">今天 <span class="n">0</span></button>
+      <button type="button" class="nav-item" data-view="week">本周 <span class="n">0</span></button>
+      <button type="button" class="nav-item" data-view="dayline">日程 <span class="n">0</span></button>
+      <button type="button" class="nav-item" data-view="all">全部 <span class="n">0</span></button>
+      <button type="button" class="nav-item" data-view="done">已完成 <span class="n">0</span></button>
+      <button type="button" class="nav-item" data-view="review">本周回顾 <span class="n">0</span></button>
+    </nav>
+    <div class="drawer-ops">
+      <button type="button" id="btn-export-mobile">导出数据</button>
+      <button type="button" id="btn-import-mobile">导入数据</button>
+    </div>
+  </aside>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
   <script src="app.js"></script>
 </body>
