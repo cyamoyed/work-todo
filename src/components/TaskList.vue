@@ -1,5 +1,5 @@
 <template>
-  <div id="task-list" class="task-list" aria-live="polite">
+  <div id="task-list" class="task-list" :class="{ 'is-selecting': ui.state.selection.active }" aria-live="polite">
     <!-- done view: only completed cards, no toggle bar (legacy renderList contract) -->
     <template v-if="viewMode === 'done'">
       <TaskItem v-for="t in doneList" :key="t.id" :task="t" />

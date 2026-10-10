@@ -32,7 +32,7 @@ import { STATUS_CYCLE, STATUS_LABELS } from '../constants.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
-const { setStatus } = useStatusChange();
+const { requestSetStatus } = useStatusChange();
 
 const currentStatus = computed(() => {
   const task = tasks.getTask(ui.state.statusMenu.taskId);
@@ -60,6 +60,7 @@ function pick(st) {
   const task = tasks.getTask(taskId);
   ui.closeStatusMenu();
   if (!task) return;
-  setStatus(taskId, st);
+  // Completing goes through the shared confirm gate.
+  requestSetStatus(task, st);
 }
 </script>

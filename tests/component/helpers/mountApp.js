@@ -58,6 +58,7 @@ export function resetState() {
   const ui = useUiStore();
   tasks.load();
   __resetUpdateStateForTests();
+  ui.stopSelection();
   ui.setFilters({ ...DEFAULT_FILTERS });
   ui.setSortMode('due');
   ui.setDoneExpanded(false);

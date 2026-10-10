@@ -44,9 +44,18 @@
       <SortMenu />
       <button
         type="button"
+        id="btn-batch"
+        class="btn sm"
+        :class="{ 'btn-primary': ui.state.selection.active }"
+        :hidden="!batchable"
+        :aria-pressed="ui.state.selection.active"
+        @click="toggleBatch"
+      >{{ ui.state.selection.active ? '退出批量' : '批量' }}</button>
+      <button
+        type="button"
         id="btn-clear-done"
         class="btn sm"
-        :hidden="!hasDone"
+        :hidden="!hasDone || ui.state.selection.active"
         @click="ui.clearCompleted()"
       >清除已完成</button>
     </div>
@@ -84,4 +93,11 @@ const priorityOptions = [
 
 const counts = computed(() => statusCounts(tasks.state.tasks));
 const hasDone = computed(() => tasks.state.tasks.some((t) => t.status === 'done'));
+// multi-select operates on the flat list views only (dayline/review have no rows grid)
+const batchable = computed(() => !['dayline', 'review'].includes(ui.state.viewMode));
+
+function toggleBatch() {
+  if (ui.state.selection.active) ui.stopSelection();
+  else ui.startSelection();
+}
 </script>

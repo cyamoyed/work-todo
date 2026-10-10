@@ -16,7 +16,7 @@ import {
   softDeleteEntity,
   reviveEntity,
 } from '../core/tasks.js';
-import { createProjectData, applyProjectPatch } from '../core/projects.js';
+import { createProjectData, applyProjectPatch, pickProjectColor } from '../core/projects.js';
 import {
   mergeImportTasks,
   buildExportPayload,
@@ -156,6 +156,40 @@ export function useTaskStore() {
       return next;
     },
 
+    /**
+     * Apply one patch to many tasks with a single persistence pass
+     * (batch status / priority / due changes). Completing recurring tasks
+     * clones their next occurrence, same as the single-task path; returns
+     * { updated, cloned } counts for the summary toast.
+     */
+    batchUpdateTasks(ids, patch, opts = {}) {
+      const set = new Set(ids);
+      let updated = 0;
+      let cloned = 0;
+      const nextTasks = [];
+      for (const t of state.tasks) {
+        if (!set.has(t.id)) {
+          nextTasks.push(t);
+          continue;
+        }
+        const next = applyTaskPatch(t, patch, opts);
+        nextTasks.push(next);
+        updated += 1;
+        if (patch.status === 'done' && t.status !== 'done' && t.repeat) {
+          const occurrence = buildNextOccurrence(next, opts);
+          if (occurrence) {
+            nextTasks.push(occurrence);
+            cloned += 1;
+          }
+        }
+      }
+      if (updated) {
+        state.tasks = nextTasks;
+        persistTasks();
+      }
+      return { updated, cloned };
+    },
+
     /** Soft delete: the task stays behind as a tombstone (undo/sync aware). */
     removeTask(id) {
       const idx = state.tasks.findIndex((t) => t.id === id);
@@ -253,7 +287,9 @@ export function useTaskStore() {
     },
 
     createProject(input, opts = {}) {
-      const project = createProjectData(input, opts);
+      // No color passed → rotate: the least-used palette color wins.
+      const color = input.color || pickProjectColor(state.projects);
+      const project = createProjectData({ ...input, color }, opts);
       state.projects.push(project);
       persistProjects();
       return project;

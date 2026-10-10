@@ -148,7 +148,7 @@ async function loginSync() {
   await page.fill('#field-sync-url', BASE);
   await page.fill('#field-sync-identity', 'a@b.c');
   await page.fill('#field-sync-password', 'pw');
-  await page.check('#field-sync-register');
+  await page.click('.sync-check'); // custom checkbox: click the label to toggle
   await page.click('#btn-sync-login');
   await page.waitForTimeout(500);
 }
@@ -171,6 +171,11 @@ beforeAll(async () => {
         assets: [],
       }),
     })
+  );
+  // Update checks fall back to the releases Atom feed when the API
+  // rate-limits — keep that path offline too (not exercised by these tests).
+  await context.route('https://github.com/cyamoyed/work-todo/releases.atom', (route) =>
+    route.fulfill({ status: 404, contentType: 'application/xml', body: '' })
   );
   page = await context.newPage();
 });

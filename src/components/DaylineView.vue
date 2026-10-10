@@ -18,9 +18,10 @@
             type="button"
             class="status-toggle"
             :class="'st-' + t.status"
-            :title="`状态：${STATUS_LABELS[t.status]} · 点击切换到「${STATUS_LABELS[nextStatus(t.status)]}」`"
-            :aria-label="`切换状态：${STATUS_LABELS[t.status]} → ${STATUS_LABELS[nextStatus(t.status)]}`"
-            @click.stop="advance(t.id)"
+            :title="`状态：${STATUS_LABELS[t.status]} · 点击${t.status === 'done' ? '标记为待办' : '标记为已完成'} · 右键选择状态`"
+            :aria-label="t.status === 'done' ? '标记为待办' : '标记为已完成'"
+            aria-haspopup="menu"
+            @click.stop="checkClick(t)"
             @contextmenu.prevent.stop="openStatus($event, t.id)"
           ></button>
           <div class="task-main">
@@ -71,7 +72,7 @@ import { PRIORITY_LABELS, STATUS_LABELS } from '../constants.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
-const { nextStatus, advanceStatus } = useStatusChange();
+const { requestSetStatus } = useStatusChange();
 
 const list = computed(() =>
   sortTasks(
@@ -98,8 +99,9 @@ function openStatus(event, id) {
   ui.openStatusMenu(event.currentTarget, id);
 }
 
-function advance(id) {
-  advanceStatus(id);
+/** Left check: complete (with confirm) / un-complete. */
+function checkClick(t) {
+  requestSetStatus(t, t.status === 'done' ? 'todo' : 'done');
 }
 
 function openPrio(event, id) {

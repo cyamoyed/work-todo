@@ -11,8 +11,9 @@ import {
   applyProjectPatch,
   normalizeProject,
   isValidProject,
+  pickProjectColor,
 } from '../../src/core/projects.js';
-import { PROJECT_NAME_MAX, PROJECTS_KEY } from '../../src/constants.js';
+import { PROJECT_COLORS, PROJECT_NAME_MAX, PROJECTS_KEY } from '../../src/constants.js';
 
 const store = useTaskStore();
 
@@ -56,6 +57,35 @@ describe('project color', () => {
   it('defaults unknown or missing color to slate', () => {
     expect(createProjectData({ name: 'A', color: 'nope' }, { id: 'c3' }).color).toBe('slate');
     expect(createProjectData({ name: 'A' }, { id: 'c4' }).color).toBe('slate');
+  });
+
+  it('pickProjectColor rotates through the least-used palette keys', () => {
+    const keys = Object.keys(PROJECT_COLORS);
+    // empty state: first palette key
+    expect(pickProjectColor([])).toBe(keys[0]);
+    // one use of the first key → second key wins
+    expect(pickProjectColor([{ color: keys[0] }])).toBe(keys[1]);
+    // ties break toward the earlier palette key
+    expect(pickProjectColor([{ color: keys[1] }])).toBe(keys[0]);
+    // full round: every key used once → back to the first
+    const all = keys.map((k) => ({ color: k }));
+    expect(pickProjectColor(all)).toBe(keys[0]);
+    // ignores junk input
+    expect(pickProjectColor(null)).toBe(keys[0]);
+    expect(pickProjectColor([{ color: 'nope' }])).toBe(keys[0]);
+  });
+
+  it('store.createProject auto-assigns rotating colors when none is passed', () => {
+    const a = store.createProject({ name: 'A' });
+    const b = store.createProject({ name: 'B' });
+    const c = store.createProject({ name: 'C' });
+    const palette = Object.keys(PROJECT_COLORS);
+    expect(palette).toContain(a.color);
+    expect(b.color).not.toBe(a.color);
+    expect(c.color).not.toBe(a.color);
+    expect(c.color).not.toBe(b.color);
+    // explicit color still honored (edit/import paths)
+    expect(store.createProject({ name: 'D', color: 'indigo' }).color).toBe('indigo');
   });
 
   it('applyProjectPatch updates valid colors and keeps the previous one otherwise', () => {

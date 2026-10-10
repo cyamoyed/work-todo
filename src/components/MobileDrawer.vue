@@ -3,7 +3,11 @@
   <aside id="mobile-drawer" class="mobile-drawer" :hidden="!ui.state.drawerOpen" aria-label="移动菜单">
     <div class="drawer-head">
       <strong>work-todo</strong>
-      <button type="button" id="btn-close-drawer" class="btn-icon" aria-label="关闭菜单" @click="ui.closeDrawer()">✕</button>
+      <button type="button" id="btn-close-drawer" class="btn-icon" aria-label="关闭菜单" @click="ui.closeDrawer()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+      </button>
     </div>
     <nav class="nav" id="nav-mobile" aria-label="移动视图">
       <button

@@ -3,7 +3,11 @@
     <div id="sync-modal" class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="sync-modal-title">
       <div class="modal-header">
         <h2 id="sync-modal-title">同步设置</h2>
-        <button type="button" class="modal-close" id="btn-close-sync" aria-label="关闭" @click="close">✕</button>
+        <button type="button" class="modal-close" id="btn-close-sync" aria-label="关闭" @click="close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </button>
       </div>
 
       <p v-if="syncState.configured" id="sync-current">
@@ -65,7 +69,8 @@
         </label>
 
         <label v-if="provider === 'pocketbase'" class="field sync-check">
-          <input id="field-sync-register" type="checkbox" v-model="register" />
+          <input id="field-sync-register" type="checkbox" class="sync-check-input" v-model="register" />
+          <span class="sync-check-box" aria-hidden="true"></span>
           <span>创建新账号（首次使用）</span>
         </label>
 

@@ -26,6 +26,24 @@ export function normalizeProject(raw) {
   };
 }
 
+/**
+ * Pick the next project color: the palette key used by the fewest live
+ * projects (fixed palette order breaks ties). New projects rotate through
+ * all four identification colors without a picker in the UI.
+ */
+export function pickProjectColor(existingProjects) {
+  const counts = {};
+  for (const key of Object.keys(PROJECT_COLORS)) counts[key] = 0;
+  for (const p of Array.isArray(existingProjects) ? existingProjects : []) {
+    if (p && Object.hasOwn(counts, p.color)) counts[p.color] += 1;
+  }
+  let best = Object.keys(PROJECT_COLORS)[0];
+  for (const key of Object.keys(PROJECT_COLORS)) {
+    if (counts[key] < counts[best]) best = key;
+  }
+  return best;
+}
+
 export function createProjectData({ name, color }, opts = {}) {
   const now = opts.now || new Date().toISOString();
   return {

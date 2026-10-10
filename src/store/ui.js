@@ -49,6 +49,8 @@ const state = reactive({
   prioMenu: { open: false, taskId: null, top: 0, left: 0 },
   dueMenu: { open: false, taskId: null, top: 0, left: 0 },
   projectMenu: { open: false, projectId: null, top: 0, left: 0 },
+  selection: { active: false, ids: [] },
+  batchMenu: null, // 'status' | 'prio' | 'due' while a batch popover is open
   _preserveStatusOnSync: false,
 });
 
@@ -305,6 +307,44 @@ export function useUiStore() {
       state.prioMenu.open = false;
       state.dueMenu.open = false;
       state.projectMenu.open = false;
+      state.batchMenu = null;
+    },
+
+    /** Multi-select mode: ids are task ids; view filtering may hide them, so
+     *  the set lives here rather than in the DOM. */
+    startSelection() {
+      state.selection.active = true;
+      state.selection.ids = [];
+    },
+
+    stopSelection() {
+      state.selection.active = false;
+      state.selection.ids = [];
+      state.batchMenu = null;
+    },
+
+    toggleSelect(id) {
+      const ids = state.selection.ids;
+      const i = ids.indexOf(id);
+      if (i === -1) ids.push(id);
+      else ids.splice(i, 1);
+    },
+
+    selectAll(ids) {
+      state.selection.ids = Array.isArray(ids) ? ids.slice() : [];
+    },
+
+    isSelected(id) {
+      return state.selection.ids.includes(id);
+    },
+
+    openBatchMenu(kind) {
+      this.closeAllPops();
+      state.batchMenu = kind;
+    },
+
+    closeBatchMenu() {
+      state.batchMenu = null;
     },
 
     openStatusMenu(anchor, taskId) {

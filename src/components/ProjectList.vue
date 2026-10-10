@@ -1,9 +1,6 @@
 <template>
   <div id="project-list">
-    <div
-      v-if="!tasks.state.projects.length"
-      :style="{ padding: '8px 10px', fontSize: '12px', color: 'var(--faint)', lineHeight: '1.6' }"
-    >还没有项目</div>
+    <div v-if="!tasks.state.projects.length" class="proj-empty">还没有项目</div>
     <div
       v-for="p in tasks.state.projects"
       :key="p.id"
@@ -19,7 +16,13 @@
       <span class="swatch" :style="{ background: colorOf(p.color) }"></span>
       <span class="name">{{ p.name }}</span>
       <span class="n">{{ projectStats(tasks.state.tasks, p.id).open }}</span>
-      <button type="button" class="more" aria-label="项目操作" @click.stop="openMenu($event, p.id)">···</button>
+      <button type="button" class="more" aria-label="项目操作" @click.stop="openMenu($event, p.id)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="3" cy="8" r="1.1" fill="currentColor" />
+          <circle cx="8" cy="8" r="1.1" fill="currentColor" />
+          <circle cx="13" cy="8" r="1.1" fill="currentColor" />
+        </svg>
+      </button>
     </div>
   </div>
 </template>

@@ -3,7 +3,11 @@
     <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
       <div class="modal-header">
         <h2 id="project-modal-title">{{ ui.state.editingProjectId ? '编辑项目' : '新建项目' }}</h2>
-        <button type="button" class="modal-close" id="btn-close-project" aria-label="关闭" @click="close">✕</button>
+        <button type="button" class="modal-close" id="btn-close-project" aria-label="关闭" @click="close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </button>
       </div>
       <form id="project-form" novalidate @submit.prevent="submit">
         <label class="field">
@@ -11,20 +15,9 @@
           <input id="field-project-name" type="text" maxlength="40" placeholder="例如：v2.2 发布" autocomplete="off" v-model="name" />
           <span class="field-error" id="project-title-error" :hidden="!nameError">请填写项目名称</span>
         </label>
-        <div class="field">
-          <span class="field-label">识别色</span>
-          <div class="segmented" id="field-project-color-wrap" role="group" aria-label="识别色">
-            <button
-              v-for="c in colors"
-              :key="c.value"
-              type="button"
-              :data-color="c.value"
-              :class="{ active: color === c.value }"
-              @click="color = c.value"
-            ><span class="swatch" :style="{ background: c.hex }"></span>{{ c.label }}</button>
-          </div>
-          <input type="hidden" id="field-project-color" :value="color" />
-        </div>
+        <p class="modal-note" v-if="!ui.state.editingProjectId">
+          识别色将按 灰 · 墨 · 靛 · 褐 自动轮换，无需手动选择。
+        </p>
         <div class="modal-actions">
           <button type="button" id="btn-cancel-project" class="btn btn-ghost" @click="close">取消</button>
           <button type="submit" class="btn btn-primary">保存</button>
@@ -44,15 +37,7 @@ const tasks = useTaskStore();
 const ui = useUiStore();
 const router = useRouter();
 
-const colors = [
-  { value: 'slate', label: '灰', hex: '#a1a1aa' },
-  { value: 'ink', label: '墨', hex: '#3f3f46' },
-  { value: 'indigo', label: '靛', hex: '#6366f1' },
-  { value: 'amber', label: '褐', hex: '#a16207' },
-];
-
 const name = ref('');
-const color = ref('slate');
 const nameError = ref(false);
 
 watch(
@@ -62,7 +47,6 @@ watch(
     nameError.value = false;
     const p = ui.state.editingProjectId ? tasks.getProject(ui.state.editingProjectId) : null;
     name.value = p ? p.name : '';
-    color.value = p ? p.color : 'slate';
     nextTick(() => {
       const el = document.getElementById('field-project-name');
       if (el) el.focus();
@@ -83,10 +67,10 @@ function submit() {
     return;
   }
   if (ui.state.editingProjectId) {
-    tasks.updateProject(ui.state.editingProjectId, { name: n, color: color.value });
+    tasks.updateProject(ui.state.editingProjectId, { name: n });
     ui.showToast('项目已更新');
   } else {
-    const p = tasks.createProject({ name: n, color: color.value });
+    const p = tasks.createProject({ name: n });
     router.push('/project/' + p.id);
     ui.showToast('项目已创建');
   }

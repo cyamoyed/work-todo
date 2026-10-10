@@ -6,7 +6,7 @@
       <div class="review-item" v-for="t in done" :key="t.id">
         <span class="when">{{ (t.completedAt || t.updatedAt || '').slice(0, 10) }}</span>
         <div class="review-main">
-          <div class="task-title" style="cursor: pointer" @click="edit(t.id)">{{ t.title }}</div>
+          <div class="task-title" @click="edit(t.id)">{{ t.title }}</div>
           <div class="task-notes" v-if="t.notes">{{ t.notes }}</div>
         </div>
       </div>

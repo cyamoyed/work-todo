@@ -3,7 +3,11 @@
     <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="backup-modal-title">
       <div class="modal-header">
         <h2 id="backup-modal-title">数据备份</h2>
-        <button type="button" class="modal-close" id="btn-close-backup" aria-label="关闭" @click="close">✕</button>
+        <button type="button" class="modal-close" id="btn-close-backup" aria-label="关闭" @click="close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </button>
       </div>
       <p id="backup-hint">备份保存在应用数据目录，自动保留最近 10 份。恢复备份会替换当前数据。</p>
       <ul class="backup-list" id="backup-list">
@@ -12,7 +16,7 @@
           <span class="backup-size">{{ formatSize(b.size) }}</span>
           <button
             type="button"
-            class="btn btn-ghost btn-sm backup-restore"
+            class="btn btn-ghost sm backup-restore"
             :data-name="b.name"
             @click="restore(b)"
           >恢复</button>

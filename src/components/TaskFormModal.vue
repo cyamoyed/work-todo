@@ -17,17 +17,54 @@
           <span class="field-error" id="title-error" :hidden="!titleError">标题不能为空</span>
         </label>
 
-        <label class="field">
-          <span class="field-label">备注</span>
-          <textarea id="field-notes" name="notes" maxlength="2000" rows="3" placeholder="补充背景、链接或验收要点（可选）" v-model="form.notes"></textarea>
-        </label>
-
         <div class="field">
-          <span class="field-label" id="project-label">项目</span>
-          <ProjectSelect v-model="form.projectId" />
+          <span class="field-label" id="due-label">截止日期</span>
+          <div class="date-row">
+            <CalendarPicker v-model="form.dueDate" />
+            <TimeSelect v-model="form.dueTime" />
+            <button type="button" id="btn-clear-date" class="btn btn-ghost" title="清除日期" @click="clearDate">清除</button>
+          </div>
         </div>
 
         <div class="field-row">
+          <div class="field">
+            <span class="field-label">优先级</span>
+            <div class="segmented" id="field-priority-wrap" role="group" aria-label="优先级">
+              <button
+                v-for="p in priorities"
+                :key="p.value"
+                type="button"
+                :data-priority="p.value"
+                :class="{ active: form.priority === p.value }"
+                @click="form.priority = p.value"
+              ><span class="prio-dot" :class="'prio-' + p.value"></span>{{ p.label }}</button>
+            </div>
+            <input type="hidden" id="field-priority" name="priority" :value="form.priority" @input="form.priority = $event.target.value" />
+          </div>
+
+          <div class="field">
+            <span class="field-label" id="project-label">项目</span>
+            <ProjectSelect v-model="form.projectId" />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          id="btn-advanced"
+          class="adv-toggle"
+          :class="{ 'is-open': advancedOpen }"
+          :aria-expanded="advancedOpen"
+          aria-controls="advanced-fields"
+          @click="advancedOpen = !advancedOpen"
+        >
+          <svg class="chev" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          高级设置
+          <span class="adv-hint">状态 · 备注 · 标签 · 重复</span>
+        </button>
+
+        <div id="advanced-fields" v-show="advancedOpen">
           <div class="field">
             <span class="field-label">状态</span>
             <div class="segmented" id="field-status-wrap" role="group" aria-label="状态">
@@ -43,44 +80,35 @@
             <input type="hidden" id="field-status" name="status" :value="form.status" @input="form.status = $event.target.value" />
           </div>
 
+          <label class="field">
+            <span class="field-label">备注</span>
+            <textarea id="field-notes" name="notes" maxlength="2000" rows="3" placeholder="补充背景、链接或验收要点（可选）" v-model="form.notes"></textarea>
+          </label>
+
+          <label class="field">
+            <span class="field-label">标签</span>
+            <input id="field-tags" type="text" maxlength="80" placeholder="用空格或逗号分隔，最多 5 个（可选）" autocomplete="off" v-model="form.tags" />
+          </label>
+
           <div class="field">
-            <span class="field-label">优先级</span>
-            <div class="segmented" id="field-priority-wrap" role="group" aria-label="优先级">
+            <span class="field-label" id="repeat-label">重复</span>
+            <div class="segmented" id="field-repeat-wrap" role="group" aria-labelledby="repeat-label">
               <button
-                v-for="p in priorities"
-                :key="p.value"
+                v-for="r in repeats"
+                :key="r.value"
                 type="button"
-                :data-priority="p.value"
-                :class="{ active: form.priority === p.value }"
-                @click="form.priority = p.value"
-              ><span class="prio-dot" :class="'prio-' + p.value"></span>{{ p.label }}</button>
+                :data-repeat="r.value"
+                :class="{ active: (form.repeat || '') === r.value }"
+                @click="form.repeat = r.value"
+              >{{ r.label }}</button>
             </div>
-            <input type="hidden" id="field-priority" name="priority" :value="form.priority" @input="form.priority = $event.target.value" />
-          </div>
-        </div>
-
-        <div class="field">
-          <span class="field-label">标签</span>
-          <input id="field-tags" type="text" maxlength="80" placeholder="用空格或逗号分隔，最多 5 个（可选）" autocomplete="off" v-model="form.tags" />
-        </div>
-
-        <div class="field">
-          <span class="field-label" id="repeat-label">重复</span>
-          <select id="field-repeat" aria-labelledby="repeat-label" class="field-select" v-model="form.repeat">
-            <option value="">不重复</option>
-            <option value="daily">每天</option>
-            <option value="weekday">工作日</option>
-            <option value="weekly">每周</option>
-            <option value="monthly">每月</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <span class="field-label" id="due-label">截止日期</span>
-          <div class="date-row">
-            <CalendarPicker v-model="form.dueDate" />
-            <TimeSelect v-model="form.dueTime" />
-            <button type="button" id="btn-clear-date" class="btn btn-ghost" title="清除日期" @click="clearDate">清除</button>
+            <select id="field-repeat" aria-labelledby="repeat-label" class="sr-only" tabindex="-1" v-model="form.repeat">
+              <option value="">不重复</option>
+              <option value="daily">每天</option>
+              <option value="weekday">工作日</option>
+              <option value="weekly">每周</option>
+              <option value="monthly">每月</option>
+            </select>
           </div>
         </div>
 
@@ -114,6 +142,13 @@ const priorities = [
   { value: 'medium', label: '中' },
   { value: 'low', label: '低' },
 ];
+const repeats = [
+  { value: '', label: '不重复' },
+  { value: 'daily', label: '每天' },
+  { value: 'weekday', label: '工作日' },
+  { value: 'weekly', label: '每周' },
+  { value: 'monthly', label: '每月' },
+];
 
 const form = reactive({
   title: '',
@@ -127,6 +162,7 @@ const form = reactive({
   repeat: '',
 });
 const titleError = ref(false);
+const advancedOpen = ref(false);
 
 watch(
   () => ui.state.taskModalOpen,
@@ -144,6 +180,9 @@ watch(
       form.dueTime = editing.dueTime || '';
       form.tags = (editing.tags || []).join('，');
       form.repeat = editing.repeat || '';
+      // editing something that already uses advanced fields → show them
+      advancedOpen.value =
+        !!form.notes || !!form.tags || !!form.repeat || form.status !== 'todo';
     } else {
       form.title = '';
       form.notes = '';
@@ -154,6 +193,7 @@ watch(
       form.dueTime = '';
       form.tags = '';
       form.repeat = '';
+      advancedOpen.value = false;
     }
     nextTick(() => {
       const t = document.getElementById('field-title');

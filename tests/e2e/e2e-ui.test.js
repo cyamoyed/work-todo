@@ -85,7 +85,10 @@ async function clearTasks() {
 async function addTask({ title, status, priority, due } = {}) {
   await page.click('#btn-new');
   await page.fill('#field-title', title);
-  if (status) await page.click(`#field-status-wrap button[data-status="${status}"]`);
+  if (status) {
+    await page.click('#btn-advanced'); // status lives in the advanced section
+    await page.click(`#field-status-wrap button[data-status="${status}"]`);
+  }
   if (priority) await page.click(`#field-priority-wrap button[data-priority="${priority}"]`);
   if (due !== undefined) {
     await page.evaluate((d) => {
@@ -116,6 +119,11 @@ beforeAll(async () => {
         assets: [],
       }),
     })
+  );
+  // Update checks fall back to the releases Atom feed when the API
+  // rate-limits — keep that path offline too (not exercised by these tests).
+  await context.route('https://github.com/cyamoyed/work-todo/releases.atom', (route) =>
+    route.fulfill({ status: 404, contentType: 'application/xml', body: '' })
   );
   page = await context.newPage();
   page.on('console', (msg) => {
@@ -157,7 +165,6 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect(await page.locator('#modal-backdrop').isVisible()).toBe(true);
 
     await page.fill('#field-title', '  写周报  ');
-    await page.click('#field-status-wrap button[data-status="todo"]');
     await page.click('#field-priority-wrap button[data-priority="high"]');
     await page.click('#task-form button[type="submit"]');
     await page.waitForTimeout(100);
@@ -167,25 +174,45 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect((await page.locator('#toast').textContent()) || '').toContain('任务已创建');
   });
 
-  it('status toggle cycles (right-click menu jumps directly)', async () => {
+  it('row check completes with confirm; status text menu jumps directly', async () => {
+    // completing goes through the confirm dialog
     await page.locator('.status-toggle').first().click();
     await page.waitForTimeout(50);
-    expect(await page.locator('.meta-status').first().textContent()).toBe('进行中');
-    // right-click opens the status menu for direct jumps
-    await page.locator('.status-toggle').first().click({ button: 'right' });
-    await page.waitForTimeout(50);
-    expect(await page.locator('.status-menu').isVisible()).toBe(true);
-    await page.locator('.status-menu-item', { hasText: '已完成' }).click();
+    expect(await page.locator('#confirm-backdrop').isVisible()).toBe(true);
+    expect(await page.locator('#confirm-message').textContent()).toContain('标记为已完成');
+    await page.click('#btn-confirm-ok');
     await page.waitForTimeout(50);
     // done is collapsed behind toggle by default
-    const doneVisible = await page.locator('.task-card.is-done').count();
-    if (doneVisible > 0) {
-      expect(await page.locator('.task-card.is-done').first().isVisible()).toBe(true);
-    }
     await page.locator('#done-toggle').click();
     await page.waitForTimeout(50);
-    expect(await page.locator('.task-card.is-done').first().isVisible()).toBe(true);
+    expect(await page.locator('.task-card.is-done .meta-status').first().textContent()).toBe('已完成');
+
+    // done → one click back to 待办, no confirm
     await page.locator('.task-card.is-done .status-toggle').first().click();
+    await page.waitForTimeout(50);
+    expect(await page.locator('.meta-status').first().textContent()).toBe('待办');
+
+    // status text opens the menu for direct jumps (no confirm for in-progress)
+    await page.locator('.task-card .task-col-status').first().click();
+    await page.waitForTimeout(50);
+    expect(await page.locator('.status-menu').isVisible()).toBe(true);
+    await page.locator('.status-menu-item', { hasText: '进行中' }).click();
+    await page.waitForTimeout(50);
+    expect(await page.locator('.meta-status').first().textContent()).toBe('进行中');
+    // picking 已完成 from the menu also lands in the confirm dialog
+    await page.locator('.task-card .task-col-status').first().click();
+    await page.waitForTimeout(50);
+    await page.locator('.status-menu-item', { hasText: '已完成' }).click();
+    await page.waitForTimeout(50);
+    expect(await page.locator('#confirm-backdrop').isVisible()).toBe(true);
+    await page.click('#btn-confirm-cancel');
+    await page.waitForTimeout(50);
+    expect(await page.locator('.meta-status').first().textContent()).toBe('进行中');
+
+    // back to 待办 so later filter/count expectations hold
+    await page.locator('.task-card .task-col-status').first().click();
+    await page.waitForTimeout(50);
+    await page.locator('.status-menu-item', { hasText: '待办' }).click();
     await page.waitForTimeout(50);
     expect(await page.locator('.meta-status').first().textContent()).toBe('待办');
   });
@@ -277,6 +304,31 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect(await page.locator('.task-card').count()).toBe(2);
   });
 
+  it('batch operations: select rows, set priority, exit', async () => {
+    await page.click('#btn-batch');
+    await page.waitForTimeout(50);
+    expect(await page.locator('#batch-bar').isVisible()).toBe(true);
+    expect(await page.locator('.task-card .select-check').first().isVisible()).toBe(true);
+
+    // select-all then batch-set priority to 低
+    await page.locator('#batch-bar button', { hasText: '全选' }).click();
+    await page.waitForTimeout(50);
+    expect(await page.locator('#batch-bar .batch-count').textContent()).toContain('已选');
+    await page.locator('#batch-bar button', { hasText: '优先级' }).click();
+    await page.waitForTimeout(50);
+    expect(await page.locator('.batch-bar-pop').isVisible()).toBe(true);
+    await page.locator('.batch-bar-pop .row-menu-item', { hasText: '低' }).click();
+    await page.waitForTimeout(80);
+    expect((await page.locator('#toast').textContent()) || '').toContain('低优先级');
+    // selection cleared after the batch, still in select mode
+    expect(await page.locator('#batch-bar').isVisible()).toBe(true);
+
+    await page.click('#btn-batch'); // 退出批量
+    await page.waitForTimeout(50);
+    expect(await page.locator('#batch-bar').isHidden()).toBe(true);
+    expect(await page.locator('.task-card .select-check').count()).toBe(0);
+  });
+
   it('delete + undo', async () => {
     const beforeDel = await page.locator('.task-card').count();
     await page.locator('.task-card').first().locator('button[aria-label="删除任务"]').click();
@@ -360,8 +412,10 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     await addTask({ title: '<img src=x onerror=window.__xss=1>' });
     await page.waitForTimeout(80);
     expect(await page.evaluate(() => window.__xss === undefined)).toBe(true);
-    expect((await page.locator('.task-title').last().textContent())).toContain('<img');
-    const html = await page.locator('.task-title').last().innerHTML();
+    const xssTitle = page.locator('.task-title', { hasText: '<img' });
+    expect(await xssTitle.count()).toBe(1);
+    expect((await xssTitle.textContent())).toContain('<img');
+    const html = await xssTitle.innerHTML();
     expect(html).not.toContain('<img');
   });
 
@@ -453,6 +507,7 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
   it('notes field + search', async () => {
     await page.click('#btn-new');
     await page.fill('#field-title', '带备注任务');
+    await page.click('#btn-advanced'); // notes live in the advanced section
     await page.fill('#field-notes', '这是验收要点关键词');
     await page.click('#task-form button[type="submit"]');
     await page.waitForTimeout(50);

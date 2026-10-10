@@ -47,6 +47,7 @@
   <PrioMenu />
   <DueMenu />
   <ProjectActionsMenu />
+  <BatchBar />
   <Toast />
 </template>
 
@@ -70,6 +71,7 @@ import StatusMenu from './components/StatusMenu.vue';
 import PrioMenu from './components/PrioMenu.vue';
 import DueMenu from './components/DueMenu.vue';
 import ProjectActionsMenu from './components/ProjectActionsMenu.vue';
+import BatchBar from './components/BatchBar.vue';
 import Toast from './components/Toast.vue';
 import { useTaskStore } from './store/tasks.js';
 import { useUiStore } from './store/ui.js';

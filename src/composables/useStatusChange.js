@@ -1,5 +1,6 @@
-/* work-todo — shared status-change semantics (row-dot cycling + status menu jumps).
- * Keeps the done/repeat toast + next-occurrence behavior in one place. */
+/* work-todo — shared status-change semantics (row checkbox + status menu).
+ * Keeps the done/repeat toast + next-occurrence behavior in one place.
+ * Completing a task always goes through a confirm dialog (product rule). */
 
 import { useRouter } from 'vue-router';
 import { useTaskStore } from '../store/tasks.js';
@@ -37,12 +38,19 @@ export function useStatusChange() {
     }
   }
 
-  /** One click on the row dot: advance to the next status in the cycle. */
-  function advanceStatus(taskId) {
-    const task = tasks.getTask(taskId);
-    if (!task) return;
-    setStatus(taskId, nextStatus(task.status));
+  /**
+   * Entry point for user-driven status changes. Completing a not-yet-done
+   * task asks for confirmation first; every other transition applies
+   * immediately.
+   */
+  function requestSetStatus(task, st) {
+    if (!task || task.status === st) return;
+    if (st === 'done') {
+      ui.openConfirmCustom(`将「${task.title}」标记为已完成？`, () => setStatus(task.id, 'done'));
+      return;
+    }
+    setStatus(task.id, st);
   }
 
-  return { nextStatus, setStatus, advanceStatus };
+  return { nextStatus, setStatus, requestSetStatus };
 }

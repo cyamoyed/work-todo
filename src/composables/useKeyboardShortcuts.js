@@ -31,6 +31,10 @@ export function useKeyboardShortcuts({ onCreateNew } = {}) {
         ui.closeProjectModal();
         return;
       }
+      // nothing else to close — Esc leaves multi-select mode
+      if (ui.state.selection.active) {
+        ui.stopSelection();
+      }
       return;
     }
     if (e.key === 'Tab') {

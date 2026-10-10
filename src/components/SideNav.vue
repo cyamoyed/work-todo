@@ -20,7 +20,11 @@
     <div class="side-sec" id="project-section">
       <div class="side-sec-head">
         <span>项目</span>
-        <button type="button" id="btn-new-project" aria-label="新建项目" @click="newProject">+</button>
+        <button type="button" id="btn-new-project" aria-label="新建项目" @click="newProject">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+        </button>
       </div>
       <ProjectList />
       <div class="proj-progress" id="project-progress" :hidden="!progress">
