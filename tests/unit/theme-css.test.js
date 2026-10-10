@@ -7,7 +7,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const css = fs.readFileSync(path.join(repoRoot, 'styles.css'), 'utf8');
+// Normalize CRLF (Windows checkouts) so selector needles and brace scanning
+// don't depend on the user's core.autocrlf setting.
+const css = fs
+  .readFileSync(path.join(repoRoot, 'styles.css'), 'utf8')
+  .replace(/\r\n/g, '\n');
 
 /** Extract the full `{...}` body of the first block whose selector list contains `needle`. */
 function blockBody(needle) {
@@ -61,5 +65,15 @@ describe('theme CSS tokens', () => {
     expect(lightBody).not.toContain('--radius');
     expect(darkBody).not.toContain('--radius');
     expect(css).toContain('--row-h: 62px');
+  });
+
+  it('the whole stylesheet is brace-balanced (a stray } makes browsers drop following rules)', () => {
+    // v0.7.0 shipped two stray top-level closers after the theme blocks; the
+    // browser's error recovery silently ate the @media fallback and the
+    // geometry :root, leaving --side-w undefined and the shell single-column.
+    const noComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const open = (noComments.match(/{/g) || []).length;
+    const close = (noComments.match(/}/g) || []).length;
+    expect(close).toBe(open);
   });
 });

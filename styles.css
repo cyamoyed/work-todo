@@ -124,7 +124,6 @@
   --proj-indigo: #818cf8;
   --proj-amber: #d3a03c;
 }
-}
 
 /* system-following dark: identical palette, applied while no explicit
    data-theme is set on <html> (theme store removes the attribute for 系统) */
@@ -187,7 +186,6 @@
   --proj-ink: #d4d4d8;
   --proj-indigo: #818cf8;
   --proj-amber: #d3a03c;
-}
   }
 }
 
@@ -231,7 +229,7 @@ kbd {
 }
 *::-webkit-scrollbar-thumb:hover { background-color: var(--line-input); }
 * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
-.side, .body, .modal, .select-pop, .update-notes { scrollbar-gutter: stable; }
+.body, .side-scroll, .modal, .select-pop, .update-notes { scrollbar-gutter: stable; }
 
 /* Keyboard focus: one quiet indigo ring everywhere (mouse users never see it). */
 :focus-visible { outline: 2px solid var(--focus-outline); outline-offset: 2px; }
@@ -256,11 +254,11 @@ kbd {
   padding: 24px 14px 18px;
   min-height: 0; overflow: auto;
 }
-.logo { display: flex; align-items: center; gap: 10px; padding: 2px 10px 22px; }
+.logo { display: flex; align-items: center; gap: 10px; padding: 2px 10px 22px; flex: none; }
 .logo-mark { width: 22px; height: 22px; flex: none; }
 .logo-text { font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
 
-.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav { display: flex; flex-direction: column; gap: 2px; flex: none; }
 .nav-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 10px; border-radius: 6px;
@@ -275,6 +273,14 @@ kbd {
 }
 .nav-item.active .n { color: var(--muted); }
 
+/* Logo + nav stay pinned; projects and the footer share .side-scroll. The
+   footer's margin-top:auto pins it to the bottom when content is short and
+   collapses to zero when the region overflows — the sidebar itself never
+   grows a scrollbar on typical viewports. */
+.side-scroll {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
 .side-sec { margin-top: 22px; display: flex; flex-direction: column; gap: 2px; }
 .side-sec-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -311,8 +317,12 @@ kbd {
 .proj-item .n {
   font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums;
 }
+/* Absolutely positioned so appearing on hover never joins the flex row —
+   a 22px inline child would outgrow the 13px×1.5 text line box and make the
+   row (and its hover background) jump. The hidden .n keeps its space. */
 .proj-item .more {
-  display: none; width: 22px; height: 22px; border-radius: 5px;
+  display: none; position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border-radius: 5px;
   color: var(--faint); font-size: 13px; line-height: 1;
 }
 .proj-item:hover .more {
@@ -330,6 +340,8 @@ kbd {
   border-radius: 999px; opacity: 0.55;
 }
 
+/* Inside .side-scroll: auto margin pushes the footer to the bottom when the
+   region has spare room, and resolves to zero once it overflows. */
 .side-foot { margin-top: auto; padding: 8px 10px 0; }
 .side-ops { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
 .side-ops button {
@@ -388,11 +400,13 @@ kbd {
 .btn-primary {
   background: var(--accent); border-color: var(--accent); color: var(--accent-on); padding: 0 14px;
 }
-.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+/* Variant hovers restate color: `.btn:hover` (class+pseudo) outranks the
+   single-class variant base, which would otherwise black out the label. */
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-on); }
 .btn-danger {
   background: var(--danger); border-color: var(--danger); color: #fff;
 }
-.btn-danger:hover { background: var(--danger-hover); border-color: var(--danger-hover); }
+.btn-danger:hover { background: var(--danger-hover); border-color: var(--danger-hover); color: #fff; }
 .btn-ghost { border-color: transparent; background: transparent; }
 .btn-ghost:hover { background: var(--line); border-color: transparent; }
 .btn.sm { height: 30px; padding: 0 10px; font-size: 12px; }

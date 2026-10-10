@@ -17,6 +17,7 @@
       >{{ item.label }} <span class="n" :id="'nav-count-' + item.view">{{ counts[item.view] }}</span></button>
     </nav>
 
+    <div class="side-scroll">
     <div class="side-sec" id="project-section">
       <div class="side-sec-head">
         <span>项目</span>
@@ -77,6 +78,7 @@
         本地存储 · JSON 可导出<br />
         <kbd>N</kbd> 新建 · <kbd>/</kbd> 搜索 · <kbd>Esc</kbd> 关闭
       </div>
+    </div>
     </div>
   </aside>
 </template>
