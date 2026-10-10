@@ -96,7 +96,7 @@ work-todo/
 ## 数据
 
 - 存储：WebView 的 `localStorage`
-- 键名：`work-todo.tasks.v1`（任务）、`work-todo.projects.v1`（项目）、`work-todo.sync.v1`（同步会话）；界面偏好存 `sessionStorage` 的 `work-todo.ui.v1`；更新检查节流时间戳 `work-todo.update.v1`
+- 键名：`work-todo.tasks.v1`（任务）、`work-todo.projects.v1`（项目）、`work-todo.sync.v1`（同步会话）；界面偏好存 `sessionStorage` 的 `work-todo.ui.v1`；更新检查节流/退避时间戳与 ETag 缓存 `work-todo.update.v1`
 - 任务/项目为**软删除**：删除写入 `deletedAt` 墓碑（保留 30 天）以传播删除状态，界面只显示活数据
 - 数据版本：`SCHEMA_VERSION = 3`（v2 及以下自动补 `deletedAt: null` 升级读取）
 - Windows/macOS 桌面包内数据独立于浏览器，各自持久化。
@@ -121,23 +121,28 @@ work-todo/
 
 应用会检查 GitHub Releases 并引导到下载页（不自动下载安装包，网页版与桌面版行为一致）。
 
-- **检查入口**：启动后静默检查（6 小时内最多一次，时间戳存 `work-todo.update.v1`）；侧栏底部「检查更新」随时手动检查；侧栏底部版本行常驻显示当前版本，发现新版时变为主题色并显示「有新版 vX.Y.Z」，点击可打开更新弹窗。
+- **检查入口**：启动后静默检查；应用常驻期间每 15 分钟复查一次（两个入口都受同一节流约束）；网络恢复（`online` 事件）时补查；侧栏底部「检查更新」随时手动检查；侧栏底部版本行常驻显示当前版本，发现新版时变为主题色并显示「有新版 vX.Y.Z」，点击可打开更新弹窗。
+- **节流与退避**：成功检查后 6 小时内不再自动检查（`UPDATE_AUTO_CHECK_MS`，时间戳存 `work-todo.update.v1`）；检查失败（断网 / 限流）不占用 6 小时窗口，15 分钟后（`UPDATE_RETRY_MS`）即可自动复查——开机断网不会把更新检测拖到 6 小时后。
 - **版本来源**：`https://api.github.com/repos/cyamoyed/work-todo/releases/latest`（不含 draft / prerelease）。`tag_name` 形如 `v0.5.0`（可省略 `v`），与运行中版本比较，更新日志取 Release 正文（`body`，弹窗内按纯文本展示）。
+  - **ETag 缓存**：成功响应的 ETag 与解析结果缓存在 `work-todo.update.v1`，下次检查带 `If-None-Match`；GitHub 返回 304 时不消耗 API 限额。
+  - **限流降级**：API 返回 403（未认证限额 60 次/小时/IP，企业出口 IP 容易触发）时改读 `https://github.com/cyamoyed/work-todo/releases.atom`（普通网页，不走 API 限额），解析出最新版本与日志；feed 失败才报「GitHub 请求受限」。两条路径的失败原因（`network` / `rate-limited` / `http` …）会体现在 toast 文案里。
 - **下载目标**：按平台挑安装包资产——Windows 优先 `*-setup.exe`（其次 `.exe` / `.msi`），macOS `.dmg`，Linux `.AppImage`（其次 `.deb`）；没有匹配资产则打开 Release 页面。桌面端用 `plugin:opener|open_url` 调系统浏览器（`src-tauri/capabilities/default.json` 授予 `opener:default`），网页端 `window.open` 新标签页。
+- **更新弹窗**：展示新版本号、当前版本、发布日期、更新日志；操作有「稍后」「复制链接」（复制下载目标到剪贴板，浏览器拉起失败时的兜底）「前往下载」。网页版会附一行提示「网页版部署更新后，刷新页面即可使用新版」。
 - **前端版本号**：由 `src-tauri/Cargo.toml` 经 Vite `define` 注入为 `__APP_VERSION__`（版本号唯一源头），`src/` 内不要手写版本号。
 
 ## CI 自动打包发布（GitHub Actions）
 
-`.github/workflows/release.yml` 在推送 `v*` 标签时自动完成整条发布链：单元/组件测试 → 校验 tag 与版本号一致 → 三平台并行构建 → 直接发布 GitHub Release。
+`.github/workflows/release.yml` 在推送 `v*` 标签时自动完成整条发布链：单元/组件测试 → 校验 tag 与版本号一致 → 生成更新日志并创建**草稿** Release → 三平台并行构建、上传安装包到草稿 → 校验资产齐全后**统一转正式发布**。
 
 - **产物覆盖**：Windows（`.msi` + NSIS `*-setup.exe`）、macOS（通用二进制 `.dmg`，同时支持 Intel / Apple Silicon）、Linux（`.deb` / `.rpm` / `.AppImage`）。
 - **触发方式**：
   - 发版：`git tag vX.Y.Z && git push origin vX.Y.Z`；
   - 仅构建：在仓库 Actions 页面手动触发（workflow_dispatch），安装包上传为 artifacts，不创建 Release。
 - **版本校验**：tag 与 `src-tauri/Cargo.toml` 的 `version` 不一致时构建直接失败，避免「Release 已发新版、应用内版本号对不上」。
-- **Release 正文**：自动取上一 tag 以来的提交记录（`git log --no-merges`）+ 各平台下载指引；发布后可随时在 GitHub 页面编辑，应用内更新弹窗读取的是线上正文。
-- **命名约束**：资产保持 Tauri 默认命名（`*_setup.exe` / `.dmg` / `.AppImage` 等），`src/lib/update.js` 按后缀与 `*-setup.exe` 优先级挑选下载目标，不要上传时改名。
-- **发布即生效**：Release 直接发布（非 draft / prerelease），`releases/latest` 立即指向新版，应用内「检查更新」可检测到。
+- **两段式发布**：先建草稿，全部平台资产上传完毕后由 publish job 按 `src/core/update.js pickDownloadUrl` 的规则校验（Windows 任一 exe/msi、macOS dmg、Linux AppImage/deb）再转正式，并确认 `releases/latest` 已指向新 tag。任一平台构建失败时 Release 停留在草稿，不会被应用内更新检测暴露；人工删除草稿、修复后重推 tag 即可。
+- **Release 正文**：按 conventional commits 自动分组（新功能 feat / 问题修复 fix / 体验优化 perf，其余提交不展示；全部为维护性提交时写「维护性更新」）+ 各平台下载指引。正文末尾的下载指引只面向 GitHub 页面访客，应用内弹窗展示时会自动裁掉（`src/core/update.js trimReleaseNotes`）。发布后可随时在 GitHub 页面编辑，应用内更新弹窗读取的是线上正文。
+- **命名约束**：资产保持 Tauri 默认命名（`*_setup.exe` / `.dmg` / `.AppImage` 等），`src/core/update.js` 按后缀与 `*-setup.exe` 优先级挑选下载目标，不要上传时改名。
+- **版本号防漂移**：`.github/workflows/version-guard.yml` 在 main 分支有新提交但 `Cargo.toml` 版本号未升时给出 warning 提醒（不阻断），避免发版前忘记升版。
 - **缓存**：npm（`package-lock.json`）与 Rust（`Cargo.lock` + `src-tauri/target`）均已缓存，冷启动全量构建约 10–20 分钟。
 - e2e 测试不进 CI：Chromium 由 `vitest.e2e.config.js` 扫描本机 `%LOCALAPPDATA%/ms-playwright` 定位，依赖本机环境。
-- **发布流程**：升版 `src-tauri/Cargo.toml` 的 `version`（版本号唯一源头，`tauri.conf.json` 与 `package.json` 均不携带版本号）→ 提交并推送 `vX.Y.Z` tag → GitHub Actions 自动构建三平台安装包并发布 Release（详见下方「CI 自动打包发布」；也可按本节旧流程手工 `cargo tauri build` + 手动建 Release）。用户端应用会检测到新版。
+- **发布流程**：升版 `src-tauri/Cargo.toml` 的 `version`（版本号唯一源头，`tauri.conf.json` 与 `package.json` 均不携带版本号）→ 提交并推送 `vX.Y.Z` tag → GitHub Actions 自动构建三平台安装包、校验后发布 Release（详见上方「CI 自动打包发布」；也可按本节旧流程手工 `cargo tauri build` + 手动建 Release）。用户端应用会检测到新版。

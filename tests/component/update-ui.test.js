@@ -89,6 +89,47 @@ describe('manual check', () => {
     expect(wrapper.find('#update-modal').isVisible()).toBe(false);
   });
 
+  it('复制链接 copies the download URL and keeps the dialog open', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+    mockFetch(200, NEWER);
+    await wrapper.find('#btn-check-update').trigger('click');
+    await flushPromises();
+    await wrapper.find('#btn-copy-link').trigger('click');
+    await flushPromises();
+    const url = updateState.latest.downloadUrl || updateState.latest.url;
+    expect(writeText).toHaveBeenCalledWith(url); // platform-dependent: installer or release page
+    expect(url).toContain('github.com/cyamoyed/work-todo');
+    expect(wrapper.find('#toast').text()).toContain('已复制下载链接');
+    expect(wrapper.find('#update-modal').isVisible()).toBe(true);
+  });
+
+  it('复制失败 falls back to a failure toast', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+      configurable: true,
+    });
+    document.execCommand = () => false; // legacy fallback also fails
+    mockFetch(200, NEWER);
+    await wrapper.find('#btn-check-update').trigger('click');
+    await flushPromises();
+    await wrapper.find('#btn-copy-link').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('#toast').text()).toContain('复制失败');
+  });
+
+  it('shows the web refresh hint outside the desktop build', async () => {
+    mockFetch(200, NEWER);
+    await wrapper.find('#btn-check-update').trigger('click');
+    await flushPromises();
+    const hint = wrapper.find('.update-hint');
+    expect(hint.exists()).toBe(true); // no window.__TAURI__ in the component env
+    expect(hint.text()).toContain('刷新页面');
+  });
+
   it('toasts 已是最新版本 when the running version is current', async () => {
     mockFetch(200, { ...NEWER, tag_name: `v${updateState.currentVersion}`, assets: [] });
     await wrapper.find('#btn-check-update').trigger('click');
@@ -112,7 +153,15 @@ describe('manual check', () => {
     );
     await wrapper.find('#btn-check-update').trigger('click');
     await flushPromises();
-    expect(wrapper.find('#toast').text()).toContain('检查更新失败');
+    expect(wrapper.find('#toast').text()).toContain('网络异常');
+  });
+
+  it('toasts a rate-limit hint when GitHub throttles both the API and the atom feed', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 403, json: async () => ({}) })));
+    await wrapper.find('#btn-check-update').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('#toast').text()).toContain('GitHub 请求受限');
+    expect(updateState.reason).toBe('rate-limited');
   });
 
   it('disables the button while checking', async () => {

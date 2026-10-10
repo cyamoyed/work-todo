@@ -14,6 +14,7 @@ import {
   notifyDueSoon,
 } from './composables/useNotifications.js';
 import { useUpdateCheck } from './composables/useUpdateCheck.js';
+import { UPDATE_RETRY_MS } from './constants.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
@@ -75,5 +76,10 @@ setTimeout(requestNotifyPermission, 800);
 setTimeout(() => notifyOverdue(tasks.state.tasks), 1200);
 setTimeout(() => notifyDueSoon(tasks.state.tasks), 1400);
 
-// Update check (throttled, silent unless a newer release is published).
-setTimeout(() => useUpdateCheck().autoCheck(), 1800);
+// Update check: silent startup check, then re-check while the app stays open
+// (both throttled in lib/update.js — success opens the 6h window, failure the
+// 15min retry clock). Re-check when the network comes back after being offline.
+const updateCheck = useUpdateCheck();
+setTimeout(() => updateCheck.autoCheck(), 1800);
+setInterval(() => updateCheck.autoCheck(), UPDATE_RETRY_MS);
+window.addEventListener('online', () => updateCheck.autoCheck());

@@ -7,6 +7,8 @@ import {
   detectPlatform,
   pickDownloadUrl,
   normalizeRelease,
+  trimReleaseNotes,
+  parseAtomFeed,
 } from '../../src/core/update.js';
 
 describe('parseVersion', () => {
@@ -120,5 +122,63 @@ describe('normalizeRelease', () => {
   it('returns null without a parseable tag', () => {
     expect(normalizeRelease(null, 'win')).toBe(null);
     expect(normalizeRelease({ tag_name: 'nightly' }, 'win')).toBe(null);
+  });
+
+  it('trims the CI-appended download-guidance tail from notes', () => {
+    const r = normalizeRelease(
+      { ...raw, body: '新功能\n- 某功能\n\n---\n下载：Windows 选 `.msi`；macOS 选 `.dmg`。' },
+      'win'
+    );
+    expect(r.notes).toBe('新功能\n- 某功能');
+  });
+});
+
+describe('trimReleaseNotes', () => {
+  it('keeps bodies without the guidance tail untouched', () => {
+    expect(trimReleaseNotes('修复若干问题')).toBe('修复若干问题');
+    expect(trimReleaseNotes('---\n普通分隔线，无下载指引')).toBe('---\n普通分隔线，无下载指引');
+    expect(trimReleaseNotes('')).toBe('');
+    expect(trimReleaseNotes(null)).toBe('');
+  });
+});
+
+describe('parseAtomFeed', () => {
+  const FEED = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Releases · cyamoyed/work-todo</title>
+  <entry>
+    <id>tag:github.com,2008:repo/123456/v9.9.9</id>
+    <updated>2026-10-01T08:00:00Z</updated>
+    <published>2026-10-01T08:00:00Z</published>
+    <link rel="alternate" type="text/html" href="https://github.com/cyamoyed/work-todo/releases/tag/v9.9.9"/>
+    <title>work-todo v9.9.9</title>
+    <content type="html">&lt;p&gt;新功能&lt;/p&gt;&lt;ul&gt;&lt;li&gt;同步&amp;备份&lt;/li&gt;&lt;/ul&gt;&lt;hr&gt;下载：Windows 选 setup</content>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:repo/123456/v9.8.0</id>
+    <title>work-todo v9.8.0</title>
+  </entry>
+</feed>`;
+
+  it('maps the first entry to the update shape', () => {
+    const r = parseAtomFeed(FEED);
+    expect(r.version).toBe('9.9.9');
+    expect(r.url).toBe('https://github.com/cyamoyed/work-todo/releases/tag/v9.9.9');
+    expect(r.publishedAt).toBe('2026-10-01T08:00:00Z');
+  });
+
+  it('unescapes entities, strips html, and trims the download tail', () => {
+    const r = parseAtomFeed(FEED);
+    expect(r.notes).toContain('新功能');
+    expect(r.notes).toContain('同步&备份');
+    expect(r.notes).not.toContain('下载：');
+    expect(r.notes).not.toContain('<');
+  });
+
+  it('returns null for feeds without a parseable entry', () => {
+    expect(parseAtomFeed('<feed></feed>')).toBe(null);
+    expect(parseAtomFeed('<entry><id>tag:github.com,2008:repo/1/nightly</id></entry>')).toBe(null);
+    expect(parseAtomFeed('')).toBe(null);
+    expect(parseAtomFeed(null)).toBe(null);
   });
 });

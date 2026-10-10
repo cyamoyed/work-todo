@@ -1,4 +1,4 @@
-/* Unit tests — update checks: GitHub fetch mapping, throttle, external open. */
+/* Unit tests — update checks: GitHub fetch mapping, throttle/backoff, ETag, atom fallback, external open. */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   checkForUpdates,
@@ -8,8 +8,9 @@ import {
   openExternal,
   openDownload,
   LATEST_RELEASE_URL,
+  ATOM_FEED_URL,
 } from '../../src/lib/update.js';
-import { UPDATE_KEY, UPDATE_AUTO_CHECK_MS } from '../../src/constants.js';
+import { UPDATE_KEY, UPDATE_AUTO_CHECK_MS, UPDATE_RETRY_MS } from '../../src/constants.js';
 
 const RELEASE = {
   tag_name: 'v9.9.9',
@@ -30,8 +31,23 @@ const RELEASE = {
   ],
 };
 
-function jsonResponse(status, body) {
-  return { ok: status >= 200 && status < 300, status, json: async () => body };
+const ATOM_FEED = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>tag:github.com,2008:repo/123456/v9.9.9</id>
+    <updated>2026-10-01T08:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/cyamoyed/work-todo/releases/tag/v9.9.9"/>
+    <content type="html">&lt;p&gt;修复若干问题&lt;/p&gt;</content>
+  </entry>
+</feed>`;
+
+function jsonResponse(status, body, headers = {}) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+    headers: { get: (name) => headers[name.toLowerCase()] || null },
+  };
 }
 
 let savedWindow;
@@ -73,6 +89,7 @@ describe('checkForUpdates', () => {
   });
 
   it('maps rate limiting and network failures to error', async () => {
+    // 403 on both the API and the atom fallback → rate-limited.
     const limited = await checkForUpdates({
       fetch: vi.fn(async () => jsonResponse(403, {})),
       currentVersion: '0.4.0',
@@ -88,6 +105,19 @@ describe('checkForUpdates', () => {
     expect(down).toEqual({ status: 'error', reason: 'network' });
   });
 
+  it('falls back to the releases atom feed when the API rate-limits', async () => {
+    const fetch = vi.fn((url) => {
+      if (url === LATEST_RELEASE_URL) return jsonResponse(403, {});
+      return Promise.resolve({ ok: true, status: 200, text: async () => ATOM_FEED });
+    });
+    const res = await checkForUpdates({ fetch, currentVersion: '0.4.0' });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls[1][0]).toBe(ATOM_FEED_URL);
+    expect(res.status).toBe('available');
+    expect(res.latest.version).toBe('9.9.9');
+    expect(res.latest.downloadUrl).toContain('/releases/tag/v9.9.9');
+  });
+
   it('rejects unparseable release payloads', async () => {
     const res = await checkForUpdates({
       fetch: vi.fn(async () => jsonResponse(200, { tag_name: 'nightly' })),
@@ -101,11 +131,81 @@ describe('checkForUpdates', () => {
   });
 });
 
-describe('update-check throttle', () => {
-  it('any completed attempt stamps the throttle clock', async () => {
+describe('etag revalidation', () => {
+  it('caches the release payload with its etag and revalidates with If-None-Match', async () => {
+    const first = vi.fn(async () => jsonResponse(200, RELEASE, { etag: '"abc"' }));
+    const res1 = await checkForUpdates({ fetch: first, platform: 'win', currentVersion: '0.4.0' });
+    expect(res1.status).toBe('available');
+    expect(first.mock.calls[0][1].headers['If-None-Match']).toBeUndefined();
+
+    const second = vi.fn(async () => jsonResponse(304, null));
+    const res2 = await checkForUpdates({ fetch: second, platform: 'win', currentVersion: '0.4.0' });
+    expect(second.mock.calls[0][1].headers['If-None-Match']).toBe('"abc"');
+    expect(res2.status).toBe('available');
+    expect(res2.latest).toEqual(res1.latest);
+  });
+
+  it('a fresh 200 answer replaces the cache and its etag', async () => {
+    await checkForUpdates({
+      fetch: vi.fn(async () => jsonResponse(200, RELEASE, { etag: '"old"' })),
+      platform: 'win',
+      currentVersion: '0.4.0',
+    });
+    const next = vi.fn(async () => jsonResponse(200, { ...RELEASE, tag_name: 'v9.9.10' }, { etag: '"new"' }));
+    const res = await checkForUpdates({ fetch: next, platform: 'win', currentVersion: '0.4.0' });
+    expect(res.latest.version).toBe('9.9.10');
+    const replay = vi.fn(async () => jsonResponse(304, null));
+    await checkForUpdates({ fetch: replay, platform: 'win', currentVersion: '0.4.0' });
+    expect(replay.mock.calls[0][1].headers['If-None-Match']).toBe('"new"');
+  });
+
+  it('a 304 without a cached payload degrades to an http error', async () => {
+    const res = await checkForUpdates({
+      fetch: vi.fn(async () => jsonResponse(304, null)),
+      currentVersion: '0.4.0',
+    });
+    expect(res).toEqual({ status: 'error', reason: 'http' });
+  });
+});
+
+describe('update-check throttle and retry backoff', () => {
+  it('a successful check stamps the 6h throttle clock', async () => {
     expect(shouldAutoCheck()).toBe(true);
     await checkForUpdates({ fetch: vi.fn(async () => jsonResponse(200, RELEASE)) });
     expect(shouldAutoCheck()).toBe(false);
+  });
+
+  it('a failed check does not burn the window — retry is allowed after UPDATE_RETRY_MS', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-10T10:00:00Z'));
+    const fail = await checkForUpdates({
+      fetch: vi.fn(async () => {
+        throw new Error('offline');
+      }),
+      currentVersion: '0.4.0',
+    });
+    expect(fail.reason).toBe('network');
+    vi.setSystemTime(new Date(Date.now() + UPDATE_RETRY_MS - 1000));
+    expect(shouldAutoCheck()).toBe(false);
+    vi.setSystemTime(new Date(Date.now() + 2000));
+    expect(shouldAutoCheck()).toBe(true);
+  });
+
+  it('a successful retry re-opens the full 6h window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-10T10:00:00Z'));
+    await checkForUpdates({
+      fetch: vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    });
+    vi.setSystemTime(new Date(Date.now() + UPDATE_RETRY_MS + 1000));
+    expect(shouldAutoCheck()).toBe(true);
+    await checkForUpdates({ fetch: vi.fn(async () => jsonResponse(200, RELEASE)) });
+    vi.setSystemTime(new Date(Date.now() + UPDATE_AUTO_CHECK_MS - 1000));
+    expect(shouldAutoCheck()).toBe(false);
+    vi.setSystemTime(new Date(Date.now() + 2000));
+    expect(shouldAutoCheck()).toBe(true);
   });
 
   it('re-allows after UPDATE_AUTO_CHECK_MS', () => {

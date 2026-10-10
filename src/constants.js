@@ -8,6 +8,8 @@ export const SYNC_KEY = 'work-todo.sync.v1';
 export const UPDATE_KEY = 'work-todo.update.v1';
 export const UPDATE_REPO = 'cyamoyed/work-todo';
 export const UPDATE_AUTO_CHECK_MS = 6 * 60 * 60 * 1000;
+// 检查失败（断网/限流）后的短退避：到点允许自动复查，不占用 6 小时节流窗口
+export const UPDATE_RETRY_MS = 15 * 60 * 1000;
 export const SCHEMA_VERSION = 3;
 export const TOMBSTONE_DAYS = 30;
 export const DEFAULT_SYNC_COLLECTION = 'work_todo';

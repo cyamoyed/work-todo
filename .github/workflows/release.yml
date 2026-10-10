@@ -1,10 +1,12 @@
-# 打包发布：推送 vX.Y.Z 标签 → 跑测试 → 三平台（Windows / macOS / Linux）
-# 并行编译安装包并发布 GitHub Release；手动触发（workflow_dispatch）则只构建，
-# 把安装包上传为 artifacts，不发布 Release。
+# 打包发布：推送 vX.Y.Z 标签 → 测试 → 生成更新日志并创建草稿 Release →
+# 三平台并行构建、上传安装包到草稿 → 校验资产齐全后统一转正式发布。
+# 手动触发（workflow_dispatch）则只构建，安装包上传为 artifacts，不建 Release。
 #
-# 应用内「检查更新」读取 releases/latest（不含 draft / prerelease），因此 Release
-# 直接发布；资产保持 Tauri 默认命名（*-setup.exe / .msi / .dmg / .AppImage / .deb），
-# src/lib/update.js 按文件后缀挑选下载目标，不要在上传时改名。
+# 应用内「检查更新」读取 releases/latest（不含 draft / prerelease）。草稿 →
+# 统一转正的两段式发布保证 releases/latest 永远不会指向缺安装包的半成品
+# （某个平台构建失败时 Release 停留在草稿，删掉重试即可）。资产保持 Tauri
+# 默认命名（*-setup.exe / .msi / .dmg / .AppImage / .deb），src/core/update.js
+# 按文件后缀挑选下载目标，不要在上传时改名。
 
 name: 打包发布
 
@@ -48,9 +50,75 @@ jobs:
             console.log("Cargo.toml 版本与 tag 一致：v" + tag);
           '
 
+  prepare:
+    name: 生成更新日志并创建草稿 Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.create_draft.outputs.release_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 更新日志需要完整提交历史与历史标签
+      # 更新日志按 conventional commits 分组（feat / fix / perf），开发类提交
+      # （chore / docs / test / ci …）不出现在用户面前；末尾追加的下载指引
+      # 只面向 GitHub 页面访客，应用内弹窗会把它裁掉（core/update.js
+      # trimReleaseNotes），两边互不干扰。
+      - name: 生成更新日志
+        id: changelog
+        shell: bash
+        run: |
+          PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+          if [ -n "$PREV" ]; then
+            SUBJECTS=$(git log --no-merges --pretty=format:'%s' "$PREV..HEAD")
+          else
+            SUBJECTS=$(git log --no-merges -n 30 --pretty=format:'%s')
+          fi
+          group() {
+            printf '%s\n' "$SUBJECTS" \
+              | grep -iE "^$1(\([^)]*\))?(!)?:" \
+              | sed -E "s/^$1(\([^)]*\))?(!)?:[[:space:]]*//I" \
+              | sed 's/^/- /' || true
+          }
+          FEATS=$(group feat)
+          FIXES=$(group fix)
+          PERFS=$(group perf)
+          {
+            echo 'body<<WORK_TODO_EOF'
+            if [ -n "$FEATS" ] || [ -n "$FIXES" ] || [ -n "$PERFS" ]; then
+              [ -n "$FEATS" ] && printf '新功能\n%s\n\n' "$FEATS"
+              [ -n "$FIXES" ] && printf '问题修复\n%s\n\n' "$FIXES"
+              [ -n "$PERFS" ] && printf '体验优化\n%s\n\n' "$PERFS"
+            else
+              printf '维护性更新。\n\n'
+            fi
+            echo '---'
+            echo '下载：Windows 选 `*-setup.exe` 或 `.msi`；macOS 选 `.dmg`（通用二进制，未签名，首次打开请右键 → 打开）；Linux 选 `.AppImage` / `.deb` / `.rpm`。'
+            echo 'WORK_TODO_EOF'
+          } >> "$GITHUB_OUTPUT"
+      - name: 创建草稿 Release
+        id: create_draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_BODY: ${{ steps.changelog.outputs.body }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ID=$(gh api --method POST "repos/${{ github.repository }}/releases" \
+            -f tag_name="${GITHUB_REF_NAME}" \
+            -f name="work-todo v${VERSION}" \
+            -f body="$RELEASE_BODY" \
+            -F draft=true -F prerelease=false \
+            --jq '.id')
+          echo "release_id=$ID" >> "$GITHUB_OUTPUT"
+
   build:
     name: 构建安装包（${{ matrix.platform }}）
-    needs: test
+    needs: [test, prepare]
+    # prepare 仅 tag 推送时存在；手动触发时被跳过也要继续构建（只出 artifacts）
+    if: ${{ !failure() && !cancelled() && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped') }}
     permissions:
       contents: write
     strategy:
@@ -80,8 +148,6 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # 生成 Release 更新日志需要完整提交历史与历史标签
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -103,36 +169,14 @@ jobs:
           workspaces: src-tauri
       - name: 安装前端依赖
         run: npm ci
-      - name: 生成 Release 更新日志
-        if: startsWith(github.ref, 'refs/tags/')
-        id: changelog
-        shell: bash # run 默认在 Windows 上用 PowerShell，本步骤是 bash 语法
-        run: |
-          PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
-          {
-            echo 'body<<WORK_TODO_EOF'
-            if [ -n "$PREV" ]; then
-              git log --no-merges --pretty=format:'- %s' "$PREV"..HEAD
-            else
-              git log --no-merges -n 30 --pretty=format:'- %s'
-            fi
-            echo ''
-            echo ''
-            echo '---'
-            echo '下载：Windows 选 `.msi` 或 `*-setup.exe`；macOS 选 `.dmg`（通用二进制，未签名，首次打开请右键 → 打开）；Linux 选 `.AppImage` / `.deb` / `.rpm`。'
-            echo 'WORK_TODO_EOF'
-          } >> "$GITHUB_OUTPUT"
-      - name: 构建并发布 Release
+      # tag 推送：上传到 prepare 建好的草稿 Release（只上传，不改变草稿状态）；
+      # 手动触发：releaseId 为空，只构建不关联任何 Release。
+      - name: 构建并上传安装包到草稿 Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # 仅 tag 推送时创建并发布 Release；手动触发时为空，只构建不发布
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
-          releaseName: 'work-todo v__VERSION__'
-          releaseBody: ${{ steps.changelog.outputs.body }}
-          releaseDraft: false
-          prerelease: false
+          releaseId: ${{ startsWith(github.ref, 'refs/tags/') && needs.prepare.outputs.release_id || '' }}
           args: ${{ matrix.args }}
       - name: 上传安装包 artifacts（手动触发时）
         if: github.event_name == 'workflow_dispatch'
@@ -141,3 +185,48 @@ jobs:
           name: work-todo-${{ matrix.platform }}
           path: ${{ matrix.artifacts }}
           if-no-files-found: error
+
+  publish:
+    name: 校验资产并发布 Release
+    if: ${{ startsWith(github.ref, 'refs/tags/') && !failure() && !cancelled() }}
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # 与 src/core/update.js pickDownloadUrl 的挑选规则保持一致：
+      # Windows 任一 exe/msi、macOS dmg、Linux AppImage 或 deb。缺资产即失败，
+      # Release 停留在草稿，不会被 releases/latest 暴露。
+      - name: 校验安装包资产齐全
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
+        run: |
+          ASSETS=$(gh api "repos/${{ github.repository }}/releases/$RELEASE_ID/assets" --paginate --jq '.[].name')
+          echo "草稿 Release 资产："
+          echo "$ASSETS"
+          check() {
+            echo "$ASSETS" | grep -Eq "$1" || { echo "::error::安装包资产不齐全：$2"; exit 1; }
+          }
+          check '-setup\.exe$|\.exe$|\.msi$' 'Windows（*-setup.exe / .msi）'
+          check '\.dmg$' 'macOS（.dmg）'
+          check '\.AppImage$|\.deb$' 'Linux（.AppImage / .deb）'
+      - name: 发布 Release（草稿转正式）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
+        run: gh api --method PATCH "repos/${{ github.repository }}/releases/$RELEASE_ID" -F draft=false
+      - name: 确认 releases/latest 已指向新版
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for i in 1 2 3 4 5; do
+            TAG=$(gh api "repos/${{ github.repository }}/releases/latest" --jq .tag_name 2>/dev/null || true)
+            if [ "$TAG" = "${GITHUB_REF_NAME}" ]; then
+              echo "releases/latest → $TAG，应用内「检查更新」即可发现新版。"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::releases/latest 未指向 ${GITHUB_REF_NAME}，请人工检查 Release 状态。"
+          exit 1

@@ -86,9 +86,73 @@ export function normalizeRelease(raw, platform = 'other') {
   const url = typeof raw.html_url === 'string' ? raw.html_url : '';
   return {
     version: tag.replace(/^v/i, ''),
-    notes: typeof raw.body === 'string' ? raw.body : '',
+    notes: trimReleaseNotes(typeof raw.body === 'string' ? raw.body : ''),
     url,
     publishedAt: typeof raw.published_at === 'string' ? raw.published_at : '',
     downloadUrl: pickDownloadUrl(assets, platform) || url,
+  };
+}
+
+/**
+ * Drop the download-guidance tail that CI appends to release bodies
+ * ("---\n下载：…"). It is written for visitors of the GitHub release page;
+ * the app picks the installer itself, so showing it in the dialog is noise.
+ */
+export function trimReleaseNotes(text) {
+  if (typeof text !== 'string') return '';
+  return text.replace(/\n*-{3,}\s*\n?下载：[\s\S]*$/, '').trim();
+}
+
+const NAMED_ENTITIES = { lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+function decodeEntities(s) {
+  const codePoint = (num) =>
+    Number.isInteger(num) && num >= 0 && num <= 0x10ffff ? String.fromCodePoint(num) : '';
+  return s
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => codePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => codePoint(Number(dec)))
+    .replace(/&(lt|gt|quot|apos|nbsp);/g, (_, name) => NAMED_ENTITIES[name])
+    .replace(/&amp;/g, '&');
+}
+
+function stripHtml(html) {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    // <hr> is how the CI-appended "---\n下载：…" tail survives in the feed's
+    // HTML — keep it as a literal --- line so trimReleaseNotes can cut it.
+    .replace(/<hr\b[^>]*>/gi, '\n---\n')
+    .replace(/<\/(p|div|li|ul|ol|h[1-6]|tr)\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
+ * Parse the first entry of the GitHub releases Atom feed (the latest release)
+ * into the app's update shape. The feed is a plain web page — no API auth and
+ * no API rate limit — so it serves as the fallback when the API throttles us.
+ * Returns null on anything unparseable. `url`/`downloadUrl` may be empty when
+ * the feed lacks the alternate link (callers fill in the release page).
+ */
+export function parseAtomFeed(xml) {
+  if (typeof xml !== 'string') return null;
+  const entry = xml.match(/<entry[\s>][\s\S]*?<\/entry>/i);
+  if (!entry) return null;
+  const block = entry[0];
+  const text = (tag) => {
+    const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'));
+    return m ? m[1].trim() : '';
+  };
+  // <id>tag:github.com,2008:repo/<repo-id>/<tag></id> — the trailing segment is the tag
+  const id = text('id');
+  const tag = id.slice(id.lastIndexOf('/') + 1).trim();
+  if (!parseVersion(tag)) return null;
+  const link = (block.match(/<link\b[^>]*\brel="alternate"[^>]*\bhref="([^"]+)"/i) ||
+    block.match(/<link\b[^>]*\bhref="([^"]+)"[^>]*\brel="alternate"/i) || [])[1] || '';
+  return {
+    version: tag.replace(/^v/i, ''),
+    notes: trimReleaseNotes(stripHtml(decodeEntities(text('content') || text('summary')))),
+    url: link,
+    publishedAt: text('updated') || text('published'),
   };
 }

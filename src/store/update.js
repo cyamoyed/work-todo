@@ -5,6 +5,7 @@ import { getAppVersion, checkForUpdates, shouldAutoCheck, openDownload } from '.
 
 export const updateState = reactive({
   status: 'idle', // idle | checking | available | up-to-date | no-release | error
+  reason: '', // error detail: network | rate-limited | http | bad-payload | no-fetch
   latest: null, // { version, notes, url, publishedAt, downloadUrl }
   currentVersion: getAppVersion(),
 });
@@ -18,8 +19,10 @@ export async function runUpdateCheck({ manual = false } = {}) {
   if (updateState.status === 'checking') return null;
   if (!manual && !shouldAutoCheck()) return null;
   updateState.status = 'checking';
+  updateState.reason = '';
   const res = await checkForUpdates();
   updateState.status = res.status;
+  updateState.reason = res.reason || '';
   updateState.latest = res.status === 'available' ? res.latest : null;
   return res;
 }
@@ -32,6 +35,7 @@ export function openLatestDownload() {
 /** Test hook: back to the fresh-boot state. */
 export function __resetUpdateStateForTests() {
   updateState.status = 'idle';
+  updateState.reason = '';
   updateState.latest = null;
   updateState.currentVersion = getAppVersion();
 }
