@@ -458,6 +458,35 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect(await page.locator('#status-filter [data-count="todo"]').textContent()).toBe('1');
   });
 
+  it('theme switching paints dark and persists across reload', async () => {
+    const attr = () => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    await page.click('.side .theme-option[data-value="dark"]');
+    await page.waitForTimeout(80);
+    expect(await attr()).toBe('dark');
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(
+      'rgb(16, 16, 19)'
+    ); // --bg of the dark palette
+    expect(
+      await page.evaluate(() => localStorage.getItem('work-todo.theme.v1'))
+    ).toBe('"dark"');
+
+    // reload: the inline head script re-applies the stored theme before paint
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(120);
+    expect(await attr()).toBe('dark');
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(
+      'rgb(16, 16, 19)'
+    );
+
+    // back to system: attribute removed, OS preference drives the palette
+    await page.click('.side .theme-option[data-value="system"]');
+    await page.waitForTimeout(80);
+    expect(await attr()).toBe(null);
+    expect(
+      await page.evaluate(() => localStorage.getItem('work-todo.theme.v1'))
+    ).toBe('"system"');
+  });
+
   it('accessibility spot checks', async () => {
     expect(await page.locator('html').getAttribute('lang')).toBe('zh-CN');
     expect(await page.locator('#search-input').getAttribute('aria-label')).toBeTruthy();

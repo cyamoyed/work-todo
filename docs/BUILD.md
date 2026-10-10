@@ -96,7 +96,7 @@ work-todo/
 ## 数据
 
 - 存储：WebView 的 `localStorage`
-- 键名：`work-todo.tasks.v1`（任务）、`work-todo.projects.v1`（项目）、`work-todo.sync.v1`（同步会话）；界面偏好存 `sessionStorage` 的 `work-todo.ui.v1`；更新检查节流/退避时间戳与 ETag 缓存 `work-todo.update.v1`
+- 键名：`work-todo.tasks.v1`（任务）、`work-todo.projects.v1`（项目）、`work-todo.sync.v1`（同步会话）；界面偏好存 `sessionStorage` 的 `work-todo.ui.v1`；更新检查节流/退避时间戳与 ETag 缓存 `work-todo.update.v1`；主题设置 `work-todo.theme.v1`（`system`/`light`/`dark`，默认跟随系统）
 - 任务/项目为**软删除**：删除写入 `deletedAt` 墓碑（保留 30 天）以传播删除状态，界面只显示活数据
 - 数据版本：`SCHEMA_VERSION = 3`（v2 及以下自动补 `deletedAt: null` 升级读取）
 - Windows/macOS 桌面包内数据独立于浏览器，各自持久化。

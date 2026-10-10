@@ -37,7 +37,7 @@
       <h3 class="task-title" @click="onTitleClick">{{ task.title }}</h3>
       <p class="task-notes" v-if="hasNote">
         <template v-if="project && !ui.state.filters.projectId">
-          <span class="proj-chip"><i :style="{ background: projectColor }"></i>{{ project.name }}</span>
+          <span class="proj-chip"><i :class="'dotc-' + projColorKey"></i>{{ project.name }}</span>
           <span class="sep-dot" v-if="task.notes">·</span>
         </template>
         <template v-if="task.notes">{{ task.notes }}</template>
@@ -100,7 +100,7 @@ import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { useStatusChange } from '../composables/useStatusChange.js';
 import { formatDue, isDueTodayOpen, isOverdue } from '../core/dates.js';
-import { PRIORITY_LABELS, REPEAT_LABELS, STATUS_LABELS, PROJECT_COLORS } from '../constants.js';
+import { PRIORITY_LABELS, REPEAT_LABELS, STATUS_LABELS } from '../constants.js';
 
 const props = defineProps({
   task: { type: Object, required: true },
@@ -114,9 +114,7 @@ const selecting = computed(() => ui.state.selection.active);
 const selected = computed(() => selecting.value && ui.isSelected(props.task.id));
 
 const project = computed(() => (props.task.projectId ? tasks.getProject(props.task.projectId) : null));
-const projectColor = computed(
-  () => PROJECT_COLORS[project.value ? project.value.color : 'slate'] || PROJECT_COLORS.slate
-);
+const projColorKey = computed(() => (project.value ? project.value.color : 'slate'));
 const hasNote = computed(() =>
   (!!project.value && !ui.state.filters.projectId) || !!props.task.notes
 );

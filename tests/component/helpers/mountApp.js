@@ -19,6 +19,7 @@ import ProjectView from '../../../src/views/ProjectView.vue';
 import { useTaskStore } from '../../../src/store/tasks.js';
 import { useUiStore } from '../../../src/store/ui.js';
 import { __resetUpdateStateForTests } from '../../../src/store/update.js';
+import { useThemeStore } from '../../../src/store/theme.js';
 import { __setStorageForTests } from '../../../src/lib/storage.js';
 
 // Mirror of the routes in src/router/index.js (hash → memory history).
@@ -58,6 +59,7 @@ export function resetState() {
   const ui = useUiStore();
   tasks.load();
   __resetUpdateStateForTests();
+  useThemeStore().__resetForTests();
   ui.stopSelection();
   ui.setFilters({ ...DEFAULT_FILTERS });
   ui.setSortMode('due');

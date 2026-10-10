@@ -5,6 +5,7 @@ import App from './App.vue';
 import { createAppRouter } from './router/index.js';
 import { useTaskStore, onPersisted } from './store/tasks.js';
 import { useUiStore } from './store/ui.js';
+import { useThemeStore } from './store/theme.js';
 import { buildWorkTodoFacade } from './lib/facade.js';
 import { createBackupNow } from './lib/backup.js';
 import { initSync, bootSync, scheduleSync } from './lib/sync/engine.js';
@@ -15,6 +16,8 @@ import {
 } from './composables/useNotifications.js';
 import { useUpdateCheck } from './composables/useUpdateCheck.js';
 import { UPDATE_RETRY_MS } from './constants.js';
+
+useThemeStore().init();
 
 const tasks = useTaskStore();
 const ui = useUiStore();

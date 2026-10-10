@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>工作待办 · work-todo</title>
+  <script>
+    // Apply the saved theme before first paint to avoid a light flash on dark
+    // systems. Key must stay in sync with THEME_KEY in src/constants.js.
+    (function () {
+      try {
+        var v = JSON.parse(localStorage.getItem('work-todo.theme.v1') || '""');
+        if (v === 'light' || v === 'dark') document.documentElement.setAttribute('data-theme', v);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="stylesheet" href="./styles.css" />

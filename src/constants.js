@@ -5,6 +5,9 @@ export const PROJECTS_KEY = 'work-todo.projects.v1';
 export const UI_PREFS_KEY = 'work-todo.ui.v1';
 export const NOTIFY_KEY = 'work-todo.notified.v1';
 export const SYNC_KEY = 'work-todo.sync.v1';
+export const THEME_KEY = 'work-todo.theme.v1';
+/** Theme settings: 'system' (default, follows prefers-color-scheme) | 'light' | 'dark'. */
+export const THEME_SETTINGS = ['system', 'light', 'dark'];
 export const UPDATE_KEY = 'work-todo.update.v1';
 export const UPDATE_REPO = 'cyamoyed/work-todo';
 export const UPDATE_AUTO_CHECK_MS = 6 * 60 * 60 * 1000;

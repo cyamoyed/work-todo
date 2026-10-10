@@ -2,7 +2,7 @@
   <div class="strip" id="strip" aria-label="今日概览">
     <template v-if="project">
       <div class="proj">
-        <i :style="{ background: projectColor }"></i>{{ project.name }}
+        <i :class="'dotc-' + projColorKey"></i>{{ project.name }}
       </div>
       <div class="meta">{{ projectStats.open }} 未完成 · {{ projectStats.done }} 已完成 · 共 {{ projectStats.total }}</div>
       <div class="sep"></div>
@@ -22,7 +22,6 @@ import { computed } from 'vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { stripStats, projectStats as projectStatsOf } from '../core/filters.js';
-import { PROJECT_COLORS } from '../constants.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
@@ -30,9 +29,7 @@ const ui = useUiStore();
 const project = computed(() =>
   ui.state.filters.projectId ? tasks.getProject(ui.state.filters.projectId) : null
 );
-const projectColor = computed(
-  () => PROJECT_COLORS[project.value ? project.value.color : 'slate'] || PROJECT_COLORS.slate
-);
+const projColorKey = computed(() => (project.value ? project.value.color : 'slate'));
 const projectStats = computed(() =>
   projectStatsOf(tasks.state.tasks, ui.state.filters.projectId)
 );

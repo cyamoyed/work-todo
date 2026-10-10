@@ -13,7 +13,7 @@
       @keydown.enter.prevent="goProject(p.id)"
       @keydown.space.prevent="goProject(p.id)"
     >
-      <span class="swatch" :style="{ background: colorOf(p.color) }"></span>
+      <span class="swatch" :class="'dotc-' + p.color"></span>
       <span class="name">{{ p.name }}</span>
       <span class="n">{{ projectStats(tasks.state.tasks, p.id).open }}</span>
       <button type="button" class="more" aria-label="项目操作" @click.stop="openMenu($event, p.id)">
@@ -32,15 +32,10 @@ import { useRouter } from 'vue-router';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { projectStats } from '../core/filters.js';
-import { PROJECT_COLORS } from '../constants.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
 const router = useRouter();
-
-function colorOf(color) {
-  return PROJECT_COLORS[color] || PROJECT_COLORS.slate;
-}
 
 function goProject(id) {
   router.push('/project/' + id);

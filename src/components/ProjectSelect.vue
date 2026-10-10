@@ -24,7 +24,7 @@
         role="option"
         @click="pick(p.id || '')"
       >
-        <span class="swatch" :style="{ background: colorOf(p.color) }"></span>
+        <span class="swatch" :class="'dotc-' + p.color"></span>
         <span>{{ p.name }}</span>
       </button>
     </div>
@@ -35,7 +35,6 @@
 import { computed } from 'vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
-import { PROJECT_COLORS } from '../constants.js';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -47,10 +46,6 @@ const ui = useUiStore();
 
 const options = computed(() => [{ id: '', name: '无项目', color: 'slate' }].concat(tasks.state.projects));
 const current = computed(() => (props.modelValue ? tasks.getProject(props.modelValue) : null));
-
-function colorOf(color) {
-  return PROJECT_COLORS[color] || PROJECT_COLORS.slate;
-}
 
 function toggle() {
   ui.state.projectPopOpen = !ui.state.projectPopOpen;

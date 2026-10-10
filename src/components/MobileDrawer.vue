@@ -21,6 +21,7 @@
       >{{ item.label }} <span class="n">{{ counts[item.view] }}</span></button>
     </nav>
     <div class="drawer-ops">
+      <ThemeToggle />
       <button type="button" id="btn-export-mobile" @click="exportMobile">导出数据</button>
       <button type="button" id="btn-import-mobile" @click="importMobile">导入数据</button>
       <button v-if="desktop" type="button" id="btn-backup-mobile" @click="backupMobile">数据备份</button>
@@ -33,6 +34,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import ThemeToggle from './ThemeToggle.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { useTransfer } from '../composables/useTransfer.js';
