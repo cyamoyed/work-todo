@@ -9,6 +9,8 @@ import {
   normalizeRelease,
   trimReleaseNotes,
   parseAtomFeed,
+  createDownloadProgress,
+  formatBytes,
 } from '../../src/core/update.js';
 
 describe('parseVersion', () => {
@@ -180,5 +182,47 @@ describe('parseAtomFeed', () => {
     expect(parseAtomFeed('<entry><id>tag:github.com,2008:repo/1/nightly</id></entry>')).toBe(null);
     expect(parseAtomFeed('')).toBe(null);
     expect(parseAtomFeed(null)).toBe(null);
+  });
+});
+
+describe('createDownloadProgress', () => {
+  it('accumulates chunks against the announced content length, capping at 99', () => {
+    const track = createDownloadProgress();
+    expect(track({ event: 'Started', data: { contentLength: 1000 } })).toEqual({
+      finished: false,
+      received: 0,
+      total: 1000,
+      percent: 0,
+    });
+    expect(track({ event: 'Progress', data: { chunkLength: 400 } }).percent).toBe(40);
+    expect(track({ event: 'Progress', data: { chunkLength: 599 } }).percent).toBe(99);
+    expect(track({ event: 'Progress', data: { chunkLength: 500 } }).percent).toBe(99); // capped pre-finish
+    expect(track({ event: 'Finished' })).toEqual({ finished: true, received: 1499, total: 1000, percent: 100 });
+  });
+
+  it('reports null percent while the total size is unknown', () => {
+    const track = createDownloadProgress();
+    expect(track({ event: 'Started', data: {} }).percent).toBe(null);
+    const p = track({ event: 'Progress', data: { chunkLength: 2048 } });
+    expect(p.percent).toBe(null);
+    expect(p.received).toBe(2048);
+    expect(track({ event: 'Finished' }).percent).toBe(100);
+  });
+
+  it('ignores malformed events', () => {
+    const track = createDownloadProgress();
+    expect(track(null).percent).toBe(null);
+    expect(track({ event: 'Progress', data: { chunkLength: -5 } }).received).toBe(0);
+    expect(track('nonsense').received).toBe(0);
+  });
+});
+
+describe('formatBytes', () => {
+  it('formats MB and KB ranges', () => {
+    expect(formatBytes(12 * 1024 * 1024 + 300 * 1024)).toBe('12.3 MB');
+    expect(formatBytes(2048)).toBe('2 KB');
+    expect(formatBytes(1)).toBe('1 KB');
+    expect(formatBytes(0)).toBe('0 MB');
+    expect(formatBytes('x')).toBe('0 MB');
   });
 });

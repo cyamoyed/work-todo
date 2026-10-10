@@ -18,24 +18,64 @@
 
       <p v-if="!isDesktop" class="update-hint">网页版部署更新后，刷新页面即可使用新版</p>
 
+      <div v-if="installing" id="update-install" class="update-install" aria-live="polite">
+        <template v-if="native.status === 'downloading'">
+          <div class="update-progress" :data-percent="native.percent ?? ''">
+            <div class="update-progress-fill" :style="{ width: (native.percent ?? 0) + '%' }"></div>
+          </div>
+          <p class="update-install-status">
+            {{ native.percent !== null ? `下载中 ${native.percent}%` : `下载中 · 已下载 ${receivedText}` }}
+          </p>
+        </template>
+        <p v-else-if="native.status === 'installing'" class="update-install-status">正在安装，应用即将重启…</p>
+        <p v-else-if="native.status === 'ready'" class="update-install-status">更新已安装，重启后生效</p>
+        <p v-else-if="native.status === 'error'" class="update-install-status update-install-error">{{ native.error }}</p>
+      </div>
+
       <div class="modal-actions">
         <button type="button" id="btn-update-later" class="btn btn-ghost" @click="close">稍后</button>
-        <button type="button" id="btn-copy-link" class="btn btn-ghost" @click="copyLink">复制链接</button>
-        <button type="button" id="btn-open-download" class="btn btn-primary" @click="download">前往下载</button>
+        <template v-if="isDesktop && native.status !== 'ready'">
+          <button
+            v-if="installable"
+            type="button"
+            id="btn-install-update"
+            class="btn btn-primary"
+            :disabled="busyInstalling"
+            @click="install"
+          >{{ installLabel }}</button>
+          <button v-else type="button" id="btn-open-download" class="btn btn-primary" @click="download">前往下载</button>
+        </template>
+        <button v-else-if="isDesktop" type="button" id="btn-relaunch" class="btn btn-primary" @click="relaunch">重启应用</button>
+        <button v-else type="button" id="btn-open-download" class="btn btn-primary" @click="download">前往下载</button>
+        <button
+          v-if="native.status !== 'downloading' && native.status !== 'installing'"
+          type="button"
+          id="btn-copy-link"
+          class="btn btn-ghost"
+          @click="copyLink"
+        >复制链接</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useUiStore } from '../store/ui.js';
-import { updateState, openLatestDownload } from '../store/update.js';
+import {
+  updateState,
+  openLatestDownload,
+  checkNativeUpdate,
+  installNativeUpdate,
+  relaunchAfterUpdate,
+} from '../store/update.js';
 import { copyText } from '../lib/clipboard.js';
 import { isTauri } from '../lib/tauri.js';
+import { formatBytes } from '../core/update.js';
 
 const ui = useUiStore();
 const isDesktop = isTauri();
+const native = updateState.native;
 
 const latest = computed(
   () => updateState.latest || { version: updateState.currentVersion, notes: '', url: '', publishedAt: '', downloadUrl: '' }
@@ -47,6 +87,36 @@ const publishedText = computed(() => {
   const d = new Date(t);
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('zh-CN');
 });
+
+// The in-app path is usable once the plugin has confirmed an installable
+// update (latest.json present + signature verifiable); until then (or when it
+// errors out) the browser download stays the primary action.
+const installable = computed(() => isDesktop && native.installable && native.status !== 'error');
+const busyInstalling = computed(() => native.status === 'checking' || native.status === 'downloading' || native.status === 'installing');
+const installing = computed(() => isDesktop && native.status !== 'idle' && native.status !== 'checking');
+const installLabel = computed(() => {
+  if (native.status === 'downloading') return native.percent !== null ? `下载中 ${native.percent}%` : '下载中…';
+  if (native.status === 'installing') return '安装中…';
+  return '立即更新';
+});
+const receivedText = computed(() => formatBytes(native.received));
+
+// On desktop, confirm installability when the dialog opens (quiet; the
+// browser-download button stays primary until the plugin answers).
+watch(
+  () => ui.state.updateModalOpen,
+  (open) => {
+    if (open && isDesktop && !native.checked) checkNativeUpdate();
+  }
+);
+
+async function install() {
+  await installNativeUpdate();
+}
+
+function relaunch() {
+  relaunchAfterUpdate();
+}
 
 async function copyLink() {
   const ok = await copyText(latest.value.downloadUrl || latest.value.url);

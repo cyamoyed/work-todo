@@ -103,6 +103,36 @@ export function trimReleaseNotes(text) {
   return text.replace(/\n*-{3,}\s*\n?下载：[\s\S]*$/, '').trim();
 }
 
+/**
+ * Tracker for the updater plugin's download events
+ * ({ event: 'Started', data: { contentLength? } } | { event: 'Progress',
+ * data: { chunkLength } } | { event: 'Finished' }). Feed each event to the
+ * returned fn; it answers { finished, received, total, percent } — percent is
+ * capped at 99 until Finished (never shows 100% while bytes may remain), and
+ * stays null while the total size is unknown.
+ */
+export function createDownloadProgress() {
+  let received = 0;
+  let total = 0;
+  return (event) => {
+    const ev = event && typeof event === 'object' ? event.event : '';
+    const data = event && typeof event === 'object' && event.data ? event.data : {};
+    if (ev === 'Started' && data.contentLength > 0) total = Number(data.contentLength);
+    else if (ev === 'Progress' && data.chunkLength > 0) received += Number(data.chunkLength);
+    else if (ev === 'Finished') return { finished: true, received, total, percent: 100 };
+    const percent = total > 0 ? Math.min(99, Math.floor((received / total) * 100)) : null;
+    return { finished: false, received, total, percent };
+  };
+}
+
+/** Format a byte count for the install UI (e.g. 12.3 MB). */
+export function formatBytes(bytes) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return '0 MB';
+  if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(n / 1024))} KB`;
+}
+
 const NAMED_ENTITIES = { lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
 function decodeEntities(s) {

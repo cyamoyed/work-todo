@@ -7,6 +7,11 @@
 # （某个平台构建失败时 Release 停留在草稿，删掉重试即可）。资产保持 Tauri
 # 默认命名（*-setup.exe / .msi / .dmg / .AppImage / .deb），src/core/update.js
 # 按文件后缀挑选下载目标，不要在上传时改名。
+#
+# 桌面端应用内更新（plugin:updater）依赖 Release 里的 latest.json 签名清单：
+# 构建时用 secrets TAURI_SIGNING_PRIVATE_KEY / TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+# 签名，运行端公钥在 src-tauri/tauri.conf.json plugins.updater.pubkey。
+# 私钥丢失 = 存量桌面用户收不到应用内更新，只能回退浏览器下载。
 
 name: 打包发布
 
@@ -171,12 +176,18 @@ jobs:
         run: npm ci
       # tag 推送：上传到 prepare 建好的草稿 Release（只上传，不改变草稿状态）；
       # 手动触发：releaseId 为空，只构建不关联任何 Release。
+      # 签名私钥（minisign）来自仓库 secrets——应用内更新按 tauri.conf.json 里的
+      # 公钥校验签名；两个 secret 未配置时带 latest.json 的构建会直接失败（见
+      # docs/BUILD.md「应用内更新」）。
       - name: 构建并上传安装包到草稿 Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           releaseId: ${{ startsWith(github.ref, 'refs/tags/') && needs.prepare.outputs.release_id || '' }}
+          includeUpdaterJson: true
           args: ${{ matrix.args }}
       - name: 上传安装包 artifacts（手动触发时）
         if: github.event_name == 'workflow_dispatch'
@@ -195,8 +206,9 @@ jobs:
       contents: write
     steps:
       # 与 src/core/update.js pickDownloadUrl 的挑选规则保持一致：
-      # Windows 任一 exe/msi、macOS dmg、Linux AppImage 或 deb。缺资产即失败，
-      # Release 停留在草稿，不会被 releases/latest 暴露。
+      # Windows 任一 exe/msi、macOS dmg、Linux AppImage 或 deb；另需 latest.json
+      # （应用内更新的签名清单）。缺资产即失败，Release 停留在草稿，不会被
+      # releases/latest 暴露。
       - name: 校验安装包资产齐全
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -211,6 +223,7 @@ jobs:
           check '-setup\.exe$|\.exe$|\.msi$' 'Windows（*-setup.exe / .msi）'
           check '\.dmg$' 'macOS（.dmg）'
           check '\.AppImage$|\.deb$' 'Linux（.AppImage / .deb）'
+          check '^latest\.json$' 'latest.json（应用内更新的签名清单）'
       - name: 发布 Release（草稿转正式）
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

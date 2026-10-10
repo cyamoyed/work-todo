@@ -119,7 +119,7 @@ work-todo/
 
 ## 软件更新
 
-应用会检查 GitHub Releases 并引导到下载页（不自动下载安装包，网页版与桌面版行为一致）。
+应用会检查 GitHub Releases：桌面端优先**应用内更新**（下载 + 安装 + 重启，全在应用内完成），不可用时引导到下载页；网页版行为一致地引导到下载页。
 
 - **检查入口**：启动后静默检查；应用常驻期间每 15 分钟复查一次（两个入口都受同一节流约束）；网络恢复（`online` 事件）时补查；侧栏底部「检查更新」随时手动检查；侧栏底部版本行常驻显示当前版本，发现新版时变为主题色并显示「有新版 vX.Y.Z」，点击可打开更新弹窗。
 - **节流与退避**：成功检查后 6 小时内不再自动检查（`UPDATE_AUTO_CHECK_MS`，时间戳存 `work-todo.update.v1`）；检查失败（断网 / 限流）不占用 6 小时窗口，15 分钟后（`UPDATE_RETRY_MS`）即可自动复查——开机断网不会把更新检测拖到 6 小时后。
@@ -130,6 +130,17 @@ work-todo/
 - **更新弹窗**：展示新版本号、当前版本、发布日期、更新日志；操作有「稍后」「复制链接」（复制下载目标到剪贴板，浏览器拉起失败时的兜底）「前往下载」。网页版会附一行提示「网页版部署更新后，刷新页面即可使用新版」。
 - **前端版本号**：由 `src-tauri/Cargo.toml` 经 Vite `define` 注入为 `__APP_VERSION__`（版本号唯一源头），`src/` 内不要手写版本号。
 
+### 应用内更新（桌面端，tauri-plugin-updater）
+
+弹窗打开时桌面端会额外询问 updater 插件（`src/lib/updater.js`，走 duck-typed 桥接，不引 `@tauri-apps/api`）：插件命中可安装更新后主按钮变为「立即更新」——下载进度条（`src/core/update.js createDownloadProgress`）→ 安装 → 重启生效；失败或插件不可用时自动回退「前往下载」浏览器流程，两条路径互为兜底。
+
+- **清单与签名**：插件读 `https://github.com/cyamoyed/work-todo/releases/latest/download/latest.json`（tauri-action 的 `includeUpdaterJson` 自动生成），安装包须有 minisign 签名；运行端公钥在 `src-tauri/tauri.conf.json` 的 `plugins.updater.pubkey`，与构建端私钥配对。
+- **签名密钥**：`src-tauri/keys/work-todo-updater.key`（本地，已 gitignore）/.key.pub。仓库 secrets 需配置 `TAURI_SIGNING_PRIVATE_KEY`（私钥**内容**或文件路径）与 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`（本密钥对为空，secret 留空即可）。**发下一个版本前必须先把私钥内容贴进 GitHub secrets，否则 CI 构建直接失败**（这是预期行为：无签名的 latest.json 对存量用户是无效更新）。
+- **平台支持**：Windows = NSIS `*-setup.exe`（installMode `passive`，安装器接管后应用自动退出重启）；macOS = 通用 `.app.tar.gz` 增量替换（首次安装仍需右键打开过一次 Gatekeeper；更新替换的新包不再触发隔离提示）；Linux = 仅 `.AppImage` 自更新，`.deb` / `.rpm` / `.msi` 安装的用户走浏览器下载重装。
+- **过渡说明**：v0.8.0 之前的存量桌面版没有 updater 插件，永远走浏览器下载；应用内更新从携带本功能的版本起、由再下一个 Release 的 `latest.json` 首次生效。
+- **密钥丢失的后果**：私钥一旦丢失，存量桌面用户无法通过应用内更新升级（签名对不上），只能回退浏览器下载重新安装一次（之后新密钥恢复生效）。请把私钥另行备份（密码管理器 / 私有存储）。
+- **权限**：`src-tauri/capabilities/default.json` 授予 `updater:default` 与 `process:allow-restart`（更新后重启）。
+
 ## CI 自动打包发布（GitHub Actions）
 
 `.github/workflows/release.yml` 在推送 `v*` 标签时自动完成整条发布链：单元/组件测试 → 校验 tag 与版本号一致 → 生成更新日志并创建**草稿** Release → 三平台并行构建、上传安装包到草稿 → 校验资产齐全后**统一转正式发布**。
@@ -139,7 +150,7 @@ work-todo/
   - 发版：`git tag vX.Y.Z && git push origin vX.Y.Z`；
   - 仅构建：在仓库 Actions 页面手动触发（workflow_dispatch），安装包上传为 artifacts，不创建 Release。
 - **版本校验**：tag 与 `src-tauri/Cargo.toml` 的 `version` 不一致时构建直接失败，避免「Release 已发新版、应用内版本号对不上」。
-- **两段式发布**：先建草稿，全部平台资产上传完毕后由 publish job 按 `src/core/update.js pickDownloadUrl` 的规则校验（Windows 任一 exe/msi、macOS dmg、Linux AppImage/deb）再转正式，并确认 `releases/latest` 已指向新 tag。任一平台构建失败时 Release 停留在草稿，不会被应用内更新检测暴露；人工删除草稿、修复后重推 tag 即可。
+- **两段式发布**：先建草稿，全部平台资产上传完毕后由 publish job 按 `src/core/update.js pickDownloadUrl` 的规则校验（Windows 任一 exe/msi、macOS dmg、Linux AppImage/deb，另需应用内更新清单 `latest.json`）再转正式，并确认 `releases/latest` 已指向新 tag。任一平台构建失败时 Release 停留在草稿，不会被应用内更新检测暴露；人工删除草稿、修复后重推 tag 即可。
 - **Release 正文**：按 conventional commits 自动分组（新功能 feat / 问题修复 fix / 体验优化 perf，其余提交不展示；全部为维护性提交时写「维护性更新」）+ 各平台下载指引。正文末尾的下载指引只面向 GitHub 页面访客，应用内弹窗展示时会自动裁掉（`src/core/update.js trimReleaseNotes`）。发布后可随时在 GitHub 页面编辑，应用内更新弹窗读取的是线上正文。
 - **命名约束**：资产保持 Tauri 默认命名（`*_setup.exe` / `.dmg` / `.AppImage` 等），`src/core/update.js` 按后缀与 `*-setup.exe` 优先级挑选下载目标，不要上传时改名。
 - **版本号防漂移**：`.github/workflows/version-guard.yml` 在 main 分支有新提交但 `Cargo.toml` 版本号未升时给出 warning 提醒（不阻断），避免发版前忘记升版。

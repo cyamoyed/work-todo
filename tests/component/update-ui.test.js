@@ -1,5 +1,5 @@
 /* Component tests — version line, update dialog, check feedback toasts. */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { mountApp, resetState, cleanup } from './helpers/mountApp.js';
 import { useUpdateCheck } from '../../src/composables/useUpdateCheck.js';
@@ -205,5 +205,116 @@ describe('startup auto check', () => {
     await toast.find('button').trigger('click');
     await flushPromises();
     expect(wrapper.find('#update-modal').isVisible()).toBe(true);
+  });
+});
+
+/* Desktop in-app install flow — window.__TAURI_INTERNALS__ stubbed before
+ * mount so UpdateModal's isTauri() picks the desktop branch. The channel
+ * events (Started/Progress/Finished) are fired through transformCallback
+ * handlers, mirroring how plugin:updater streams download progress. */
+describe('desktop in-app install (plugin:updater)', () => {
+  const channelHandlers = new Map();
+  let invokeMock;
+  let channelSeq = 0;
+
+  beforeAll(() => {
+    window.__TAURI_INTERNALS__ = {
+      invoke: (...args) => invokeMock(...args),
+      transformCallback: (fn) => {
+        channelSeq += 1;
+        channelHandlers.set(channelSeq, fn);
+        return channelSeq;
+      },
+    };
+  });
+  afterAll(() => {
+    delete window.__TAURI_INTERNALS__;
+  });
+  beforeEach(() => {
+    invokeMock = vi.fn();
+    channelHandlers.clear();
+  });
+
+  const CHECK_OK = { rid: 7, available: true, version: '9.9.9', body: '更新内容摘要' };
+
+  async function openModalWithNative(checkResult = CHECK_OK) {
+    // Only intercept the modal-open check; tests may install their own
+    // persistent impl for download_and_install / restart beforehand.
+    invokeMock.mockImplementationOnce(async () => checkResult);
+    mockFetch(200, NEWER);
+    await wrapper.find('#btn-check-update').trigger('click');
+    await flushPromises();
+  }
+
+  it('swaps the primary action to 立即更新 once the plugin confirms an update', async () => {
+    await openModalWithNative();
+    expect(invokeMock).toHaveBeenCalledWith('plugin:updater|check', {});
+    const btn = wrapper.find('#btn-install-update');
+    expect(btn.exists()).toBe(true);
+    expect(btn.text()).toBe('立即更新');
+    expect(wrapper.find('#btn-open-download').exists()).toBe(false);
+    expect(updateState.native.installable).toBe(true);
+  });
+
+  it('keeps the browser download primary when the plugin has no installable update', async () => {
+    await openModalWithNative({ available: false });
+    expect(wrapper.find('#btn-install-update').exists()).toBe(false);
+    expect(wrapper.find('#btn-open-download').exists()).toBe(true);
+    expect(updateState.native.installable).toBe(false);
+  });
+
+  it('downloads with progress, installs, then offers 重启应用', async () => {
+    let resolveInstall = null;
+    let fire = null;
+    invokeMock.mockImplementation((cmd, args) => {
+      if (cmd === 'plugin:updater|check') return Promise.resolve(CHECK_OK);
+      if (cmd === 'plugin:updater|download_and_install') {
+        const id = Number(String(args.onEvent).split(':')[1]);
+        fire = (e) => channelHandlers.get(id)(e);
+        expect(String(args.onEvent)).toMatch(/^__CHANNEL__:\d+$/);
+        expect(args.rid).toBe(7);
+        return new Promise((resolve) => {
+          resolveInstall = () => resolve(null);
+        });
+      }
+      return Promise.resolve(null);
+    });
+    await openModalWithNative();
+    await wrapper.find('#btn-install-update').trigger('click');
+    await flushPromises();
+
+    fire({ event: 'Started', data: { contentLength: 1000 } });
+    fire({ event: 'Progress', data: { chunkLength: 500 } });
+    await flushPromises();
+    expect(wrapper.find('.update-install-status').text()).toContain('下载中 50%');
+    expect(wrapper.find('.update-progress-fill').attributes('style')).toContain('width: 50%');
+    expect(wrapper.find('#btn-install-update').attributes('disabled')).toBeDefined();
+
+    fire({ event: 'Finished' });
+    await flushPromises();
+    expect(wrapper.find('.update-install-status').text()).toContain('正在安装');
+
+    resolveInstall();
+    await flushPromises();
+    expect(wrapper.find('#btn-relaunch').exists()).toBe(true);
+    expect(wrapper.find('.update-install-status').text()).toContain('重启后生效');
+
+    await wrapper.find('#btn-relaunch').trigger('click');
+    await flushPromises();
+    expect(invokeMock).toHaveBeenCalledWith('plugin:process|restart', { exitCode: 0 });
+  });
+
+  it('falls back to the browser download when the install fails', async () => {
+    invokeMock.mockImplementation((cmd) => {
+      if (cmd === 'plugin:updater|check') return Promise.resolve(CHECK_OK);
+      if (cmd === 'plugin:updater|download_and_install') return Promise.reject(new Error('signature'));
+      return Promise.resolve(null);
+    });
+    await openModalWithNative();
+    await wrapper.find('#btn-install-update').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.update-install-error').text()).toContain('应用内更新失败');
+    expect(wrapper.find('#btn-open-download').exists()).toBe(true); // fallback primary is back
+    expect(wrapper.find('#btn-install-update').exists()).toBe(false);
   });
 });

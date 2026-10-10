@@ -28,3 +28,6 @@ probe-banner.png
 tests/reports/
 design/output/
 design/*.png
+
+# Updater signing — private key never committed (public key lives in tauri.conf.json)
+src-tauri/keys/*.key
