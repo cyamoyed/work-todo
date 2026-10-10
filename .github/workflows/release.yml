@@ -32,28 +32,20 @@ jobs:
         run: npm ci
       - name: 单元 + 组件测试
         run: npm test
-      # AGENTS.md 契约：package.json / tauri.conf.json / Cargo.toml 三处版本必须
-      # 一致，且与 tag 相同，否则应用内版本比较与 releases/latest 对不上。
-      - name: 校验 tag 与三处版本号一致
+      # AGENTS.md 契约：版本号唯一源头是 src-tauri/Cargo.toml，tag 必须与之一致，
+      # 否则应用内版本比较与 releases/latest 对不上。
+      - name: 校验 tag 与版本号一致
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           node -e '
             const fs = require("fs");
             const tag = process.env.GITHUB_REF_NAME.replace(/^v/, "");
-            const rows = [
-              ["git tag", tag],
-              ["package.json", require("./package.json").version],
-              ["src-tauri/tauri.conf.json", require("./src-tauri/tauri.conf.json").version],
-              ["src-tauri/Cargo.toml", fs.readFileSync("./src-tauri/Cargo.toml", "utf8").match(/^version = "([^"]+)"/m)[1]],
-            ];
-            const bad = rows.filter(([_, v]) => v !== tag);
-            if (bad.length) {
-              console.error("版本号不一致（期望 " + tag + "）：");
-              for (const [where, v] of bad) console.error("  " + where + " = " + v);
-              console.error("请同步三处版本号后重新打 tag（见 docs/BUILD.md 发布流程）。");
+            const version = fs.readFileSync("./src-tauri/Cargo.toml", "utf8").match(/^version = "([^"]+)"/m)[1];
+            if (version !== tag) {
+              console.error("src-tauri/Cargo.toml 版本 " + version + " 与 tag " + tag + " 不一致，请升版后重新打 tag（见 docs/BUILD.md 发布流程）。");
               process.exit(1);
             }
-            console.log("三处版本号与 tag 一致：v" + tag);
+            console.log("Cargo.toml 版本与 tag 一致：v" + tag);
           '
 
   build:
@@ -114,6 +106,7 @@ jobs:
       - name: 生成 Release 更新日志
         if: startsWith(github.ref, 'refs/tags/')
         id: changelog
+        shell: bash # run 默认在 Windows 上用 PowerShell，本步骤是 bash 语法
         run: |
           PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
           {
