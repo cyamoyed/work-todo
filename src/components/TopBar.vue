@@ -1,5 +1,5 @@
 <template>
-  <div class="top">
+  <div class="top" data-tauri-drag-region>
     <button
       type="button"
       id="btn-mobile-menu"
@@ -59,12 +59,15 @@
       </svg>
       <span>新建任务</span>
     </button>
+
+    <TitleBarControls />
   </div>
 </template>
 
 <script setup>
 import SearchBar from './SearchBar.vue';
 import BrandMark from './BrandMark.vue';
+import TitleBarControls from './TitleBarControls.vue';
 import { useUiStore } from '../store/ui.js';
 import { useFilterChips } from '../composables/useFilterChips.js';
 

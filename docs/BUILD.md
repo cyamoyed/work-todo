@@ -135,7 +135,9 @@ work-todo/
 弹窗打开时桌面端会额外询问 updater 插件（`src/lib/updater.js`，走 duck-typed 桥接，不引 `@tauri-apps/api`）：插件命中可安装更新后主按钮变为「立即更新」——下载进度条（`src/core/update.js createDownloadProgress`）→ 安装 → 重启生效；失败或插件不可用时自动回退「前往下载」浏览器流程，两条路径互为兜底。
 
 - **清单与签名**：插件读 `https://github.com/cyamoyed/work-todo/releases/latest/download/latest.json`（tauri-action 的 `includeUpdaterJson` 自动生成），安装包须有 minisign 签名；运行端公钥在 `src-tauri/tauri.conf.json` 的 `plugins.updater.pubkey`，与构建端私钥配对。
-- **签名密钥**：`src-tauri/keys/work-todo-updater.key`（本地，已 gitignore）/.key.pub。仓库 secrets 需配置 `TAURI_SIGNING_PRIVATE_KEY`（私钥**内容**或文件路径）与 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`（本密钥对为空，secret 留空即可）。**发下一个版本前必须先把私钥内容贴进 GitHub secrets，否则 CI 构建直接失败**（这是预期行为：无签名的 latest.json 对存量用户是无效更新）。
+- **签名密钥**：`src-tauri/keys/work-todo-updater.key`（本地，已 gitignore）/.key.pub。仓库 secrets 需配置 `TAURI_SIGNING_PRIVATE_KEY` = 私钥文件的**完整内容**（base64 形式的单行字符串，即文件原样；tauri 构建时先 base64 解码再解析 minisign 密钥）与 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`（本密钥对为空，secret 留空即可）。**发下一个版本前必须先把私钥内容贴进 GitHub secrets，否则 CI 构建直接失败**（这是预期行为：无签名的 latest.json 对存量用户是无效更新）。
+  - **secret 为空或不合法时的报错**是 `incorrect updater private key password: Missing comment in secret key`——解码失败被 tauri 统一包装成「密码错误」，与密码无关：空 secret、贴成了解码后的两行原始内容、或贴了别的 base64 都会这样。release.yml 在构建前有预检步骤，会秒级失败并给出可操作的提示。
+  - **复制方式**（不要经剪贴板多处中转，避免丢行）：Git Bash 执行 `cat src-tauri/keys/work-todo-updater.key | clip` 后整行粘贴进 secret；或 `gh secret set TAURI_SIGNING_PRIVATE_KEY < src-tauri/keys/work-todo-updater.key`。
 - **平台支持**：Windows = NSIS `*-setup.exe`（installMode `passive`，安装器接管后应用自动退出重启）；macOS = 通用 `.app.tar.gz` 增量替换（首次安装仍需右键打开过一次 Gatekeeper；更新替换的新包不再触发隔离提示）；Linux = 仅 `.AppImage` 自更新，`.deb` / `.rpm` / `.msi` 安装的用户走浏览器下载重装。
 - **过渡说明**：v0.8.0 之前的存量桌面版没有 updater 插件，永远走浏览器下载；应用内更新从携带本功能的版本起、由再下一个 Release 的 `latest.json` 首次生效。
 - **密钥丢失的后果**：私钥一旦丢失，存量桌面用户无法通过应用内更新升级（签名对不上），只能回退浏览器下载重新安装一次（之后新密钥恢复生效）。请把私钥另行备份（密码管理器 / 私有存储）。

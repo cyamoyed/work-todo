@@ -34,7 +34,14 @@
     </div>
 
     <div class="task-main">
-      <h3 class="task-title" @click="onTitleClick">{{ task.title }}</h3>
+      <h3
+        class="task-title"
+        tabindex="0"
+        title="编辑任务"
+        @click="onTitleClick"
+        @keydown.enter.prevent="onTitleClick"
+        @keydown.space.prevent="onTitleClick"
+      >{{ task.title }}</h3>
       <p class="task-notes" v-if="hasNote">
         <template v-if="project && !ui.state.filters.projectId">
           <span class="proj-chip"><i :class="'dotc-' + projColorKey"></i>{{ project.name }}</span>
@@ -78,11 +85,6 @@
     >{{ dueText || '' }}</button>
 
     <div class="task-actions" v-if="!selecting">
-      <button type="button" class="btn-icon" title="编辑任务" aria-label="编辑任务" @click.stop="edit">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M11.2 2.6l2.2 2.2L5.6 12.6 2.5 13.5l.9-3.1 7.8-7.8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </button>
       <button type="button" class="btn-icon danger" title="删除任务" aria-label="删除任务" @click.stop="remove">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M2.8 4.2h10.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />

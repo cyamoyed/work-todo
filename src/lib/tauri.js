@@ -59,3 +59,42 @@ export function restoreBackup(name) {
   if (!isTauri()) return Promise.resolve(null);
   return tauriInvoke('restore_backup', { name }).catch(() => null);
 }
+
+/* —— Custom titlebar window controls (Tauri 2 window plugin, main window) —— */
+
+const WINDOW_LABEL = 'main';
+
+export function minimizeWindow() {
+  return tauriInvoke('plugin:window|minimize', { label: WINDOW_LABEL }).catch(() => {});
+}
+
+export function toggleMaximizeWindow() {
+  return tauriInvoke('plugin:window|toggle_maximize', { label: WINDOW_LABEL }).catch(() => {});
+}
+
+export function closeWindow() {
+  return tauriInvoke('plugin:window|close', { label: WINDOW_LABEL }).catch(() => {});
+}
+
+export function isWindowMaximized() {
+  return tauriInvoke('plugin:window|is_maximized', { label: WINDOW_LABEL })
+    .then((v) => v === true)
+    .catch(() => false);
+}
+
+/**
+ * Subscribe to tauri://resize (fires on maximize/restore) via the event plugin.
+ * Returns an unlisten function (never rejects, no-ops outside Tauri).
+ */
+export function onWindowResized(handler) {
+  if (!isTauri()) return Promise.resolve(() => {});
+  const t = window.__TAURI_INTERNALS__;
+  if (!t || typeof t.transformCallback !== 'function') return Promise.resolve(() => {});
+  const target = { kind: 'Window', label: WINDOW_LABEL };
+  const handlerId = t.transformCallback(handler);
+  return tauriInvoke('plugin:event|listen', { event: 'tauri://resize', target, handler: handlerId })
+    .then((eventId) => () => {
+      tauriInvoke('plugin:event|unlisten', { event: 'tauri://resize', eventId, target }).catch(() => {});
+    })
+    .catch(() => {});
+}

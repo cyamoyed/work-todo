@@ -148,6 +148,7 @@ async function loginSync() {
   await page.fill('#field-sync-url', BASE);
   await page.fill('#field-sync-identity', 'a@b.c');
   await page.fill('#field-sync-password', 'pw');
+  await page.click('#btn-sync-advanced'); // 注册开关在高级设置里
   await page.click('.sync-check'); // custom checkbox: click the label to toggle
   await page.click('#btn-sync-login');
   await page.waitForTimeout(500);

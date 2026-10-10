@@ -16,7 +16,7 @@
           <span class="field-error" id="project-title-error" :hidden="!nameError">请填写项目名称</span>
         </label>
         <p class="modal-note" v-if="!ui.state.editingProjectId">
-          识别色将按 灰 · 墨 · 靛 · 褐 自动轮换，无需手动选择。
+          识别色按 灰 · 墨 · 靛 · 褐 自动分配。
         </p>
         <div class="modal-actions">
           <button type="button" id="btn-cancel-project" class="btn btn-ghost" @click="close">取消</button>

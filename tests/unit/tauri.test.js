@@ -8,6 +8,11 @@ import {
   backupTasks,
   listBackups,
   restoreBackup,
+  minimizeWindow,
+  toggleMaximizeWindow,
+  closeWindow,
+  isWindowMaximized,
+  onWindowResized,
 } from '../../src/lib/tauri.js';
 import {
   createBackupNow,
@@ -156,5 +161,58 @@ describe('backup bridge + helpers', () => {
     expect(await listBackupFiles()).toEqual([]);
     expect(await readBackupPayload('x.json')).toBeNull();
     expect(isBackupAvailable()).toBe(false);
+  });
+});
+
+describe('custom titlebar window controls', () => {
+  it('routes to plugin:window commands with the main window label', async () => {
+    const invoke = vi.fn().mockResolvedValue(true);
+    withTauri(invoke);
+    await minimizeWindow();
+    await toggleMaximizeWindow();
+    await closeWindow();
+    expect(invoke).toHaveBeenNthCalledWith(1, 'plugin:window|minimize', { label: 'main' });
+    expect(invoke).toHaveBeenNthCalledWith(2, 'plugin:window|toggle_maximize', { label: 'main' });
+    expect(invoke).toHaveBeenNthCalledWith(3, 'plugin:window|close', { label: 'main' });
+    expect(await isWindowMaximized()).toBe(true);
+    expect(invoke).toHaveBeenNthCalledWith(4, 'plugin:window|is_maximized', { label: 'main' });
+  });
+
+  it('isWindowMaximized is false on rejection or outside Tauri', async () => {
+    withTauri(() => Promise.reject(new Error('denied')));
+    expect(await isWindowMaximized()).toBe(false);
+    globalThis.window = {};
+    expect(await isWindowMaximized()).toBe(false);
+  });
+
+  it('window controls swallow failures instead of throwing', async () => {
+    withTauri(() => Promise.reject(new Error('nope')));
+    await expect(minimizeWindow()).resolves.toBeUndefined();
+    await expect(toggleMaximizeWindow()).resolves.toBeUndefined();
+    await expect(closeWindow()).resolves.toBeUndefined();
+  });
+
+  it('onWindowResized registers tauri://resize and returns an unlisten fn', async () => {
+    const invoke = vi.fn(async (cmd) => (cmd === 'plugin:event|listen' ? 7 : undefined));
+    withTauri(invoke);
+    globalThis.window.__TAURI_INTERNALS__.transformCallback = vi.fn(() => 42);
+    const handler = vi.fn();
+    const unlisten = await onWindowResized(handler);
+    const target = { kind: 'Window', label: 'main' };
+    expect(globalThis.window.__TAURI_INTERNALS__.transformCallback).toHaveBeenCalledWith(handler);
+    expect(invoke).toHaveBeenCalledWith('plugin:event|listen', {
+      event: 'tauri://resize', target, handler: 42,
+    });
+    await unlisten();
+    expect(invoke).toHaveBeenCalledWith('plugin:event|unlisten', {
+      event: 'tauri://resize', eventId: 7, target,
+    });
+  });
+
+  it('onWindowResized degrades to a no-op unlisten outside Tauri', async () => {
+    globalThis.window = {};
+    const unlisten = await onWindowResized(() => {});
+    expect(typeof unlisten).toBe('function');
+    expect(() => unlisten()).not.toThrow();
   });
 });

@@ -179,6 +179,30 @@ jobs:
       # 签名私钥（minisign）来自仓库 secrets——应用内更新按 tauri.conf.json 里的
       # 公钥校验签名；两个 secret 未配置时带 latest.json 的构建会直接失败（见
       # docs/BUILD.md「应用内更新」）。
+      # 预检放在构建前：secret 为空时 tauri 的真实报错是「incorrect updater
+      # private key password: Missing comment in secret key」（解码失败被统一
+      # 包装成密码错误，无法定位），且要等矩阵构建近尾声才炸；这里秒级失败并
+      # 给出可操作的提示。私钥本体是 src-tauri/keys/work-todo-updater.key 的
+      # 完整单行内容（base64 形式，tauri 构建时先 base64 解码再解析 minisign
+      # 密钥），见 docs/BUILD.md「应用内更新」。
+      - name: 检查更新签名私钥 secret
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          node -e '
+            const key = (process.env.TAURI_SIGNING_PRIVATE_KEY || "").trim();
+            if (!key) {
+              console.error("::error::secret TAURI_SIGNING_PRIVATE_KEY 未配置或为空——应用内更新需要 minisign 私钥签名 latest.json。请把 src-tauri/keys/work-todo-updater.key 的完整单行内容填入仓库 secrets（见 docs/BUILD.md「应用内更新」）。");
+              process.exit(1);
+            }
+            const decoded = Buffer.from(key, "base64").toString("utf8");
+            if (!decoded.startsWith("untrusted comment:")) {
+              console.error("::error::TAURI_SIGNING_PRIVATE_KEY 不是有效的 minisign 私钥（应为 src-tauri/keys/work-todo-updater.key 文件的完整内容，base64 形式的单行字符串）。内容不对时 tauri 构建会报「Missing comment in secret key」。");
+              process.exit(1);
+            }
+            console.log("TAURI_SIGNING_PRIVATE_KEY 已配置且格式合法（minisign 私钥）。");
+          '
       - name: 构建并上传安装包到草稿 Release
         uses: tauri-apps/tauri-action@v0
         env:

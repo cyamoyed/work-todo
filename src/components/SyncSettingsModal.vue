@@ -57,22 +57,41 @@
           <input id="field-sync-password" type="password" autocomplete="current-password" v-model="password" />
         </label>
 
-        <label v-if="provider === 'pocketbase'" class="field">
-          <span class="field-label">集合名称</span>
-          <input
-            id="field-sync-collection"
-            type="text"
-            :placeholder="DEFAULT_SYNC_COLLECTION"
-            autocomplete="off"
-            v-model="collection"
-          />
-        </label>
+        <template v-if="provider === 'pocketbase'">
+          <button
+            type="button"
+            id="btn-sync-advanced"
+            class="adv-toggle"
+            :class="{ 'is-open': advancedOpen }"
+            :aria-expanded="advancedOpen"
+            aria-controls="sync-advanced-fields"
+            @click="advancedOpen = !advancedOpen"
+          >
+            <svg class="chev" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            高级设置
+          </button>
 
-        <label v-if="provider === 'pocketbase'" class="field sync-check">
-          <input id="field-sync-register" type="checkbox" class="sync-check-input" v-model="register" />
-          <span class="sync-check-box" aria-hidden="true"></span>
-          <span>创建新账号（首次使用）</span>
-        </label>
+          <div id="sync-advanced-fields" v-show="advancedOpen">
+            <label class="field">
+              <span class="field-label">集合名称</span>
+              <input
+                id="field-sync-collection"
+                type="text"
+                :placeholder="DEFAULT_SYNC_COLLECTION"
+                autocomplete="off"
+                v-model="collection"
+              />
+            </label>
+
+            <label class="field sync-check">
+              <input id="field-sync-register" type="checkbox" class="sync-check-input" v-model="register" />
+              <span class="sync-check-box" aria-hidden="true"></span>
+              <span>创建新账号（首次使用）</span>
+            </label>
+          </div>
+        </template>
 
         <p class="sync-note">
           {{ provider === 'pocketbase'
@@ -113,6 +132,7 @@ const password = ref('');
 const collection = ref(DEFAULT_SYNC_COLLECTION);
 const register = ref(false);
 const error = ref('');
+const advancedOpen = ref(false);
 
 const statusText = computed(() => syncStatusText());
 
@@ -136,6 +156,8 @@ watch(
     } catch (_) {
       /* fresh form */
     }
+    // 自定义过集合名的配置重新打开时，直接展开高级设置
+    advancedOpen.value = collection.value !== DEFAULT_SYNC_COLLECTION;
   }
 );
 

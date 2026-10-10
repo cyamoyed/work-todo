@@ -256,10 +256,10 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
   });
 
   it('edit task', async () => {
-    // edit by title so we don't clobber the overdue fixture
+    // edit by title so we don't clobber the overdue fixture; title click opens the editor
     await page
       .locator('.task-card', { has: page.locator('.task-title', { hasText: '写周报' }) })
-      .locator('button[aria-label="编辑任务"]')
+      .locator('.task-title')
       .click();
     expect(await page.locator('#modal-backdrop').isVisible()).toBe(true);
     expect(await page.locator('#modal-title').textContent()).toBe('编辑任务');

@@ -2,7 +2,7 @@
   <aside class="side">
     <div class="logo">
       <div class="logo-mark" aria-hidden="true"><BrandMark :size="22" /></div>
-      <div class="logo-text">work-todo</div>
+      <div class="logo-text">Work Todo</div>
     </div>
 
     <nav class="nav" id="nav" aria-label="视图">
@@ -72,10 +72,6 @@
         <span class="sync-status" id="sync-status" :title="syncState.lastError || ''">
           <i class="sync-dot" :class="syncDotClass" aria-hidden="true"></i>{{ syncText }}
         </span>
-        <span v-if="!desktop" id="data-hint" class="data-hint"
-          >数据仅存于本机浏览器，清除浏览器数据会丢失。建议开启同步或定期导出。</span
-        >
-        本地存储 · JSON 可导出<br />
         <kbd>N</kbd> 新建 · <kbd>/</kbd> 搜索 · <kbd>Esc</kbd> 关闭
       </div>
     </div>

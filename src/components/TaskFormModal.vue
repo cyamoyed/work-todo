@@ -26,26 +26,24 @@
           </div>
         </div>
 
-        <div class="field-row">
-          <div class="field">
-            <span class="field-label">优先级</span>
-            <div class="segmented" id="field-priority-wrap" role="group" aria-label="优先级">
-              <button
-                v-for="p in priorities"
-                :key="p.value"
-                type="button"
-                :data-priority="p.value"
-                :class="{ active: form.priority === p.value }"
-                @click="form.priority = p.value"
-              ><span class="prio-dot" :class="'prio-' + p.value"></span>{{ p.label }}</button>
-            </div>
-            <input type="hidden" id="field-priority" name="priority" :value="form.priority" @input="form.priority = $event.target.value" />
+        <div class="field">
+          <span class="field-label">优先级</span>
+          <div class="segmented" id="field-priority-wrap" role="group" aria-label="优先级">
+            <button
+              v-for="p in priorities"
+              :key="p.value"
+              type="button"
+              :data-priority="p.value"
+              :class="{ active: form.priority === p.value }"
+              @click="form.priority = p.value"
+            ><span class="prio-dot" :class="'prio-' + p.value"></span>{{ p.label }}</button>
           </div>
+          <input type="hidden" id="field-priority" name="priority" :value="form.priority" @input="form.priority = $event.target.value" />
+        </div>
 
-          <div class="field">
-            <span class="field-label" id="project-label">项目</span>
-            <ProjectSelect v-model="form.projectId" />
-          </div>
+        <div class="field">
+          <span class="field-label" id="project-label">项目</span>
+          <ProjectSelect v-model="form.projectId" />
         </div>
 
         <button

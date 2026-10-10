@@ -46,17 +46,15 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-describe('side footer: sync status + data hint', () => {
+describe('side footer: sync status', () => {
   it('shows the unconfigured status line', () => {
     const status = wrapper.find('#sync-status');
     expect(status.exists()).toBe(true);
     expect(status.text()).toContain('未配置同步');
   });
 
-  it('browser mode shows the data-loss hint and hides the backup entry', () => {
+  it('browser mode hides the backup entry', () => {
     expect(isTauri()).toBe(false);
-    expect(wrapper.find('#data-hint').exists()).toBe(true);
-    expect(wrapper.find('#data-hint').text()).toContain('清除浏览器数据会丢失');
     expect(wrapper.find('#btn-backup').exists()).toBe(false);
     expect(wrapper.find('#btn-sync-settings').exists()).toBe(true);
   });
