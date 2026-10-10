@@ -65,15 +65,24 @@ export function isOverdue(task) {
   return false;
 }
 
+/* ISO timestamp (UTC) → local YYYY-MM-DD. Stamps are stored as
+   toISOString(); slicing their first 10 chars yields the UTC date, which
+   lags the local date between local midnight and UTC midnight (all night
+   under UTC+8) and made “done today” undercount until morning. */
+export function isoToLocalDateStr(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : dateStr(d);
+}
+
 export function isCompletedToday(task) {
   if (task.status !== 'done') return false;
-  const stamp = (task.completedAt || task.updatedAt || '').slice(0, 10);
-  return stamp === todayString();
+  return isoToLocalDateStr(task.completedAt || task.updatedAt || '') === todayString();
 }
 
 export function isCompletedThisWeek(task) {
   if (task.status !== 'done') return false;
-  const stamp = (task.completedAt || task.updatedAt || '').slice(0, 10);
+  const stamp = isoToLocalDateStr(task.completedAt || task.updatedAt || '');
   return stamp ? isThisWeek(stamp) : false;
 }
 

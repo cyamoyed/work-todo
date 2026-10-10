@@ -15,6 +15,10 @@ import {
   formatDueLabel,
   formatTodayLabel,
   isOverdue,
+  dateStr,
+  isoToLocalDateStr,
+  isCompletedToday,
+  isCompletedThisWeek,
 } from '../../src/core/dates.js';
 
 // Same helper as the old suite, rebased on the new toDateStr export.
@@ -168,5 +172,33 @@ describe('formatTodayLabel', () => {
     const label = formatTodayLabel();
     expect(/星期[一二三四五六日]/.test(label)).toBe(true);
     expect(label).toContain('星期三'); // 2026-10-07 is a Wednesday
+  });
+});
+
+describe('isoToLocalDateStr / isCompletedToday (local-vs-UTC stamp)', () => {
+  it('maps an ISO stamp to its LOCAL calendar date, not the UTC date', () => {
+    vi.setSystemTime(new Date(2026, 9, 7, 10, 0));
+    const iso = new Date(2026, 9, 7, 10, 0).toISOString();
+    expect(isoToLocalDateStr(iso)).toBe(dateStr(new Date(iso)));
+    expect(isoToLocalDateStr('')).toBe('');
+    expect(isoToLocalDateStr('not-a-date')).toBe('');
+  });
+
+  it('a completion at "now" always counts as done today, even when the local day has rolled over from the UTC date', () => {
+    // Local 01:00 — under UTC+8 this is 2026-10-10T17:00Z; the old
+    // `.slice(0, 10)` compared the UTC date (10-10) against the local
+    // today (10-11) and dropped the completion from the overview.
+    vi.setSystemTime(new Date(2026, 9, 11, 1, 0));
+    const iso = new Date(2026, 9, 11, 1, 0).toISOString();
+    expect(isCompletedToday({ status: 'done', completedAt: iso })).toBe(true);
+    expect(isCompletedToday({ status: 'todo', completedAt: iso })).toBe(false);
+    expect(isCompletedToday({ status: 'done', completedAt: '' })).toBe(false);
+  });
+
+  it('a completion at "now" counts for the current week', () => {
+    vi.setSystemTime(new Date(2026, 9, 11, 1, 0)); // Sunday
+    const iso = new Date(2026, 9, 11, 1, 0).toISOString();
+    expect(isCompletedThisWeek({ status: 'done', completedAt: iso })).toBe(true);
+    expect(isCompletedThisWeek({ status: 'done', completedAt: '2020-01-01T00:00:00.000Z' })).toBe(false);
   });
 });
