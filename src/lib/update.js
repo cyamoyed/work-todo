@@ -7,7 +7,7 @@ import { isTauri, tauriInvoke } from './tauri.js';
 /** GitHub API endpoint for the newest published (non-prerelease) release. */
 export const LATEST_RELEASE_URL = `https://api.github.com/repos/${UPDATE_REPO}/releases/latest`;
 
-/** Frontend version — injected from package.json at build time (Vite define). */
+/** Frontend version — injected from src-tauri/Cargo.toml at build time (Vite define). */
 export function getAppVersion() {
   return typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
 }

@@ -1,6 +1,5 @@
 {
   "name": "worktodo",
-  "version": "0.4.1",
   "private": true,
   "description": "工作待办 — lightweight work todo app",
   "type": "module",

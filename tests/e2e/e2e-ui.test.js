@@ -103,13 +103,13 @@ beforeAll(async () => {
   browser = await chromium.launch({ headless: true, executablePath: findChrome() });
   context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   // No external network in e2e: answer update checks with "already current".
-  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  const appVersion = fs.readFileSync(path.join(ROOT, 'src-tauri', 'Cargo.toml'), 'utf8').match(/^version = "([^"]+)"/m)[1];
   await context.route('https://api.github.com/**', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        tag_name: `v${pkg.version}`,
+        tag_name: `v${appVersion}`,
         body: '',
         html_url: 'https://github.com/cyamoyed/workTodo/releases',
         published_at: '2026-01-01T00:00:00Z',
