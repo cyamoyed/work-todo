@@ -1,4 +1,4 @@
-/* WorkTodo — app bootstrap: store load, router sync, facade, desktop restore, notifications */
+/* work-todo — app bootstrap: store load, router sync, facade, desktop restore, notifications */
 
 import { createApp, watch } from 'vue';
 import App from './App.vue';
@@ -52,8 +52,8 @@ const app = createApp(App);
 app.use(router);
 app.mount('#app');
 
-// Debug/compat surface (legacy window.WorkTodo).
-window.WorkTodo = buildWorkTodoFacade();
+// Debug/compat surface (legacy window.workTodo).
+window.workTodo = buildWorkTodoFacade();
 
 // Desktop bootstrap + notifications (legacy init tail).
 tasks.bootstrapDesktop().then(() => {

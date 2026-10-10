@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::Manager;
 
-const BACKUP_PREFIX: &str = "worktodo-";
+const BACKUP_PREFIX: &str = "work-todo-";
 const BACKUP_KEEP: usize = 10;
 
 fn tasks_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {

@@ -1,4 +1,4 @@
-/* WorkTodo — update-check presentation: dialog for new versions, toasts otherwise */
+/* work-todo — update-check presentation: dialog for new versions, toasts otherwise */
 
 import { useUiStore } from '../store/ui.js';
 import { runUpdateCheck, updateState } from '../store/update.js';

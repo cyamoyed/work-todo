@@ -1,13 +1,13 @@
 [package]
-name = "worktodo"
+name = "work-todo"
 version = "0.4.2"
 description = "工作待办 — lightweight work todo app"
-authors = ["workTodo"]
+authors = ["work-todo"]
 edition = "2021"
 rust-version = "1.77"
 
 [lib]
-name = "worktodo_lib"
+name = "work_todo_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

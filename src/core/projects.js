@@ -1,4 +1,4 @@
-/* WorkTodo — pure project normalization / factories (no DOM / no Vue) */
+/* work-todo — pure project normalization / factories (no DOM / no Vue) */
 
 import { PROJECT_COLORS, PROJECT_NAME_MAX } from '../constants.js';
 import { normalizeDeletedAt } from './tasks.js';

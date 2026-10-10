@@ -1,4 +1,4 @@
-/* WorkTodo — Tauri duck-typed bridge (no @tauri-apps/api dependency) */
+/* work-todo — Tauri duck-typed bridge (no @tauri-apps/api dependency) */
 
 import { normalizeTask } from '../core/tasks.js';
 

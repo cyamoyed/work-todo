@@ -1,16 +1,16 @@
-/* WorkTodo — shared constants (pure, no DOM / no Vue) */
+/* work-todo — shared constants (pure, no DOM / no Vue) */
 
-export const STORAGE_KEY = 'worktodo.tasks.v1';
-export const PROJECTS_KEY = 'worktodo.projects.v1';
-export const UI_PREFS_KEY = 'worktodo.ui.v1';
-export const NOTIFY_KEY = 'worktodo.notified.v1';
-export const SYNC_KEY = 'worktodo.sync.v1';
-export const UPDATE_KEY = 'worktodo.update.v1';
-export const UPDATE_REPO = 'cyamoyed/workTodo';
+export const STORAGE_KEY = 'work-todo.tasks.v1';
+export const PROJECTS_KEY = 'work-todo.projects.v1';
+export const UI_PREFS_KEY = 'work-todo.ui.v1';
+export const NOTIFY_KEY = 'work-todo.notified.v1';
+export const SYNC_KEY = 'work-todo.sync.v1';
+export const UPDATE_KEY = 'work-todo.update.v1';
+export const UPDATE_REPO = 'cyamoyed/work-todo';
 export const UPDATE_AUTO_CHECK_MS = 6 * 60 * 60 * 1000;
 export const SCHEMA_VERSION = 3;
 export const TOMBSTONE_DAYS = 30;
-export const DEFAULT_SYNC_COLLECTION = 'workTodo';
+export const DEFAULT_SYNC_COLLECTION = 'work_todo';
 export const NOTES_MAX = 2000;
 export const TITLE_MAX = 120;
 export const PROJECT_NAME_MAX = 40;

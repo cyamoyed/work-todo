@@ -1,4 +1,4 @@
-# WorkTodo 数据持久化与多端同步 · 设计文档
+# work-todo 数据持久化与多端同步 · 设计文档
 
 > 版本：v1.0 · 编制日期：2026-10-10 · 状态：**已批准，实施中**
 > 输入：v0.4 需求「数据持久化且多端同步」
@@ -54,7 +54,7 @@ store/tasks.js（唯一数据入口，不变）
   ├── lib/tauri.js        桌面文件镜像 + 滚动备份（增强）
   └── lib/sync/           ★ 新增
         ├── engine.js     pull → merge → push 状态机（触发/重试/退避）
-        ├── session.js    同步配置与凭据持久化（worktodo.sync.v1）
+        ├── session.js    同步配置与凭据持久化（work-todo.sync.v1）
         └── providers/
               ├── pocketbase.js   推荐：自建后端
               └── webdav.js       备选：零后端（网盘）
@@ -148,7 +148,7 @@ lastActionAt(e) = max(e.updatedAt, e.deletedAt || '')
 
 ### 5.5 会话持久化
 
-localStorage 新键 `worktodo.sync.v1`：`{ provider, url, username/email, token, rev, lastSyncedAt }`。
+localStorage 新键 `work-todo.sync.v1`：`{ provider, url, username/email, token, rev, lastSyncedAt }`。
 
 - PocketBase 仅存 API token（标准做法）；
 - WebDAV 需要 Basic 认证凭据，存于本机并在 UI 明示「凭据保存在本机」；
@@ -173,12 +173,12 @@ localStorage 新键 `worktodo.sync.v1`：`{ provider, url, username/email, token
 
 - 部署：单个 Go 二进制 + SQLite 文件，一台 VPS 即可，数据在自己手里；
 - 认证：`POST /api/collections/users/auth-with-password`（注册用 `POST /api/collections/users/records`）；
-- 数据：自建数据集合（名称可配置，默认 `workTodo`），字段 `user`(relation) / `payload`(json) / `rev`(number)，记录按用户一对一；
+- 数据：自建数据集合（名称可配置，默认 `work_todo`，PocketBase 集合名仅允许字母数字下划线），字段 `user`(relation) / `payload`(json) / `rev`(number)，记录按用户一对一；
 - push 采用「读 rev → 校验 → PATCH」，窗口极窄的 TOCTOU 由 §5.2 收敛论证兜底。
 
 ### 6.2 WebDAV（备选，零后端）
 
-- 把 payload 作为单个 JSON 文件读写（如坚果云网盘 `worktodo-sync.json`）；
+- 把 payload 作为单个 JSON 文件读写（如坚果云网盘 `work-todo-sync.json`）；
 - push 用 `If-Match: <etag>` 实现真乐观锁，412 即冲突；
 - **浏览器受 CORS 限制**：需服务端允许跨域（坚果云支持；自建 nginx 可配）。Tauri 桌面端不受限；
 - 服务端选型对照：
@@ -197,7 +197,7 @@ Tauri `app_data_dir/backups/`：
 
 | 命令 | 行为 |
 |------|------|
-| `backup_tasks(data)` | 写入 `worktodo-YYYYMMDD-HHmmss.json`，滚动保留最近 **10** 份，自动清理更旧 |
+| `backup_tasks(data)` | 写入 `work-todo-YYYYMMDD-HHmmss.json`，滚动保留最近 **10** 份，自动清理更旧 |
 | `list_backups()` | 列出备份文件名/大小/修改时间 |
 | `restore_backup(name)` | 读出备份内容，前端以**替换模式**导入（确认弹窗先行） |
 

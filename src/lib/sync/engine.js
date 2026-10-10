@@ -1,4 +1,4 @@
-/* WorkTodo — sync engine: pull → merge → push over a pluggable provider.
+/* work-todo — sync engine: pull → merge → push over a pluggable provider.
  *
  * Local-first: every failure degrades to "sync paused", never to blocked local
  * edits. Conflict resolution is entity-level LWW (core/transfer.mergeImportTasks);

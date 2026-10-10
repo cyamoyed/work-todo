@@ -1,4 +1,4 @@
-/* WorkTodo — WebDAV sync provider (raw fetch).
+/* work-todo — WebDAV sync provider (raw fetch).
  *
  * The payload is one JSON file on any WebDAV endpoint (a cloud drive folder,
  * e.g. 坚果云). Optimistic locking uses If-Match on the file ETag.

@@ -1,4 +1,4 @@
-/* WorkTodo — shared export/import flows (SideNav + MobileDrawer) */
+/* work-todo — shared export/import flows (SideNav + MobileDrawer) */
 
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';

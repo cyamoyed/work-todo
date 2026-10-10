@@ -22,8 +22,8 @@ beforeAll(() => {
 });
 
 describe('storage key & boot', () => {
-  it('STORAGE_KEY is worktodo.tasks.v1', () => {
-    expect(STORAGE_KEY).toBe('worktodo.tasks.v1');
+  it('STORAGE_KEY is work-todo.tasks.v1', () => {
+    expect(STORAGE_KEY).toBe('work-todo.tasks.v1');
   });
 
   it('boot with empty storage → []', () => {

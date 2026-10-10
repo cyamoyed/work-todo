@@ -1,4 +1,4 @@
-/* WorkTodo — browser Notification helpers (worktodo.notified.v1 dedupe) */
+/* work-todo — browser Notification helpers (work-todo.notified.v1 dedupe) */
 
 import { NOTIFY_KEY } from '../constants.js';
 import { isOverdue, isCompletedToday, nowTimeHM, todayString } from '../core/dates.js';
@@ -42,7 +42,7 @@ export function notifyOverdue(tasks) {
       .slice(0, 3)
       .map((t) => t.title)
       .join('、');
-    new Notification('WorkTodo · 有逾期任务', {
+    new Notification('work-todo · 有逾期任务', {
       body: overdue.length > 3 ? `${body} 等 ${overdue.length} 项` : body,
     });
     markNotified(dayKey);
@@ -71,7 +71,7 @@ export function notifyDueSoon(tasks) {
     for (const t of soon) {
       const key = 'due:' + t.id + ':' + today;
       if (stamp[key]) continue;
-      new Notification(`WorkTodo · ${t.dueTime} 到期`, {
+      new Notification(`work-todo · ${t.dueTime} 到期`, {
         body: t.title,
       });
       markNotified(key);

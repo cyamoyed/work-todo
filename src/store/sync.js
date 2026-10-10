@@ -1,4 +1,4 @@
-/* WorkTodo — reactive view over the sync engine state (for templates) */
+/* work-todo — reactive view over the sync engine state (for templates) */
 
 import { reactive } from 'vue';
 import { getSyncState, onSyncStateChange } from '../lib/sync/engine.js';

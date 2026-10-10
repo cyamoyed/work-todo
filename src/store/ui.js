@@ -1,4 +1,4 @@
-/* WorkTodo — UI state store: filters, view sync, modals, toast (no Pinia) */
+/* work-todo — UI state store: filters, view sync, modals, toast (no Pinia) */
 
 import { reactive } from 'vue';
 import { UNDO_TOAST_MS } from '../constants.js';

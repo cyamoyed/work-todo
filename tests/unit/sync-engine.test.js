@@ -61,7 +61,7 @@ async function flushAsync(ticks = 50) {
   for (let i = 0; i < ticks; i++) await Promise.resolve();
 }
 
-const WEBDAV_URL = 'https://dav.example.com/worktodo-sync.json';
+const WEBDAV_URL = 'https://dav.example.com/work-todo-sync.json';
 
 async function configure() {
   return configureSync({
@@ -95,7 +95,7 @@ afterEach(() => {
 });
 
 describe('configureSync / session', () => {
-  it('logs in, saves worktodo.sync.v1, runs the first cycle', async () => {
+  it('logs in, saves work-todo.sync.v1, runs the first cycle', async () => {
     const state = await configure();
     expect(state.status).toBe('ok');
     expect(state.configured).toBe(true);
@@ -154,7 +154,7 @@ describe('pull → merge → push cycle', () => {
     server.payload = {
       schemaVersion: 3,
       exportedAt: '2026-01-01T00:00:00.000Z',
-      app: 'worktodo',
+      app: 'work-todo',
       tasks: [{ id: 'remote-1', title: '远端', status: 'todo', priority: 'medium', updatedAt: '2026-01-01T00:00:00.000Z' }],
       projects: [],
     };

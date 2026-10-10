@@ -2,7 +2,7 @@
   <div id="mobile-drawer-backdrop" class="drawer-backdrop" :hidden="!ui.state.drawerOpen" @click="ui.closeDrawer()"></div>
   <aside id="mobile-drawer" class="mobile-drawer" :hidden="!ui.state.drawerOpen" aria-label="移动菜单">
     <div class="drawer-head">
-      <strong>WorkTodo</strong>
+      <strong>work-todo</strong>
       <button type="button" id="btn-close-drawer" class="btn-icon" aria-label="关闭菜单" @click="ui.closeDrawer()">✕</button>
     </div>
     <nav class="nav" id="nav-mobile" aria-label="移动视图">

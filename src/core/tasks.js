@@ -1,4 +1,4 @@
-/* WorkTodo — pure task normalization / factories (no DOM / no Vue) */
+/* work-todo — pure task normalization / factories (no DOM / no Vue) */
 
 import {
   NOTES_MAX,

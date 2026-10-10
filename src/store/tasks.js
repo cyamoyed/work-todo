@@ -1,4 +1,4 @@
-/* WorkTodo — task/project data store (plain reactive singleton, no Pinia)
+/* work-todo — task/project data store (plain reactive singleton, no Pinia)
  *
  * Dual-collection model: state.tasks / state.projects hold live entities only
  * (every UI consumer keeps its current semantics); soft-deleted entities live
@@ -116,7 +116,7 @@ export function useTaskStore() {
       return state.tasks;
     },
 
-    /** Force a persistence pass (legacy API parity: WorkTodo.saveTasks()). */
+    /** Force a persistence pass (legacy API parity: workTodo.saveTasks()). */
     persistNow() {
       persistTasks();
     },

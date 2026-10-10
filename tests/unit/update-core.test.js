@@ -62,10 +62,10 @@ describe('detectPlatform', () => {
 
 describe('pickDownloadUrl', () => {
   const assets = [
-    { name: 'WorkTodo_0.5.0_x64_en-US.msi', url: 'https://example.com/x.msi' },
-    { name: 'WorkTodo_0.5.0_x64-setup.exe', url: 'https://example.com/x-setup.exe' },
-    { name: 'WorkTodo_0.5.0_aarch64.dmg', url: 'https://example.com/x.dmg' },
-    { name: 'WorkTodo_0.5.0_amd64.AppImage', url: 'https://example.com/x.AppImage' },
+    { name: 'work-todo_0.5.0_x64_en-US.msi', url: 'https://example.com/x.msi' },
+    { name: 'work-todo_0.5.0_x64-setup.exe', url: 'https://example.com/x-setup.exe' },
+    { name: 'work-todo_0.5.0_aarch64.dmg', url: 'https://example.com/x.dmg' },
+    { name: 'work-todo_0.5.0_amd64.AppImage', url: 'https://example.com/x.AppImage' },
   ];
 
   it('windows prefers the NSIS setup exe over the MSI', () => {
@@ -93,12 +93,12 @@ describe('normalizeRelease', () => {
   const raw = {
     tag_name: 'v0.5.0',
     body: '更新内容',
-    html_url: 'https://github.com/cyamoyed/workTodo/releases/tag/v0.5.0',
+    html_url: 'https://github.com/cyamoyed/work-todo/releases/tag/v0.5.0',
     published_at: '2026-10-01T00:00:00Z',
     assets: [
       {
-        name: 'WorkTodo_0.5.0_x64-setup.exe',
-        browser_download_url: 'https://github.com/x/WorkTodo_0.5.0_x64-setup.exe',
+        name: 'work-todo_0.5.0_x64-setup.exe',
+        browser_download_url: 'https://github.com/x/work-todo_0.5.0_x64-setup.exe',
       },
     ],
   };
@@ -107,14 +107,14 @@ describe('normalizeRelease', () => {
     const r = normalizeRelease(raw, 'win');
     expect(r.version).toBe('0.5.0');
     expect(r.notes).toBe('更新内容');
-    expect(r.url).toBe('https://github.com/cyamoyed/workTodo/releases/tag/v0.5.0');
+    expect(r.url).toBe('https://github.com/cyamoyed/work-todo/releases/tag/v0.5.0');
     expect(r.publishedAt).toBe('2026-10-01T00:00:00Z');
-    expect(r.downloadUrl).toBe('https://github.com/x/WorkTodo_0.5.0_x64-setup.exe');
+    expect(r.downloadUrl).toBe('https://github.com/x/work-todo_0.5.0_x64-setup.exe');
   });
 
   it('falls back to the release page when no installer matches', () => {
     const r = normalizeRelease(raw, 'other');
-    expect(r.downloadUrl).toBe('https://github.com/cyamoyed/workTodo/releases/tag/v0.5.0');
+    expect(r.downloadUrl).toBe('https://github.com/cyamoyed/work-todo/releases/tag/v0.5.0');
   });
 
   it('returns null without a parseable tag', () => {

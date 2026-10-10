@@ -1,4 +1,4 @@
-/* WorkTodo — shared status-change semantics (row-dot cycling + status menu jumps).
+/* work-todo — shared status-change semantics (row-dot cycling + status menu jumps).
  * Keeps the done/repeat toast + next-occurrence behavior in one place. */
 
 import { useRouter } from 'vue-router';

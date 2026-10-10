@@ -36,8 +36,8 @@ afterEach(() => {
 describe('PocketBase provider', () => {
   const pb = () => createPocketBaseProvider({ url: 'https://pb.example.com/' });
 
-  it('defaults to the workTodo collection and accepts custom names', async () => {
-    expect(pb().collection).toBe('workTodo');
+  it('defaults to the work_todo collection and accepts custom names', async () => {
+    expect(pb().collection).toBe('work_todo');
     mockFetch((req) => {
       expect(req.url).toContain('/collections/mySync/records');
       return jsonResponse(200, { items: [] });
@@ -142,7 +142,7 @@ describe('PocketBase provider', () => {
 });
 
 describe('WebDAV provider', () => {
-  const dav = () => createWebDavProvider({ url: 'https://dav.example.com/worktodo-sync.json' });
+  const dav = () => createWebDavProvider({ url: 'https://dav.example.com/work-todo-sync.json' });
   const session = { identity: 'user', password: 'pass' };
 
   it('login: 404 probe (file not created yet) is success; 401 is auth error', async () => {

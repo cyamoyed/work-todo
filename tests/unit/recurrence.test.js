@@ -84,7 +84,7 @@ describe('export / import payload', () => {
     expect(payload.tasks.length).toBe(2);
     expect(payload.tasks.find((t) => t.title === '导出1').notes).toBe('n1');
     expect(payload.tasks.find((t) => t.title === '导出1').dueTime).toBe('15:00');
-    expect(store.exportFilename()).toMatch(/^worktodo-\d{8}\.json$/);
+    expect(store.exportFilename()).toMatch(/^work-todo-\d{8}\.json$/);
 
     const parsed = parseImportPayload(JSON.stringify(payload));
     expect(parsed.ok).toBe(true);

@@ -1,4 +1,4 @@
-/* WorkTodo — pure calendar grid builder (no DOM / no Vue) */
+/* work-todo — pure calendar grid builder (no DOM / no Vue) */
 
 import { parseDateStr, toDateStr } from './dates.js';
 

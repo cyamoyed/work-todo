@@ -89,7 +89,7 @@ describe('project name limits', () => {
 });
 
 describe('project CRUD (store)', () => {
-  it('createProject persists under worktodo.projects.v1', () => {
+  it('createProject persists under work-todo.projects.v1', () => {
     const p = store.createProject({ name: '后端', color: 'indigo' }, { id: 'p-crud', now: '2026-10-01T08:00:00.000Z' });
     expect(store.getProject('p-crud')).toEqual(p);
     const saved = JSON.parse(localStorage.getItem(PROJECTS_KEY));

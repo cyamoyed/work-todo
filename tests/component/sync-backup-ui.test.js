@@ -73,7 +73,7 @@ describe('sync settings modal', () => {
     expect(wrapper.find('#btn-sync-login').exists()).toBe(true);
     // PocketBase-only fields: collection name + register checkbox
     expect(wrapper.find('#field-sync-collection').exists()).toBe(true);
-    expect(wrapper.find('#field-sync-collection').attributes('placeholder')).toBe('workTodo');
+    expect(wrapper.find('#field-sync-collection').attributes('placeholder')).toBe('work_todo');
     expect(wrapper.find('#field-sync-register').exists()).toBe(true);
     await wrapper.find('#field-sync-provider button[data-value="webdav"]').trigger('click');
     await flushPromises();
@@ -96,7 +96,7 @@ describe('sync settings modal', () => {
     await wrapper.find('#btn-sync-settings').trigger('click');
     await flushPromises();
     await wrapper.find('#field-sync-provider button[data-value="webdav"]').trigger('click');
-    await wrapper.find('#field-sync-url').setValue('https://dav.example.com/worktodo-sync.json');
+    await wrapper.find('#field-sync-url').setValue('https://dav.example.com/work-todo-sync.json');
     await wrapper.find('#field-sync-identity').setValue('user');
     await wrapper.find('#field-sync-password').setValue('pass');
     await wrapper.find('#btn-sync-login').trigger('click');

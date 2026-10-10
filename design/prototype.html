@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WorkTodo · 原型</title>
+<title>work-todo · 原型</title>
 <style>
   :root {
     --ink: #18181b;
@@ -682,7 +682,7 @@
   <aside class="side">
     <div class="logo">
       <div class="logo-mark" aria-hidden="true"></div>
-      <div class="logo-text">WorkTodo</div>
+      <div class="logo-text">work-todo</div>
     </div>
     <nav class="nav" id="nav" aria-label="视图">
       <button class="nav-item active" data-view="today">今天 <span class="n" data-count="today">0</span></button>
@@ -984,7 +984,7 @@
   "use strict";
 
   /* ————— state ————— */
-  const STORE_KEY = "worktodo.prototype.v1";
+  const STORE_KEY = "work-todo.prototype.v1";
   const STATUS = {
     todo: "待办",
     "in-progress": "进行中",
@@ -1146,7 +1146,7 @@
     const iso = new Date().toISOString();
     const p1 = uid(), p2 = uid(), p3 = uid();
     const projects = [
-      { id: p1, name: "WorkTodo 改版", color: "indigo", createdAt: iso, updatedAt: iso },
+      { id: p1, name: "work-todo 改版", color: "indigo", createdAt: iso, updatedAt: iso },
       { id: p2, name: "v2.2 发布", color: "ink", createdAt: iso, updatedAt: iso },
       { id: p3, name: "客户交付", color: "slate", createdAt: iso, updatedAt: iso },
     ];
@@ -1739,7 +1739,7 @@
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "worktodo-" + todayYmd().replace(/-/g, "") + ".json";
+    a.download = "work-todo-" + todayYmd().replace(/-/g, "") + ".json";
     a.click();
     URL.revokeObjectURL(a.href);
     toast("已导出 " + state.tasks.length + " 条任务 · " + state.projects.length + " 个项目");
@@ -1760,7 +1760,7 @@
           "文件包含 " + tasks.length + " 条任务、" + projects.length + " 个项目。合并会按 ID 去重，替换会清空当前数据后导入。";
         $("#import-backdrop").hidden = false;
       } catch (e) {
-        toast("导入失败：不是有效的 WorkTodo JSON");
+        toast("导入失败：不是有效的 work-todo JSON");
       }
     };
     reader.readAsText(file);

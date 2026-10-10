@@ -1,4 +1,4 @@
-/* WorkTodo — pure export / import payload handling (no DOM / no Vue) */
+/* work-todo — pure export / import payload handling (no DOM / no Vue) */
 
 import { SCHEMA_VERSION, TOMBSTONE_DAYS } from '../constants.js';
 import { normalizeTask, lastActionAt } from './tasks.js';
@@ -9,7 +9,7 @@ export function buildExportPayload(tasks, projects, opts = {}) {
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: opts.now || new Date().toISOString(),
-    app: 'worktodo',
+    app: 'work-todo',
     tasks: tasks.map((t) => ({ ...t })),
     projects: projects.map((p) => ({ ...p })),
   };
@@ -127,7 +127,7 @@ export function purgeDeleted(entities, opts = {}) {
 }
 
 export function exportFilename(today = todayString()) {
-  return `worktodo-${today.replace(/-/g, '')}.json`;
+  return `work-todo-${today.replace(/-/g, '')}.json`;
 }
 
 /** Rolling backup filename with local-time precision (sortable, inert). */
@@ -137,5 +137,5 @@ export function backupFilename(now = new Date()) {
   const stamp =
     `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}` +
     `-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-  return `worktodo-${stamp}.json`;
+  return `work-todo-${stamp}.json`;
 }

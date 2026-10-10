@@ -14,18 +14,18 @@ import { UPDATE_KEY, UPDATE_AUTO_CHECK_MS } from '../../src/constants.js';
 const RELEASE = {
   tag_name: 'v9.9.9',
   body: '修复若干问题',
-  html_url: 'https://github.com/cyamoyed/workTodo/releases/tag/v9.9.9',
+  html_url: 'https://github.com/cyamoyed/work-todo/releases/tag/v9.9.9',
   published_at: '2026-10-01T00:00:00Z',
   assets: [
     {
-      name: 'WorkTodo_9.9.9_x64-setup.exe',
+      name: 'work-todo_9.9.9_x64-setup.exe',
       browser_download_url:
-        'https://github.com/cyamoyed/workTodo/releases/download/v9.9.9/WorkTodo_9.9.9_x64-setup.exe',
+        'https://github.com/cyamoyed/work-todo/releases/download/v9.9.9/work-todo_9.9.9_x64-setup.exe',
     },
     {
-      name: 'WorkTodo_9.9.9_x64_en-US.msi',
+      name: 'work-todo_9.9.9_x64_en-US.msi',
       browser_download_url:
-        'https://github.com/cyamoyed/workTodo/releases/download/v9.9.9/WorkTodo_9.9.9_x64_en-US.msi',
+        'https://github.com/cyamoyed/work-todo/releases/download/v9.9.9/work-todo_9.9.9_x64_en-US.msi',
     },
   ],
 };

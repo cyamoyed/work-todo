@@ -10,7 +10,7 @@ commits: a242a2f..5c835b5
 
 ## Report
 
-**What was built** — 一个轻量工作待办应用：根目录纯静态 SPA（`index.html` / `styles.css` / `app.js`，浏览器可直接打开）+ Tauri 2 桌面壳脚手架。功能覆盖任务 CRUD、状态（待办/进行中/已完成）、优先级（高/中/低）、截止日期、状态/优先级筛选、标题搜索、过期「已过期」标识、删除确认，数据存 `localStorage`（键 `worktodo.tasks.v1`）。排序规则：未完成在前，按截止日期升序（空日期靠后），再按优先级、创建时间倒序。Tauri 侧提供 `src-tauri/`（`[lib] name = "worktodo_lib"` 与 `main.rs` 对齐）、`frontendDist: "../dist"` + `scripts/prepare-dist.js`、`docs/BUILD.md` 打包说明；桌面包需在本机装 Rust 后执行 `cargo tauri build`。
+**What was built** — 一个轻量工作待办应用：根目录纯静态 SPA（`index.html` / `styles.css` / `app.js`，浏览器可直接打开）+ Tauri 2 桌面壳脚手架。功能覆盖任务 CRUD、状态（待办/进行中/已完成）、优先级（高/中/低）、截止日期、状态/优先级筛选、标题搜索、过期「已过期」标识、删除确认，数据存 `localStorage`（键 `work-todo.tasks.v1`）。排序规则：未完成在前，按截止日期升序（空日期靠后），再按优先级、创建时间倒序。Tauri 侧提供 `src-tauri/`（`[lib] name = "work_todo_lib"` 与 `main.rs` 对齐）、`frontendDist: "../dist"` + `scripts/prepare-dist.js`、`docs/BUILD.md` 打包说明；桌面包需在本机装 Rust 后执行 `cargo tauri build`。
 
 **Verification**（2026-10-08）
 - `node --check app.js` — PASS
@@ -23,13 +23,13 @@ commits: a242a2f..5c835b5
   - 搜索命中 / 无命中空态「没有匹配的任务」
   - 状态筛选（已完成 → 空态）
   - 编辑回填 + 保存
-  - 同会话 reload 后 localStorage 持久化（`worktodo.tasks.v1`）
+  - 同会话 reload 后 localStorage 持久化（`work-todo.tasks.v1`）
   - 删除确认对话框 → 列表清空
   - 过期标识：截止 2026-10-01 显示「已过期」，页脚「过期 1」
   - 唯一 console 错误为 favicon 404
 
 **Journey log**
-1. 首版 Tauri `Cargo.toml` 漏掉 `[lib] name = "worktodo_lib"`，与 `main.rs` 不对齐会导致 `cargo tauri dev/build` 无法编译；已补并加入 smoke 断言。
+1. 首版 Tauri `Cargo.toml` 漏掉 `[lib] name = "work_todo_lib"`，与 `main.rs` 不对齐会导致 `cargo tauri dev/build` 无法编译；已补并加入 smoke 断言。
 2. 排序比较器原式 `a<b?1:-1` 在等键时双向返回 -1，同毫秒创建顺序不稳定；已改为等键返回 0，缺 `createdAt` 时以空串参与比较。
 3. `frontendDist: ".."` 会把整个仓库打进包；改为 `../dist` + `scripts/prepare-dist.js`，根目录 `index.html` 仍供浏览器预览。
 4. 复审指出 hook 路径 `node ../scripts/...` 按 Tauri cwd（frontend 根）会指到仓库外；正确写法是 `node scripts/prepare-dist.js`。配置类断言必须覆盖 hook 命令字符串，不能只测 `frontendDist`。
@@ -45,7 +45,7 @@ commits: a242a2f..5c835b5
 
 - 前端：纯 HTML / CSS / JavaScript 单页应用，入口 `index.html`，配套 `styles.css`、`app.js`，保存于仓库根目录，双击或静态服务即可在浏览器运行。
 - 桌面：同一套前端由 Tauri（WebView）承载；本交付只提供 Tauri 工程配置与构建说明（`src-tauri/` + `docs/BUILD.md`），不在本机产出安装包。macOS 包必须在 Mac 上构建。
-- 持久化：`localStorage`，键名 `worktodo.tasks.v1`。写入失败时在 UI 显示非阻塞错误提示，不静默丢数据。
+- 持久化：`localStorage`，键名 `work-todo.tasks.v1`。写入失败时在 UI 显示非阻塞错误提示，不静默丢数据。
 - 无构建步骤、无打包器、无运行时 npm 依赖（Tauri 侧构建依赖除外，仅打包时需要）。
 
 ### 数据模型
@@ -104,7 +104,7 @@ interface Task {
 ## Tasks
 
 - [x] T1: 项目骨架与静态页面结构 — acceptance: 根目录存在 `index.html` / `styles.css` / `app.js`，浏览器打开可见顶栏、筛选条、空列表区与表单区（covers: S2 技术形态、界面结构）
-- [x] T2: 数据层 — acceptance: `app.js` 提供任务 list/create/update/remove 的 localStorage 读写函数，可手工在控制台调用并看到 `worktodo.tasks.v1` 变化（covers: S2 数据模型、行为契约 9）
+- [x] T2: 数据层 — acceptance: `app.js` 提供任务 list/create/update/remove 的 localStorage 读写函数，可手工在控制台调用并看到 `work-todo.tasks.v1` 变化（covers: S2 数据模型、行为契约 9）
 - [x] T3: 任务列表渲染与排序 — acceptance: 有数据时按契约 1 的排序规则渲染行，展示标题/优先级/状态/截止日期，已完成弱化显示（covers: S2 行为契约 1、7）
 - [x] T4: 新建/编辑表单 — acceptance: 可新建任务并出现在列表；点编辑回填并可保存；标题为空时内联报错；截止日期可清空（covers: S2 行为契约 2）
 - [x] T5: 状态切换与删除 — acceptance: 行内可切换 todo/in-progress/done 并即时持久化；删除有确认且刷新后仍消失（covers: S2 行为契约 3、4）

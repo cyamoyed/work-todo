@@ -1,4 +1,4 @@
-/* WorkTodo — update checks against GitHub Releases (no Vue) */
+/* work-todo — update checks against GitHub Releases (no Vue) */
 
 import { UPDATE_KEY, UPDATE_REPO, UPDATE_AUTO_CHECK_MS } from '../constants.js';
 import { detectPlatform, isNewerVersion, normalizeRelease } from '../core/update.js';

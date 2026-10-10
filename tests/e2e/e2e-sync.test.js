@@ -16,7 +16,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const DIST = path.join(ROOT, 'dist');
 
 function findChrome() {
-  if (process.env.WORKTODO_CHROME_PATH) return process.env.WORKTODO_CHROME_PATH;
+  if (process.env.WORK_TODO_CHROME_PATH) return process.env.WORK_TODO_CHROME_PATH;
   const base = path.join(process.env.LOCALAPPDATA || '', 'ms-playwright');
   try {
     for (const entry of fs.readdirSync(base)) {
@@ -66,7 +66,7 @@ function handleApi(req, res, body) {
   if (req.method === 'POST' && url.includes('/auth-with-password')) {
     return json(200, { token: 'test-token', record: { id: 'u1', email: 'a@b.c' } });
   }
-  if (req.method === 'GET' && url.includes('/collections/workTodo/records')) {
+  if (req.method === 'GET' && url.includes('/collections/work_todo/records')) {
     return json(200, {
       page: 1,
       perPage: 30,
@@ -74,12 +74,12 @@ function handleApi(req, res, body) {
       items: pb.doc ? [pb.doc] : [],
     });
   }
-  if (req.method === 'POST' && url.includes('/collections/workTodo/records')) {
+  if (req.method === 'POST' && url.includes('/collections/work_todo/records')) {
     const data = JSON.parse(body || '{}');
     pb.doc = { id: 'doc1', user: data.user, payload: data.payload, rev: data.rev };
     return json(200, pb.doc);
   }
-  if (req.method === 'PATCH' && url.includes('/collections/workTodo/records/')) {
+  if (req.method === 'PATCH' && url.includes('/collections/work_todo/records/')) {
     const data = JSON.parse(body || '{}');
     if (!pb.doc) return json(404, { message: 'not found' });
     pb.doc = { ...pb.doc, payload: data.payload, rev: data.rev };
@@ -166,7 +166,7 @@ beforeAll(async () => {
       body: JSON.stringify({
         tag_name: `v${appVersion}`,
         body: '',
-        html_url: 'https://github.com/cyamoyed/workTodo/releases',
+        html_url: 'https://github.com/cyamoyed/work-todo/releases',
         published_at: '2026-01-01T00:00:00Z',
         assets: [],
       }),
@@ -201,7 +201,7 @@ describe('soft delete (tombstones)', () => {
     await page.waitForTimeout(80);
     expect(await page.locator('.task-title').allTextContents()).toEqual(['保留项']);
 
-    const raw = await page.evaluate(() => localStorage.getItem('worktodo.tasks.v1'));
+    const raw = await page.evaluate(() => localStorage.getItem('work-todo.tasks.v1'));
     const list = JSON.parse(raw);
     const tomb = list.find((t) => t.title === '删除后不复活');
     expect(tomb.deletedAt).toBeTruthy();
@@ -220,7 +220,7 @@ describe('soft delete (tombstones)', () => {
     await page.click('#toast button');
     await page.waitForTimeout(80);
     expect(await page.locator('.task-title').allTextContents()).toEqual(['撤销复活']);
-    const raw = await page.evaluate(() => localStorage.getItem('worktodo.tasks.v1'));
+    const raw = await page.evaluate(() => localStorage.getItem('work-todo.tasks.v1'));
     expect(JSON.parse(raw).every((t) => !t.deletedAt)).toBe(true);
   });
 });
@@ -245,7 +245,7 @@ describe('pocketbase sync roundtrip', () => {
       payload: {
         schemaVersion: 3,
         exportedAt: '2026-10-10T00:00:00.000Z',
-        app: 'worktodo',
+        app: 'work-todo',
         tasks: [
           {
             id: 'remote-1',
@@ -285,7 +285,7 @@ describe('pocketbase sync roundtrip', () => {
     expect(pushed.deletedAt).toBeTruthy();
 
     // Fresh device: wipe local data (keep the session) and resync.
-    await page.evaluate(() => localStorage.removeItem('worktodo.tasks.v1'));
+    await page.evaluate(() => localStorage.removeItem('work-todo.tasks.v1'));
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(500); // bootSync auto-runs
     const titles = await page.locator('.task-title').allTextContents();

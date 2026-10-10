@@ -1,4 +1,4 @@
-/* WorkTodo — hash router. Router owns viewMode/projectId; store syncs one-way via afterEach. */
+/* work-todo — hash router. Router owns viewMode/projectId; store syncs one-way via afterEach. */
 
 import { createRouter, createWebHashHistory } from 'vue-router';
 import TodayView from '../views/TodayView.vue';

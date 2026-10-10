@@ -4,7 +4,7 @@ Guidance for ZCode agents working in this repository. `CLAUDE.md` has the same i
 
 ## Project
 
-WorkTodo (工作待办) — a Vue 3 + Vite single-page task manager that runs in the browser and as a Tauri 2 desktop app. Pure JavaScript (no TypeScript); UI copy and docs are in Chinese. Only runtime deps: `vue` + `vue-router`. No Pinia — stores are plain `reactive()` singletons.
+work-todo (工作待办) — a Vue 3 + Vite single-page task manager that runs in the browser and as a Tauri 2 desktop app. Pure JavaScript (no TypeScript); UI copy and docs are in Chinese. Only runtime deps: `vue` + `vue-router`. No Pinia — stores are plain `reactive()` singletons.
 
 ## Commands
 
@@ -33,14 +33,14 @@ Keep the layering: core pure, lib I/O, stores orchestrate, components render.
 ## Hard contracts (do not break)
 
 - **DOM:** templates preserve legacy ids/classes exactly (`#task-list` with `.task-card` direct children, `data-value` chips, `:hidden` modals/toast/error banner, hidden inputs `#field-due`/`#field-due-time`/`#field-status`/`#field-priority`). `styles.css` (root, single stylesheet), component tests, and e2e depend on them — rename only together.
-- **Storage:** keys `worktodo.tasks.v1`, `worktodo.projects.v1`, `worktodo.sync.v1` (localStorage); `worktodo.ui.v1` (sessionStorage, slim prefs only — view/project live in the URL), `worktodo.notified.v1`, `worktodo.update.v1`. Schema `SCHEMA_VERSION = 3` with soft-delete tombstones (`deletedAt`, purged after `TOMBSTONE_DAYS = 30`). Import/sync merge by `id` keeping newer `max(updatedAt, deletedAt)` — a later delete beats an earlier edit. Export payload is also the sync wire format. e2e mutates raw localStorage JSON — keep shapes stable. See `docs/SYNC-DESIGN.md`.
+- **Storage:** keys `work-todo.tasks.v1`, `work-todo.projects.v1`, `work-todo.sync.v1` (localStorage); `work-todo.ui.v1` (sessionStorage, slim prefs only — view/project live in the URL), `work-todo.notified.v1`, `work-todo.update.v1`. Schema `SCHEMA_VERSION = 3` with soft-delete tombstones (`deletedAt`, purged after `TOMBSTONE_DAYS = 30`). Import/sync merge by `id` keeping newer `max(updatedAt, deletedAt)` — a later delete beats an earlier edit. Export payload is also the sync wire format. e2e mutates raw localStorage JSON — keep shapes stable. See `docs/SYNC-DESIGN.md`.
 - **Version lives in one place: `src-tauri/Cargo.toml`.** `tauri.conf.json` omits `version` (Tauri 2 falls back to the Cargo.toml package version), `package.json` carries none, and `vite.config.js` reads Cargo.toml to `define` `__APP_VERSION__` — never hardcode a version in `src/`. Release tags `vX.Y.Z` must match Cargo.toml (CI enforces).
-- **Sync/update must never block local edits or fail the app.** Update checks hit `api.github.com/repos/cyamoyed/workTodo/releases/latest` and open pages via Tauri `plugin:opener` (capability in `src-tauri/capabilities/default.json`).
+- **Sync/update must never block local edits or fail the app.** Update checks hit `api.github.com/repos/cyamoyed/work-todo/releases/latest` and open pages via Tauri `plugin:opener` (capability in `src-tauri/capabilities/default.json`).
 
 ## Tests
 
 - Vitest config is `vite.config.js` (`test.include`: unit + component, happy-dom). E2e uses the separate `vitest.e2e.config.js` (node env) — do not merge the include lists.
-- E2e drives real Chromium against the **built `dist/`** via playwright-core; Chromium located by scanning `%LOCALAPPDATA%/ms-playwright/...` (override `WORKTODO_CHROME_PATH`). E2e intercepts `https://api.github.com/**` so it never touches the network.
+- E2e drives real Chromium against the **built `dist/`** via playwright-core; Chromium located by scanning `%LOCALAPPDATA%/ms-playwright/...` (override `WORK_TODO_CHROME_PATH`). E2e intercepts `https://api.github.com/**` so it never touches the network.
 
 ## Design constraints
 

@@ -1,4 +1,4 @@
-/* WorkTodo — pure filtering / sorting / grouping (no DOM / no Vue) */
+/* work-todo — pure filtering / sorting / grouping (no DOM / no Vue) */
 
 import { PRIORITY_RANK } from '../constants.js';
 import {

@@ -1,4 +1,4 @@
-/* WorkTodo — sync error taxonomy (shared by engine + providers) */
+/* work-todo — sync error taxonomy (shared by engine + providers) */
 
 /** Remote version moved on; the engine re-pulls, re-merges and retries. */
 export class SyncConflictError extends Error {

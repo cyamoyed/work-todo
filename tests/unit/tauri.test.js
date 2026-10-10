@@ -107,7 +107,7 @@ describe('bootstrapDesktopStorage', () => {
     const changed = await store.bootstrapDesktop();
     expect(changed).toBe(true);
     expect(store.getTasks()[0].title).toBe('恢复项');
-    const raw = JSON.parse(localStorage.getItem('worktodo.tasks.v1'));
+    const raw = JSON.parse(localStorage.getItem('work-todo.tasks.v1'));
     expect(raw[0].id).toBe('d2');
   });
 });
@@ -115,31 +115,31 @@ describe('bootstrapDesktopStorage', () => {
 describe('backup bridge + helpers', () => {
   it('backupTasks/listBackups/restoreBackup route to the right commands', async () => {
     const invoke = vi.fn(async (cmd) => {
-      if (cmd === 'backup_tasks') return 'worktodo-20261010-120000.json';
-      if (cmd === 'list_backups') return [{ name: 'worktodo-20261010-120000.json', size: 12, modified: 0 }];
+      if (cmd === 'backup_tasks') return 'work-todo-20261010-120000.json';
+      if (cmd === 'list_backups') return [{ name: 'work-todo-20261010-120000.json', size: 12, modified: 0 }];
       if (cmd === 'restore_backup') return '{"tasks":[],"projects":[]}';
       return null;
     });
     withTauri(invoke);
-    expect(await backupTasks('[]', 'worktodo-20261010-120000.json')).toBe('worktodo-20261010-120000.json');
+    expect(await backupTasks('[]', 'work-todo-20261010-120000.json')).toBe('work-todo-20261010-120000.json');
     expect(invoke).toHaveBeenCalledWith('backup_tasks', {
       data: '[]',
-      name: 'worktodo-20261010-120000.json',
+      name: 'work-todo-20261010-120000.json',
     });
     expect((await listBackups()).length).toBe(1);
-    expect(await restoreBackup('worktodo-20261010-120000.json')).toBe('{"tasks":[],"projects":[]}');
+    expect(await restoreBackup('work-todo-20261010-120000.json')).toBe('{"tasks":[],"projects":[]}');
   });
 
   it('createBackupNow stringifies the payload with a timestamped name', async () => {
     const invoke = vi.fn(async (cmd, args) => {
       expect(cmd).toBe('backup_tasks');
-      expect(args.name).toMatch(/^worktodo-\d{8}-\d{6}\.json$/);
+      expect(args.name).toMatch(/^work-todo-\d{8}-\d{6}\.json$/);
       expect(JSON.parse(args.data).tasks.length).toBe(1);
       return args.name;
     });
     withTauri(invoke);
     const name = await createBackupNow({ tasks: [{ id: 'a' }], projects: [] });
-    expect(name).toMatch(/^worktodo-\d{8}-\d{6}\.json$/);
+    expect(name).toMatch(/^work-todo-\d{8}-\d{6}\.json$/);
   });
 
   it('readBackupPayload parses JSON and nulls junk', async () => {

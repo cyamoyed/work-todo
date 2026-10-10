@@ -1,4 +1,4 @@
-# WorkTodo v0.4 开发计划
+# work-todo v0.4 开发计划
 
 > 版本：v0.4 · 编制日期：2026-10-10 · 状态：**已交付**
 > 输入：`docs/SYNC-DESIGN.md`（数据持久化与多端同步设计）
@@ -38,7 +38,7 @@ v0.4 按 `docs/SYNC-DESIGN.md` 实施：local-first + 可插拔同步层。
 | A-05 | P1 | 桌面 | Rust：`backup_tasks` 滚动备份（保留 10 份）+ `list_backups` + `restore_backup` | 已完成 |
 | A-06 | P1 | UI | 备份弹窗（列表/恢复）；浏览器数据风险提示 `#data-hint` + 一键导出 | 已完成 |
 | B-01 | P0 | 同步 | 同步引擎：pull → merge → push、rev 冲突重试（≤3）、debounce 5s、60s 轮询、聚焦/online 触发、指数退避 | 已完成 |
-| B-02 | P0 | 同步 | 会话持久化 `worktodo.sync.v1`（配置/token/rev/lastSyncedAt） | 已完成 |
+| B-02 | P0 | 同步 | 会话持久化 `work-todo.sync.v1`（配置/token/rev/lastSyncedAt） | 已完成 |
 | B-03 | P0 | 同步 | PocketBase Provider：注册/登录/`sync_docs` 读写/rev 校验 | 已完成 |
 | B-04 | P1 | 同步 | WebDAV Provider：GET/PUT JSON 文件、`If-Match` 乐观锁 | 已完成 |
 | B-05 | P0 | UI | 同步设置弹窗 `#sync-modal` + 状态指示 `#sync-status`（ANTI-AI 约束） | 已完成 |
@@ -82,7 +82,7 @@ v0.4 按 `docs/SYNC-DESIGN.md` 实施：local-first + 可插拔同步层。
 ### M3 同步引擎与 Provider（B-01 ~ B-04）
 
 - `src/lib/sync/engine.js`：状态机 + 触发器 + 退避；
-- `src/lib/sync/session.js`：`worktodo.sync.v1` 读写；
+- `src/lib/sync/session.js`：`work-todo.sync.v1` 读写；
 - `src/lib/sync/providers/pocketbase.js`、`webdav.js`（原生 fetch）。
 
 **验收**：mock Provider 下 pull-merge-push 正确；rev 冲突自动重试；断网时本地可写、状态为离线/失败；恢复网络后自动收敛。
@@ -141,5 +141,5 @@ v0.4 按 `docs/SYNC-DESIGN.md` 实施：local-first + 可插拔同步层。
 **契约变更（已同步至 CLAUDE.md / BUILD.md）**
 
 - `SCHEMA_VERSION = 2 → 3`：任务/项目新增 `deletedAt` 软删除墓碑，v2 自动升级读取
-- localStorage 新增 `worktodo.sync.v1`（同步会话）；桌面 `app_data_dir/backups/` 滚动备份（保留 10 份）
+- localStorage 新增 `work-todo.sync.v1`（同步会话）；桌面 `app_data_dir/backups/` 滚动备份（保留 10 份）
 - 导出 payload 与同步 wire 格式统一；合并规则 `updatedAt` → `max(updatedAt, deletedAt)` LWW

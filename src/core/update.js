@@ -1,4 +1,4 @@
-/* WorkTodo — version compare + GitHub release parsing (pure, no fetch / no DOM) */
+/* work-todo — version compare + GitHub release parsing (pure, no fetch / no DOM) */
 
 /**
  * Parse a version-ish string ("0.4.0", "v0.5.1", "v1.2.3-beta.1") into a

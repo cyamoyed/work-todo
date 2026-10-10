@@ -1,4 +1,4 @@
-/* WorkTodo — window.WorkTodo debug/compat facade over store + core */
+/* work-todo — window.workTodo debug/compat facade over store + core */
 
 import {
   STORAGE_KEY,

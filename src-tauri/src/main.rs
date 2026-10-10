@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    worktodo_lib::run()
+    work_todo_lib::run()
 }

@@ -110,7 +110,7 @@ describe('export payload shape', () => {
     expect(payload.exportedAt).toContain('T');
     expect(payload.tasks.length).toBe(1);
     expect(payload.tasks[0].notes).toBe('n1');
-    expect(/^worktodo-\d{8}\.json$/.test(exportFilename())).toBe(true);
+    expect(/^work-todo-\d{8}\.json$/.test(exportFilename())).toBe(true);
     const parsed = parseImportPayload(JSON.stringify(payload));
     expect(parsed.ok).toBe(true);
     expect(parsed.tasks.length).toBe(1);

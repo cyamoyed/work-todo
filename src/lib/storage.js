@@ -1,4 +1,4 @@
-/* WorkTodo — persistence over an injectable storage adapter (no Vue) */
+/* work-todo — persistence over an injectable storage adapter (no Vue) */
 
 import { STORAGE_KEY, PROJECTS_KEY, UI_PREFS_KEY } from '../constants.js';
 import { normalizeTask } from '../core/tasks.js';

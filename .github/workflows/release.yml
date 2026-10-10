@@ -58,7 +58,7 @@ jobs:
       matrix:
         include:
           # macOS 构建通用二进制（同时含 Intel / Apple Silicon），dmg 资产名形如
-          # WorkTodo_x.y.z_universal.dmg，仍是 update.js 认得的 .dmg。
+          # work-todo_x.y.z_universal.dmg，仍是 update.js 认得的 .dmg。
           - platform: macos-latest
             rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
             args: '--target universal-apple-darwin'
@@ -110,7 +110,7 @@ jobs:
         run: |
           PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
           {
-            echo 'body<<WORKTODO_EOF'
+            echo 'body<<WORK_TODO_EOF'
             if [ -n "$PREV" ]; then
               git log --no-merges --pretty=format:'- %s' "$PREV"..HEAD
             else
@@ -120,7 +120,7 @@ jobs:
             echo ''
             echo '---'
             echo '下载：Windows 选 `.msi` 或 `*-setup.exe`；macOS 选 `.dmg`（通用二进制，未签名，首次打开请右键 → 打开）；Linux 选 `.AppImage` / `.deb` / `.rpm`。'
-            echo 'WORKTODO_EOF'
+            echo 'WORK_TODO_EOF'
           } >> "$GITHUB_OUTPUT"
       - name: 构建并发布 Release
         uses: tauri-apps/tauri-action@v0
@@ -129,7 +129,7 @@ jobs:
         with:
           # 仅 tag 推送时创建并发布 Release；手动触发时为空，只构建不发布
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
-          releaseName: 'WorkTodo v__VERSION__'
+          releaseName: 'work-todo v__VERSION__'
           releaseBody: ${{ steps.changelog.outputs.body }}
           releaseDraft: false
           prerelease: false
@@ -138,6 +138,6 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: WorkTodo-${{ matrix.platform }}
+          name: work-todo-${{ matrix.platform }}
           path: ${{ matrix.artifacts }}
           if-no-files-found: error

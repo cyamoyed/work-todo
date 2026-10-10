@@ -1,4 +1,4 @@
-/* WorkTodo — shared filter-chip navigation semantics (legacy bindChips) */
+/* work-todo — shared filter-chip navigation semantics (legacy bindChips) */
 
 import { useRouter } from 'vue-router';
 import { useUiStore } from '../store/ui.js';

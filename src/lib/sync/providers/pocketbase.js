@@ -1,7 +1,7 @@
-/* WorkTodo — PocketBase sync provider (raw fetch, no SDK).
+/* work-todo — PocketBase sync provider (raw fetch, no SDK).
  *
  * Server setup (once, in the PocketBase admin UI):
- *   - a data collection (default name `workTodo`, configurable per session)
+ *   - a data collection (default name `work-todo`, configurable per session)
  *     with fields: user (relation → users), payload (json), rev (number);
  *   - list/view/update rules scoped to the record owner.
  */

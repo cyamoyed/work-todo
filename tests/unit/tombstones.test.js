@@ -167,8 +167,8 @@ describe('purgeDeleted', () => {
 });
 
 describe('backupFilename', () => {
-  it('is worktodo-YYYYMMDD-HHmmss.json', () => {
+  it('is work-todo-YYYYMMDD-HHmmss.json', () => {
     const name = backupFilename(new Date(2026, 9, 10, 15, 4, 5));
-    expect(name).toBe('worktodo-20261010-150405.json');
+    expect(name).toBe('work-todo-20261010-150405.json');
   });
 });

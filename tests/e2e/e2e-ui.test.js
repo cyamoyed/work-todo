@@ -14,7 +14,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const DIST = path.join(ROOT, 'dist');
 
 function findChrome() {
-  if (process.env.WORKTODO_CHROME_PATH) return process.env.WORKTODO_CHROME_PATH;
+  if (process.env.WORK_TODO_CHROME_PATH) return process.env.WORK_TODO_CHROME_PATH;
   const base = path.join(process.env.LOCALAPPDATA || '', 'ms-playwright');
   const explicit = path.join(base, 'chromium-1234', 'chrome-win64', 'chrome.exe');
   if (fs.existsSync(explicit)) return explicit;
@@ -111,7 +111,7 @@ beforeAll(async () => {
       body: JSON.stringify({
         tag_name: `v${appVersion}`,
         body: '',
-        html_url: 'https://github.com/cyamoyed/workTodo/releases',
+        html_url: 'https://github.com/cyamoyed/work-todo/releases',
         published_at: '2026-01-01T00:00:00Z',
         assets: [],
       }),
@@ -302,7 +302,7 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     await page.waitForTimeout(80);
     const titlesAfter = await page.locator('.task-title').allTextContents();
     expect(titlesAfter).toEqual(titlesBefore);
-    const raw = await page.evaluate(() => localStorage.getItem('worktodo.tasks.v1'));
+    const raw = await page.evaluate(() => localStorage.getItem('work-todo.tasks.v1'));
     expect(raw).toBeTruthy();
     // v3: storage may hold soft-delete tombstones; visible titles are live tasks.
     expect(JSON.parse(raw).filter((t) => !t.deletedAt).length).toBe(titlesBefore.length);
@@ -421,13 +421,13 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     await addTask({ title: 'no-due', status: 'todo', priority: 'high' });
     // set due dates via raw storage for sort verification
     await page.evaluate(() => {
-      const list = JSON.parse(localStorage.getItem('worktodo.tasks.v1'));
+      const list = JSON.parse(localStorage.getItem('work-todo.tasks.v1'));
       for (const t of list) {
         if (t.title === 'due-early') t.dueDate = '2026-01-01';
         if (t.title === 'no-due') t.dueDate = null;
         if (t.title === 'done-late') t.dueDate = '2026-12-01';
       }
-      localStorage.setItem('worktodo.tasks.v1', JSON.stringify(list));
+      localStorage.setItem('work-todo.tasks.v1', JSON.stringify(list));
     });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(80);

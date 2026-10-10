@@ -1,4 +1,4 @@
-/* WorkTodo — sync session persistence (worktodo.sync.v1, localStorage) */
+/* work-todo — sync session persistence (work-todo.sync.v1, localStorage) */
 
 import { SYNC_KEY } from '../../constants.js';
 
@@ -11,7 +11,7 @@ import { SYNC_KEY } from '../../constants.js';
  *   userId: string | null,   // pocketbase user record id
  *   token: string | null,    // pocketbase API token
  *   password: string | null, // webdav basic-auth secret (kept on-device only)
- *   collection: string | null, // pocketbase data collection (default workTodo)
+ *   collection: string | null, // pocketbase data collection (default work_todo)
  *   version: string | number | null, // last seen remote version (rev / etag)
  *   lastSyncedAt: string | null,
  * }

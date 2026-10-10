@@ -1,4 +1,4 @@
-/* WorkTodo — pure date helpers + recurrence math (no DOM / no Vue) */
+/* work-todo — pure date helpers + recurrence math (no DOM / no Vue) */
 
 import { REPEAT_LABELS } from '../constants.js';
 

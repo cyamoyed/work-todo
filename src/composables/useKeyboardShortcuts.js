@@ -1,4 +1,4 @@
-/* WorkTodo — global keyboard shortcuts: N new · / search · Esc close · Tab focus trap */
+/* work-todo — global keyboard shortcuts: N new · / search · Esc close · Tab focus trap */
 
 import { onMounted, onUnmounted } from 'vue';
 import { useUiStore } from '../store/ui.js';

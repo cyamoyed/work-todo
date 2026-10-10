@@ -13,7 +13,7 @@
         <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
       </svg>
     </button>
-    <div class="brand-mobile" aria-hidden="true">WorkTodo</div>
+    <div class="brand-mobile" aria-hidden="true">work-todo</div>
     <SearchBar />
 
     <div class="pop-anchor">

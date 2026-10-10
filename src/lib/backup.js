@@ -1,4 +1,4 @@
-/* WorkTodo — desktop rolling backups over the Tauri bridge (best-effort) */
+/* work-todo — desktop rolling backups over the Tauri bridge (best-effort) */
 
 import { isTauri, backupTasks, listBackups, restoreBackup } from './tauri.js';
 import { backupFilename } from '../core/transfer.js';

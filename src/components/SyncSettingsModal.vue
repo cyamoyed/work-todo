@@ -37,7 +37,7 @@
           <input
             id="field-sync-url"
             type="text"
-            :placeholder="provider === 'pocketbase' ? 'https://pb.example.com' : 'https://dav.example.com/worktodo-sync.json'"
+            :placeholder="provider === 'pocketbase' ? 'https://pb.example.com' : 'https://dav.example.com/work-todo-sync.json'"
             autocomplete="off"
             v-model="url"
           />
@@ -123,7 +123,7 @@ watch(
     password.value = '';
     register.value = false;
     try {
-      const saved = JSON.parse(localStorage.getItem('worktodo.sync.v1') || '{}');
+      const saved = JSON.parse(localStorage.getItem('work-todo.sync.v1') || '{}');
       if (saved.provider) provider.value = saved.provider;
       if (saved.url) url.value = saved.url;
       if (saved.identity) identity.value = saved.identity;

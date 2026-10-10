@@ -1,6 +1,6 @@
 # 构建说明
 
-WorkTodo 前端为 Vue 3 + Vite 单页应用（源码在 `src/`，入口 `index.html` + `styles.css`）。
+work-todo 前端为 Vue 3 + Vite 单页应用（源码在 `src/`，入口 `index.html` + `styles.css`）。
 桌面端由 Tauri 2 承载同一套前端构建产物。
 
 ## Web 预览
@@ -63,7 +63,7 @@ cargo tauri build
 ## 目录说明
 
 ```
-workTodo/
+work-todo/
 ├── index.html              # Vite 入口（挂载 #app）
 ├── styles.css              # 唯一样式源（Vite 打包进 dist/）
 ├── vite.config.js          # plugin-vue、base:'./'（Tauri 需要相对资源路径）、vitest 配置
@@ -83,7 +83,7 @@ workTodo/
 │   ├── component/          # vitest + @vue/test-utils 组件测试
 │   └── e2e/                # playwright-core 真浏览器端到端
 ├── src-tauri/              # Tauri 桌面壳
-│   ├── Cargo.toml          # 含 [lib] name = "worktodo_lib"
+│   ├── Cargo.toml          # 含 [lib] name = "work_todo_lib"
 │   ├── tauri.conf.json     # frontendDist = "../dist"
 │   └── src/
 │       ├── main.rs
@@ -96,19 +96,19 @@ workTodo/
 ## 数据
 
 - 存储：WebView 的 `localStorage`
-- 键名：`worktodo.tasks.v1`（任务）、`worktodo.projects.v1`（项目）、`worktodo.sync.v1`（同步会话）；界面偏好存 `sessionStorage` 的 `worktodo.ui.v1`；更新检查节流时间戳 `worktodo.update.v1`
+- 键名：`work-todo.tasks.v1`（任务）、`work-todo.projects.v1`（项目）、`work-todo.sync.v1`（同步会话）；界面偏好存 `sessionStorage` 的 `work-todo.ui.v1`；更新检查节流时间戳 `work-todo.update.v1`
 - 任务/项目为**软删除**：删除写入 `deletedAt` 墓碑（保留 30 天）以传播删除状态，界面只显示活数据
 - 数据版本：`SCHEMA_VERSION = 3`（v2 及以下自动补 `deletedAt: null` 升级读取）
 - Windows/macOS 桌面包内数据独立于浏览器，各自持久化。
 
 ## 数据与备份
 
-- **导出**：侧栏「导出数据」下载 `worktodo-YYYYMMDD.json`，含 `schemaVersion`、`exportedAt`、`tasks`、`projects`（含墓碑）。
+- **导出**：侧栏「导出数据」下载 `work-todo-YYYYMMDD.json`，含 `schemaVersion`、`exportedAt`、`tasks`、`projects`（含墓碑）。
 - **导入**：侧栏「导入数据」选择 JSON；默认按 `id` 合并（同 id 取 `max(updatedAt, deletedAt)` 较新者），导入前有确认。
-- **浏览器数据**：`localStorage` 键 `worktodo.tasks.v1` / `worktodo.projects.v1`。侧栏有数据风险提示（`#data-hint`）。
+- **浏览器数据**：`localStorage` 键 `work-todo.tasks.v1` / `work-todo.projects.v1`。侧栏有数据风险提示（`#data-hint`）。
 - **桌面数据**：Tauri 应用数据目录下的 `tasks.json`（通过 `load_tasks` / `save_tasks` 命令读写）。启动时会尝试从桌面文件恢复。
-- **桌面备份**：应用数据目录 `backups/worktodo-YYYYMMDD-HHmmss.json`，启动与导入后自动备份，滚动保留 10 份；侧栏「数据备份」可查看/恢复（`backup_tasks` / `list_backups` / `restore_backup`）。
-- **多端同步**：侧栏「同步设置」。支持 PocketBase（自建，需一个数据集合，名称可在应用内配置、默认 `workTodo`）与 WebDAV（网盘 JSON 文件）；pull-merge-push + rev/ETag 乐观锁，实体级 LWW 自动解决冲突。详见 `docs/SYNC-DESIGN.md`。
+- **桌面备份**：应用数据目录 `backups/work-todo-YYYYMMDD-HHmmss.json`，启动与导入后自动备份，滚动保留 10 份；侧栏「数据备份」可查看/恢复（`backup_tasks` / `list_backups` / `restore_backup`）。
+- **多端同步**：侧栏「同步设置」。支持 PocketBase（自建，需一个数据集合，名称可在应用内配置、默认 `work_todo`）与 WebDAV（网盘 JSON 文件）；pull-merge-push + rev/ETag 乐观锁，实体级 LWW 自动解决冲突。详见 `docs/SYNC-DESIGN.md`。
 - **测试**：`npm test`（单元 + 组件）、`npm run test:e2e`（构建后真浏览器端到端）。
 
 ## 版本
@@ -121,8 +121,8 @@ workTodo/
 
 应用会检查 GitHub Releases 并引导到下载页（不自动下载安装包，网页版与桌面版行为一致）。
 
-- **检查入口**：启动后静默检查（6 小时内最多一次，时间戳存 `worktodo.update.v1`）；侧栏底部「检查更新」随时手动检查；侧栏底部版本行常驻显示当前版本，发现新版时变为主题色并显示「有新版 vX.Y.Z」，点击可打开更新弹窗。
-- **版本来源**：`https://api.github.com/repos/cyamoyed/workTodo/releases/latest`（不含 draft / prerelease）。`tag_name` 形如 `v0.5.0`（可省略 `v`），与运行中版本比较，更新日志取 Release 正文（`body`，弹窗内按纯文本展示）。
+- **检查入口**：启动后静默检查（6 小时内最多一次，时间戳存 `work-todo.update.v1`）；侧栏底部「检查更新」随时手动检查；侧栏底部版本行常驻显示当前版本，发现新版时变为主题色并显示「有新版 vX.Y.Z」，点击可打开更新弹窗。
+- **版本来源**：`https://api.github.com/repos/cyamoyed/work-todo/releases/latest`（不含 draft / prerelease）。`tag_name` 形如 `v0.5.0`（可省略 `v`），与运行中版本比较，更新日志取 Release 正文（`body`，弹窗内按纯文本展示）。
 - **下载目标**：按平台挑安装包资产——Windows 优先 `*-setup.exe`（其次 `.exe` / `.msi`），macOS `.dmg`，Linux `.AppImage`（其次 `.deb`）；没有匹配资产则打开 Release 页面。桌面端用 `plugin:opener|open_url` 调系统浏览器（`src-tauri/capabilities/default.json` 授予 `opener:default`），网页端 `window.open` 新标签页。
 - **前端版本号**：由 `src-tauri/Cargo.toml` 经 Vite `define` 注入为 `__APP_VERSION__`（版本号唯一源头），`src/` 内不要手写版本号。
 

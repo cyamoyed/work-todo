@@ -2,7 +2,7 @@
   <aside class="side">
     <div class="logo">
       <div class="logo-mark" aria-hidden="true"></div>
-      <div class="logo-text">WorkTodo</div>
+      <div class="logo-text">work-todo</div>
     </div>
 
     <nav class="nav" id="nav" aria-label="视图">

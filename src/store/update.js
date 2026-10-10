@@ -1,4 +1,4 @@
-/* WorkTodo — update-check state (reactive view for templates) + orchestration */
+/* work-todo — update-check state (reactive view for templates) + orchestration */
 
 import { reactive } from 'vue';
 import { getAppVersion, checkForUpdates, shouldAutoCheck, openDownload } from '../lib/update.js';

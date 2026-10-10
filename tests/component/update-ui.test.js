@@ -8,13 +8,13 @@ import { updateState } from '../../src/store/update.js';
 const NEWER = {
   tag_name: 'v9.9.9',
   body: '更新内容摘要',
-  html_url: 'https://github.com/cyamoyed/workTodo/releases/tag/v9.9.9',
+  html_url: 'https://github.com/cyamoyed/work-todo/releases/tag/v9.9.9',
   published_at: '2026-10-01T00:00:00Z',
   assets: [
     {
-      name: 'WorkTodo_9.9.9_x64-setup.exe',
+      name: 'work-todo_9.9.9_x64-setup.exe',
       browser_download_url:
-        'https://github.com/cyamoyed/workTodo/releases/download/v9.9.9/WorkTodo_9.9.9_x64-setup.exe',
+        'https://github.com/cyamoyed/work-todo/releases/download/v9.9.9/work-todo_9.9.9_x64-setup.exe',
     },
   ],
 };
@@ -85,7 +85,7 @@ describe('manual check', () => {
     await flushPromises();
     await wrapper.find('#btn-open-download').trigger('click');
     await flushPromises();
-    expect(open).toHaveBeenCalledWith(expect.stringContaining('github.com/cyamoyed/workTodo'), '_blank');
+    expect(open).toHaveBeenCalledWith(expect.stringContaining('github.com/cyamoyed/work-todo'), '_blank');
     expect(wrapper.find('#update-modal').isVisible()).toBe(false);
   });
 
