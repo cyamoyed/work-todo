@@ -68,14 +68,7 @@ kbd {
   min-height: 0; overflow: auto;
 }
 .logo { display: flex; align-items: center; gap: 10px; padding: 2px 10px 22px; }
-.logo-mark {
-  width: 22px; height: 22px; border-radius: 6px; background: var(--ink);
-  position: relative;
-}
-.logo-mark::after {
-  content: ""; position: absolute; inset: 6px;
-  background: var(--panel); border-radius: 2px;
-}
+.logo-mark { width: 22px; height: 22px; flex: none; }
 .logo-text { font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
 
 .nav { display: flex; flex-direction: column; gap: 2px; }
@@ -695,7 +688,7 @@ kbd {
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; }
   .side { display: none; }
-  .brand-mobile { display: block; margin-right: 4px; }
+  .brand-mobile { display: flex; align-items: center; gap: 6px; margin-right: 4px; }
   .top { padding: 14px 16px; }
   .body { padding: 16px 16px 88px; }
   .task-card {

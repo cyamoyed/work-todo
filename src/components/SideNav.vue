@@ -1,7 +1,7 @@
 <template>
   <aside class="side">
     <div class="logo">
-      <div class="logo-mark" aria-hidden="true"></div>
+      <div class="logo-mark" aria-hidden="true"><BrandMark :size="22" /></div>
       <div class="logo-text">work-todo</div>
     </div>
 
@@ -80,6 +80,7 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import ProjectList from './ProjectList.vue';
+import BrandMark from './BrandMark.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { useTransfer } from '../composables/useTransfer.js';
