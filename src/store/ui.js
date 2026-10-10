@@ -24,6 +24,7 @@ const state = reactive({
   projectModalOpen: false,
   backupModalOpen: false,
   syncModalOpen: false,
+  updateModalOpen: false,
   confirm: {
     open: false,
     message: '',
@@ -207,6 +208,16 @@ export function useUiStore() {
 
     closeSyncModal() {
       state.syncModalOpen = false;
+      if (state.lastFocus && state.lastFocus.focus) state.lastFocus.focus();
+    },
+
+    openUpdateModal(anchor = null) {
+      state.lastFocus = anchor || (typeof document !== 'undefined' ? document.activeElement : null);
+      state.updateModalOpen = true;
+    },
+
+    closeUpdateModal() {
+      state.updateModalOpen = false;
       if (state.lastFocus && state.lastFocus.focus) state.lastFocus.focus();
     },
 

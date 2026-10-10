@@ -803,6 +803,27 @@ kbd {
 .sync-dot.ok { background: #16a34a; }
 .sync-dot.error { background: #dc2626; }
 
+/* —— Version line + update dialog —— */
+.side-ver { margin-bottom: 8px; }
+#app-version {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 0; font-size: 11px; color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+#app-version:hover { color: var(--ink-2); }
+#app-version.has-update, #app-version.has-update:hover { color: var(--accent); }
+.version-dot {
+  width: 5px; height: 5px; border-radius: 999px;
+  background: var(--accent); flex: none;
+}
+.update-notes {
+  margin: 0 20px 16px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); font-size: 12.5px; line-height: 1.7;
+  color: var(--ink-2); white-space: pre-wrap; word-break: break-word;
+  max-height: 240px; overflow: auto;
+}
+
 /* —— Sync settings modal —— */
 .sync-check {
   display: flex; align-items: center; gap: 8px;

@@ -40,6 +40,7 @@
   <ProjectModal />
   <BackupModal />
   <SyncSettingsModal />
+  <UpdateModal />
   <ConfirmDialog />
   <MobileDrawer />
   <StatusMenu />
@@ -62,6 +63,7 @@ import TaskFormModal from './components/TaskFormModal.vue';
 import ProjectModal from './components/ProjectModal.vue';
 import BackupModal from './components/BackupModal.vue';
 import SyncSettingsModal from './components/SyncSettingsModal.vue';
+import UpdateModal from './components/UpdateModal.vue';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 import MobileDrawer from './components/MobileDrawer.vue';
 import StatusMenu from './components/StatusMenu.vue';

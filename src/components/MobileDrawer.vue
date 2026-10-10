@@ -21,6 +21,7 @@
       <button type="button" id="btn-import-mobile" @click="importMobile">导入数据</button>
       <button v-if="desktop" type="button" id="btn-backup-mobile" @click="backupMobile">数据备份</button>
       <button type="button" id="btn-sync-settings-mobile" @click="syncMobile">同步设置</button>
+      <button type="button" id="btn-check-update-mobile" @click="updateMobile">检查更新</button>
     </div>
   </aside>
 </template>
@@ -31,6 +32,7 @@ import { useRouter } from 'vue-router';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { useTransfer } from '../composables/useTransfer.js';
+import { useUpdateCheck } from '../composables/useUpdateCheck.js';
 import { isTauri } from '../lib/tauri.js';
 import { navCounts } from '../core/filters.js';
 
@@ -38,6 +40,7 @@ const tasks = useTaskStore();
 const ui = useUiStore();
 const router = useRouter();
 const { doExport } = useTransfer();
+const { checkNow } = useUpdateCheck();
 const desktop = isTauri();
 
 const navItems = [
@@ -79,5 +82,10 @@ function backupMobile() {
 function syncMobile() {
   ui.closeDrawer();
   ui.openSyncModal(null);
+}
+
+function updateMobile() {
+  ui.closeDrawer();
+  checkNow(null);
 }
 </script>

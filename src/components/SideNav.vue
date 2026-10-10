@@ -34,6 +34,12 @@
         <button type="button" id="btn-import" @click="openImport">导入数据</button>
         <button v-if="desktop" type="button" id="btn-backup" @click="openBackup">数据备份</button>
         <button type="button" id="btn-sync-settings" @click="openSync">同步设置</button>
+        <button
+          type="button"
+          id="btn-check-update"
+          :disabled="updateState.status === 'checking'"
+          @click="checkUpdate"
+        >{{ checkLabel }}</button>
         <input
           id="import-file"
           type="file"
@@ -44,6 +50,19 @@
         />
       </div>
       <div class="side-hint">
+        <div class="side-ver">
+          <button
+            type="button"
+            id="app-version"
+            :class="{ 'has-update': hasUpdate }"
+            :title="hasUpdate ? '发现新版本，点击查看' : '当前版本，点击检查更新'"
+            @click="versionClick"
+          >
+            <i v-if="hasUpdate" class="version-dot" aria-hidden="true"></i>
+            <span>v{{ updateState.currentVersion }}</span>
+            <span v-if="hasUpdate"> · 有新版 v{{ updateState.latest.version }}</span>
+          </button>
+        </div>
         <span class="sync-status" id="sync-status" :title="syncState.lastError || ''">
           <i class="sync-dot" :class="syncDotClass" aria-hidden="true"></i>{{ syncText }}
         </span>
@@ -64,6 +83,8 @@ import ProjectList from './ProjectList.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { useTransfer } from '../composables/useTransfer.js';
+import { useUpdateCheck } from '../composables/useUpdateCheck.js';
+import { updateState } from '../store/update.js';
 import { isTauri } from '../lib/tauri.js';
 import { syncState, syncStatusText } from '../store/sync.js';
 import { navCounts, projectStats } from '../core/filters.js';
@@ -72,7 +93,11 @@ const tasks = useTaskStore();
 const ui = useUiStore();
 const router = useRouter();
 const { doExport, importFile } = useTransfer();
+const { checkNow } = useUpdateCheck();
 const desktop = isTauri();
+
+const hasUpdate = computed(() => updateState.status === 'available' && !!updateState.latest);
+const checkLabel = computed(() => (updateState.status === 'checking' ? '检查中…' : '检查更新'));
 
 const syncText = computed(() => syncStatusText());
 const syncDotClass = computed(() => {
@@ -123,6 +148,15 @@ function openBackup() {
 
 function openSync() {
   ui.openSyncModal(document.getElementById('btn-sync-settings'));
+}
+
+function checkUpdate() {
+  checkNow(document.getElementById('btn-check-update'));
+}
+
+function versionClick() {
+  if (hasUpdate.value) ui.openUpdateModal(document.getElementById('app-version'));
+  else checkNow(document.getElementById('app-version'));
 }
 
 function onImportFile(e) {

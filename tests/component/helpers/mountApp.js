@@ -18,6 +18,7 @@ import ReviewPage from '../../../src/views/ReviewPage.vue';
 import ProjectView from '../../../src/views/ProjectView.vue';
 import { useTaskStore } from '../../../src/store/tasks.js';
 import { useUiStore } from '../../../src/store/ui.js';
+import { __resetUpdateStateForTests } from '../../../src/store/update.js';
 import { __setStorageForTests } from '../../../src/lib/storage.js';
 
 // Mirror of the routes in src/router/index.js (hash → memory history).
@@ -56,6 +57,7 @@ export function resetState() {
   const tasks = useTaskStore();
   const ui = useUiStore();
   tasks.load();
+  __resetUpdateStateForTests();
   ui.setFilters({ ...DEFAULT_FILTERS });
   ui.setSortMode('due');
   ui.setDoneExpanded(false);
@@ -63,6 +65,7 @@ export function resetState() {
   ui.hideToast();
   ui.closeTaskModal();
   ui.closeProjectModal();
+  ui.closeUpdateModal();
   ui.closeConfirm();
   ui.closeDrawer();
   ui.state._preserveStatusOnSync = false;

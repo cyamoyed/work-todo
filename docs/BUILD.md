@@ -96,7 +96,7 @@ workTodo/
 ## 数据
 
 - 存储：WebView 的 `localStorage`
-- 键名：`worktodo.tasks.v1`（任务）、`worktodo.projects.v1`（项目）、`worktodo.sync.v1`（同步会话）；界面偏好存 `sessionStorage` 的 `worktodo.ui.v1`
+- 键名：`worktodo.tasks.v1`（任务）、`worktodo.projects.v1`（项目）、`worktodo.sync.v1`（同步会话）；界面偏好存 `sessionStorage` 的 `worktodo.ui.v1`；更新检查节流时间戳 `worktodo.update.v1`
 - 任务/项目为**软删除**：删除写入 `deletedAt` 墓碑（保留 30 天）以传播删除状态，界面只显示活数据
 - 数据版本：`SCHEMA_VERSION = 3`（v2 及以下自动补 `deletedAt: null` 升级读取）
 - Windows/macOS 桌面包内数据独立于浏览器，各自持久化。
@@ -116,3 +116,13 @@ workTodo/
 - 当前前端功能版本：**0.4.0**（持久化加固 + 多端同步）。
 - v0.3 起新增：项目、日程（dayline）、本周回顾、hash 路由（视图进 URL、前进后退、直达链接）、Vue 3 + Vite 架构。
 - v0.4 起新增：软删除墓碑（schema v3）、桌面滚动备份、PocketBase / WebDAV 多端同步。
+
+## 软件更新
+
+应用会检查 GitHub Releases 并引导到下载页（不自动下载安装包，网页版与桌面版行为一致）。
+
+- **检查入口**：启动后静默检查（6 小时内最多一次，时间戳存 `worktodo.update.v1`）；侧栏底部「检查更新」随时手动检查；侧栏底部版本行常驻显示当前版本，发现新版时变为主题色并显示「有新版 vX.Y.Z」，点击可打开更新弹窗。
+- **版本来源**：`https://api.github.com/repos/cyamoyed/workTodo/releases/latest`（不含 draft / prerelease）。`tag_name` 形如 `v0.5.0`（可省略 `v`），与运行中版本比较，更新日志取 Release 正文（`body`，弹窗内按纯文本展示）。
+- **下载目标**：按平台挑安装包资产——Windows 优先 `*-setup.exe`（其次 `.exe` / `.msi`），macOS `.dmg`，Linux `.AppImage`（其次 `.deb`）；没有匹配资产则打开 Release 页面。桌面端用 `plugin:opener|open_url` 调系统浏览器（`src-tauri/capabilities/default.json` 授予 `opener:default`），网页端 `window.open` 新标签页。
+- **前端版本号**：由 `package.json` 经 Vite `define` 注入为 `__APP_VERSION__`，`src/` 内不要手写版本号。
+- **发布流程**：三处版本号同步升版（`package.json` / `src-tauri/Cargo.toml` / `src-tauri/tauri.conf.json`）→ `cargo tauri build` 产出安装包 → 在 GitHub 建 `vX.Y.Z` tag 并发布 Release（正文写更新日志，把安装包作为 Release assets 上传，保持 Tauri 默认命名）。用户端应用会检测到新版。

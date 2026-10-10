@@ -13,6 +13,7 @@ import {
   notifyOverdue,
   notifyDueSoon,
 } from './composables/useNotifications.js';
+import { useUpdateCheck } from './composables/useUpdateCheck.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
@@ -73,3 +74,6 @@ bootSync();
 setTimeout(requestNotifyPermission, 800);
 setTimeout(() => notifyOverdue(tasks.state.tasks), 1200);
 setTimeout(() => notifyDueSoon(tasks.state.tasks), 1400);
+
+// Update check (throttled, silent unless a newer release is published).
+setTimeout(() => useUpdateCheck().autoCheck(), 1800);
