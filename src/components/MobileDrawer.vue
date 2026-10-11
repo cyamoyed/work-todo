@@ -25,7 +25,6 @@
         type="button"
         id="btn-settings-mobile"
         class="drawer-settings"
-        :class="{ active: ui.state.viewMode === 'settings' }"
         @click="goSettings"
       >
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -75,7 +74,7 @@ function go(view) {
 }
 
 function goSettings() {
-  router.push('/settings');
   ui.closeDrawer();
+  ui.openSettingsModal(document.getElementById('btn-settings-mobile'));
 }
 </script>

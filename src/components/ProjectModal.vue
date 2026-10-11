@@ -15,9 +15,6 @@
           <input id="field-project-name" type="text" maxlength="40" placeholder="例如：v2.2 发布" autocomplete="off" v-model="name" />
           <span class="field-error" id="project-title-error" :hidden="!nameError">请填写项目名称</span>
         </label>
-        <p class="modal-note" v-if="!ui.state.editingProjectId">
-          识别色按 灰 · 墨 · 靛 · 褐 自动分配。
-        </p>
         <div class="modal-actions">
           <button type="button" id="btn-cancel-project" class="btn btn-ghost" @click="close">取消</button>
           <button type="submit" class="btn btn-primary">保存</button>

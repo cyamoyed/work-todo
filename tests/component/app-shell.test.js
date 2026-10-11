@@ -10,11 +10,10 @@ import { useUiStore } from '../../src/store/ui.js';
 let wrapper;
 let tasks;
 let ui;
-let router;
 
 beforeEach(async () => {
   resetState();
-  ({ wrapper, tasks, ui, router } = await mountApp());
+  ({ wrapper, tasks, ui } = await mountApp());
 });
 
 afterEach(async () => {
@@ -22,9 +21,10 @@ afterEach(async () => {
 });
 
 describe('export/import HTML anchors present', () => {
-  it('settings-page transfer controls exist in the mounted DOM', async () => {
-    await router.push('/settings');
+  it('settings-modal transfer controls exist in the mounted DOM', async () => {
+    await wrapper.find('#btn-settings').trigger('click');
     await flushPromises();
+    expect(wrapper.find('#settings-backdrop').element.hidden).toBe(false);
     expect(wrapper.find('#btn-export').exists()).toBe(true); // has btn-export
     expect(wrapper.find('#btn-import').exists()).toBe(true); // has btn-import
     expect(wrapper.find('#import-file').exists()).toBe(true); // has import-file

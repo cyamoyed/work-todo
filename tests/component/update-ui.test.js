@@ -28,13 +28,12 @@ function mockFetch(status, body) {
 
 let wrapper;
 let ui;
-let router;
 
 beforeEach(async () => {
   resetState();
-  ({ wrapper, ui, router } = await mountApp());
-  // update entry points moved from the side footer to the /settings page
-  await router.push('/settings');
+  ({ wrapper, ui } = await mountApp());
+  // update entry points live in the settings modal
+  ui.openSettingsModal();
   await flushPromises();
 });
 

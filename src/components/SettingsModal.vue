@@ -1,10 +1,17 @@
 <template>
-  <div class="settings-page">
-    <header class="settings-head">
-      <h2>设置</h2>
-    </header>
+  <div id="settings-backdrop" class="modal-backdrop" :hidden="!ui.state.settingsModalOpen" @click.self="close">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+      <div class="modal-header">
+        <h2 id="settings-modal-title">设置</h2>
+        <button type="button" class="modal-close" id="btn-close-settings" aria-label="关闭" @click="close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
 
-    <section class="settings-sec" aria-label="外观">
+      <div class="settings-body">
+        <section class="settings-sec" aria-label="外观">
       <h4 class="settings-sec-title">外观</h4>
       <div class="settings-row">
         <div class="settings-row-main">
@@ -80,6 +87,8 @@
         >{{ checkLabel }}</button>
       </div>
     </section>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -97,6 +106,10 @@ const ui = useUiStore();
 const { doExport } = useTransfer();
 const { checkNow } = useUpdateCheck();
 const desktop = isTauri();
+
+function close() {
+  ui.closeSettingsModal();
+}
 
 const hasUpdate = computed(() => updateState.status === 'available' && !!updateState.latest);
 const checkLabel = computed(() => (updateState.status === 'checking' ? '检查中…' : '检查更新'));

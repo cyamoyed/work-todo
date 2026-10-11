@@ -31,6 +31,10 @@ export function useKeyboardShortcuts({ onCreateNew } = {}) {
         ui.closeProjectModal();
         return;
       }
+      if (ui.state.settingsModalOpen) {
+        ui.closeSettingsModal();
+        return;
+      }
       // nothing else to close — Esc leaves multi-select mode
       if (ui.state.selection.active) {
         ui.stopSelection();
@@ -41,7 +45,8 @@ export function useKeyboardShortcuts({ onCreateNew } = {}) {
       const openBackdrop =
         (ui.state.confirm.open && document.querySelector('#confirm-backdrop')) ||
         (ui.state.taskModalOpen && document.querySelector('#modal-backdrop')) ||
-        (ui.state.projectModalOpen && document.querySelector('#project-backdrop'));
+        (ui.state.projectModalOpen && document.querySelector('#project-backdrop')) ||
+        (ui.state.settingsModalOpen && document.querySelector('#settings-backdrop'));
       if (!openBackdrop) return;
       const focusables = openBackdrop.querySelectorAll(
         'button, [href], input, textarea, [tabindex]:not([tabindex="-1"])'

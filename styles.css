@@ -587,11 +587,13 @@ kbd {
 .select-check.is-on {
   background: var(--accent); border-color: var(--accent);
 }
-/* tall box + right/bottom borders, rotated +45° — the classic unclipped ✓ */
+/* tall box + right/bottom borders, rotated +45° — the classic unclipped ✓;
+   the ink sits on the box's lower edges, so translate(-1,-1) in the rotated
+   frame cancels its ~1px downward sag (pure vertical shift on screen) */
 .select-check.is-on::after {
   content: ""; width: 5px; height: 9px;
   border: solid #fff; border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  transform: rotate(45deg) translate(-1.5px, -1.5px);
 }
 .task-card.is-overdue { box-shadow: inset 2px 0 0 var(--danger); }
 .task-card.is-done .task-title {
@@ -775,7 +777,6 @@ kbd {
 .modal-close:hover { background: var(--line); color: var(--ink); }
 .modal .field, .modal .field-row { margin: 0 20px 16px; }
 .modal > p { padding: 0 20px 16px; font-size: 13.5px; color: var(--ink-2); line-height: 1.7; }
-.modal .modal-note { margin: 0 20px 14px; font-size: 12px; color: var(--muted); line-height: 1.7; }
 .modal-actions {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 12px 20px 18px; border-top: 1px solid var(--line);
@@ -1142,10 +1143,9 @@ kbd {
   font-size: 12.5px;
 }
 
-/* —— Settings page (/settings) —— */
-.settings-page { max-width: 620px; }
-.settings-head h2 { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
-.settings-sec { margin-top: 28px; }
+/* —— Settings modal —— */
+.settings-body { padding: 2px 20px 20px; }
+.settings-sec { margin-top: 22px; }
 .settings-sec-title {
   font-size: 11px; font-weight: 650; letter-spacing: 0.1em;
   color: var(--faint); text-transform: uppercase;

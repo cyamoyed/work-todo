@@ -583,11 +583,13 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
   it('export / import anchors', async () => {
     await page.click('#btn-settings');
     await page.waitForTimeout(80);
+    expect(await page.locator('#settings-backdrop').isVisible()).toBe(true);
     expect(await page.locator('#btn-export').isVisible()).toBe(true);
     expect(await page.locator('#btn-import').isVisible()).toBe(true);
     expect(await page.locator('#import-file').count()).toBe(1);
-    await page.click('#nav [data-view="today"]');
-    await page.waitForTimeout(50);
+    await page.click('#btn-close-settings');
+    await page.waitForTimeout(80);
+    expect(await page.locator('#settings-backdrop').isHidden()).toBe(true);
   });
 
   it('due time field in form', async () => {

@@ -16,7 +16,6 @@ import AllView from '../../../src/views/AllView.vue';
 import DoneView from '../../../src/views/DoneView.vue';
 import ReviewPage from '../../../src/views/ReviewPage.vue';
 import ProjectView from '../../../src/views/ProjectView.vue';
-import SettingsView from '../../../src/views/SettingsView.vue';
 import { useTaskStore } from '../../../src/store/tasks.js';
 import { useUiStore } from '../../../src/store/ui.js';
 import { __resetUpdateStateForTests } from '../../../src/store/update.js';
@@ -32,7 +31,6 @@ const routes = [
   { path: '/all', name: 'all', component: AllView },
   { path: '/done', name: 'done', component: DoneView },
   { path: '/review', name: 'review', component: ReviewPage },
-  { path: '/settings', name: 'settings', component: SettingsView },
   {
     path: '/project/:id',
     name: 'project',
@@ -70,6 +68,7 @@ export function resetState() {
   ui.hideToast();
   ui.closeTaskModal();
   ui.closeProjectModal();
+  ui.closeSettingsModal();
   ui.closeUpdateModal();
   ui.closeConfirm();
   ui.closeDrawer();

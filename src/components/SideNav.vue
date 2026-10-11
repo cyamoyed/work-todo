@@ -35,9 +35,8 @@
           type="button"
           id="btn-settings"
           class="side-settings"
-          :class="{ active: isSettings }"
           aria-label="打开设置"
-          @click="goSettings"
+          @click="openSettings"
         >
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <circle cx="8" cy="8" r="2.25" stroke="currentColor" stroke-width="1.4" />
@@ -66,8 +65,6 @@ import { navCounts, projectStats } from '../core/filters.js';
 const tasks = useTaskStore();
 const ui = useUiStore();
 const router = useRouter();
-
-const isSettings = computed(() => ui.state.viewMode === 'settings');
 
 const navItems = [
   { view: 'today', label: '今天' },
@@ -99,7 +96,7 @@ function newProject() {
   ui.openProjectModal(null, document.getElementById('btn-new-project'));
 }
 
-function goSettings() {
-  router.push('/settings');
+function openSettings() {
+  ui.openSettingsModal(document.getElementById('btn-settings'));
 }
 </script>

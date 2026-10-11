@@ -131,9 +131,19 @@ async function addTask(title) {
 }
 
 async function openSyncModal() {
-  await page.click('#btn-settings');
+  // 上一用例的登录流程可能把设置弹窗留在打开状态——先复位
+  if (await page.locator('#settings-backdrop').isVisible()) {
+    await page.click('#btn-close-settings');
+    await page.waitForTimeout(80);
+  }
+  await page.click('#btn-settings'); // 设置弹窗
   await page.waitForTimeout(80);
-  await page.click('#btn-sync-settings');
+  await page.click('#btn-sync-settings'); // 同步配置弹窗(叠加在上)
+  await page.waitForTimeout(80);
+}
+
+async function closeSettingsModal() {
+  await page.click('#btn-close-settings');
   await page.waitForTimeout(80);
 }
 
@@ -143,9 +153,9 @@ async function syncNowViaModal() {
   await page.waitForTimeout(300);
   await page.click('#btn-cancel-sync');
   await page.waitForTimeout(80);
-  // the sync entry lives on /settings; task-view assertions need the list back
-  // (/all shows every task regardless of due date)
-  await page.click('[data-view="all"]');
+  await closeSettingsModal();
+  // task-view assertions need the list; /all shows every task regardless of due date
+  await page.click('#nav [data-view="all"]');
   await page.waitForTimeout(80);
 }
 

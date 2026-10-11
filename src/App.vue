@@ -6,32 +6,32 @@
       <TopBar />
 
       <div class="body">
-        <StatsSpans v-if="!isSettings" />
-        <Strip v-if="!isSettings" />
+        <StatsSpans />
+        <Strip />
 
-        <div v-if="!isSettings" class="toolbar-row">
+        <div class="toolbar-row">
           <QuickAdd />
           <FilterBar />
         </div>
 
-        <ErrorBanner v-if="!isSettings" />
+        <ErrorBanner />
 
-        <section :class="{ 'list-section': !isSettings }" :aria-label="isSettings ? '设置' : '任务列表'">
-          <div v-if="!isSettings" class="list-head">
+        <section class="list-section" aria-label="任务列表">
+          <div class="list-head">
             <h2 class="list-title" id="list-title">{{ listTitle }}</h2>
             <p class="list-meta" id="list-meta">{{ listMeta }}</p>
           </div>
           <RouterView />
         </section>
 
-        <footer v-if="!isSettings" class="footer">
+        <footer class="footer">
           <span id="task-stats">{{ footerText }}</span>
         </footer>
       </div>
     </main>
   </div>
 
-  <button v-if="!isSettings" type="button" id="fab-new" class="fab-new" aria-label="新建任务" @click="createNew">
+  <button type="button" id="fab-new" class="fab-new" aria-label="新建任务" @click="createNew">
     <svg width="22" height="22" viewBox="0 0 14 14" fill="none" aria-hidden="true">
       <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
     </svg>
@@ -48,6 +48,7 @@
 
   <TaskFormModal />
   <ProjectModal />
+  <SettingsModal />
   <BackupModal />
   <SyncSettingsModal />
   <UpdateModal />
@@ -72,6 +73,7 @@ import FilterBar from './components/FilterBar.vue';
 import ErrorBanner from './components/ErrorBanner.vue';
 import TaskFormModal from './components/TaskFormModal.vue';
 import ProjectModal from './components/ProjectModal.vue';
+import SettingsModal from './components/SettingsModal.vue';
 import BackupModal from './components/BackupModal.vue';
 import SyncSettingsModal from './components/SyncSettingsModal.vue';
 import UpdateModal from './components/UpdateModal.vue';
@@ -97,8 +99,6 @@ const { importFile } = useTransfer();
 useKeyboardShortcuts({
   onCreateNew: () => ui.openTaskModal(null, null),
 });
-
-const isSettings = computed(() => ui.state.viewMode === 'settings');
 
 function onImportFile(e) {
   importFile(e.target.files && e.target.files[0]);
