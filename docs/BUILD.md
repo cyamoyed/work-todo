@@ -125,7 +125,8 @@ work-todo/
 - **节流与退避**：成功检查后 6 小时内不再自动检查（`UPDATE_AUTO_CHECK_MS`，时间戳存 `work-todo.update.v1`）；检查失败（断网 / 限流）不占用 6 小时窗口，15 分钟后（`UPDATE_RETRY_MS`）即可自动复查——开机断网不会把更新检测拖到 6 小时后。
 - **版本来源**：`https://api.github.com/repos/cyamoyed/work-todo/releases/latest`（不含 draft / prerelease）。`tag_name` 形如 `v0.5.0`（可省略 `v`），与运行中版本比较，更新日志取 Release 正文（`body`，弹窗内按纯文本展示）。
   - **ETag 缓存**：成功响应的 ETag 与解析结果缓存在 `work-todo.update.v1`，下次检查带 `If-None-Match`；GitHub 返回 304 时不消耗 API 限额。
-  - **限流降级**：API 返回 403（未认证限额 60 次/小时/IP，企业出口 IP 容易触发）时改读 `https://github.com/cyamoyed/work-todo/releases.atom`（普通网页，不走 API 限额），解析出最新版本与日志；feed 失败才报「GitHub 请求受限」。两条路径的失败原因（`network` / `rate-limited` / `http` …）会体现在 toast 文案里。
+  - **镜像降级**：主源拿不到确定答案时（403/429 限流——未认证限额 60 次/小时/IP、共享出口 IP 容易触发；5xx；连接挂起或失败——请求带 8 秒超时 `UPDATE_CHECK_TIMEOUT_MS`）依序尝试镜像链：先读 `https://github.com/cyamoyed/work-todo/releases.atom`（普通网页，不走 API 限额），再读 jsDelivr tag 列表 `https://data.jsdelivr.com/v1/packages/gh/cyamoyed/work-todo`（CDN 分发，国内可达性好）。镜像只用来判断"最新版本号是多少"（jsDelivr 侧过滤 prerelease tag），下载目标一律钉在官方 Releases 页，不采信镜像给出的地址。全部失败才报「GitHub 请求受限」等错误（`network` / `rate-limited` / `http`，体现在 toast 文案）。
+  - **陈旧兜底**：所有来源都失败时，若本地存有上次成功检查的结果，会按上次数据展示（弹窗与「有新版」标记附「基于上次检查」说明，toast 加「发布页」快捷入口），不让限流把已知的新版信息也挡掉。
 - **下载目标**：按平台挑安装包资产——Windows 优先 `*-setup.exe`（其次 `.exe` / `.msi`），macOS `.dmg`，Linux `.AppImage`（其次 `.deb`）；没有匹配资产则打开 Release 页面。桌面端用 `plugin:opener|open_url` 调系统浏览器（`src-tauri/capabilities/default.json` 授予 `opener:default`），网页端 `window.open` 新标签页。
 - **更新弹窗**：展示新版本号、当前版本、发布日期、更新日志；操作有「稍后」「复制链接」（复制下载目标到剪贴板，浏览器拉起失败时的兜底）「前往下载」。网页版会附一行提示「网页版部署更新后，刷新页面即可使用新版」。
 - **前端版本号**：由 `src-tauri/Cargo.toml` 经 Vite `define` 注入为 `__APP_VERSION__`（版本号唯一源头），`src/` 内不要手写版本号。

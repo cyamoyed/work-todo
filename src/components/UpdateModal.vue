@@ -14,6 +14,10 @@
         当前版本 v{{ updateState.currentVersion }}<span v-if="publishedText"> · 发布于 {{ publishedText }}</span>
       </p>
 
+      <p v-if="updateState.stale" id="update-stale-hint" class="update-hint">
+        GitHub 暂时请求受限，以上版本信息来自上次检查
+      </p>
+
       <div v-if="latest.notes" id="update-notes" class="update-notes">{{ latest.notes }}</div>
 
       <p v-if="!isDesktop" class="update-hint">网页版部署更新后，刷新页面即可使用新版</p>

@@ -9,6 +9,7 @@ import {
   normalizeRelease,
   trimReleaseNotes,
   parseAtomFeed,
+  pickNewestTag,
   createDownloadProgress,
   formatBytes,
 } from '../../src/core/update.js';
@@ -224,5 +225,34 @@ describe('formatBytes', () => {
     expect(formatBytes(1)).toBe('1 KB');
     expect(formatBytes(0)).toBe('0 MB');
     expect(formatBytes('x')).toBe('0 MB');
+  });
+});
+
+describe('pickNewestTag', () => {
+  it('picks the newest plain version from a jsDelivr payload', () => {
+    expect(
+      pickNewestTag({
+        versions: [{ version: '0.9.0' }, { version: 'v0.10.4' }, { version: '0.10.3' }],
+      })
+    ).toBe('0.10.4');
+  });
+
+  it('skips prerelease tags, unparseable entries and malformed payloads', () => {
+    expect(
+      pickNewestTag({
+        versions: [
+          { version: '0.11.0-beta.1' },
+          { version: '0.11.0-rc.2' },
+          { version: 'nightly' },
+          { version: '' },
+          null,
+          { version: '0.10.4' },
+        ],
+      })
+    ).toBe('0.10.4');
+    expect(pickNewestTag({ versions: [{ version: '1.2.3-rc.1' }] })).toBe(null);
+    expect(pickNewestTag(null)).toBe(null);
+    expect(pickNewestTag({})).toBe(null);
+    expect(pickNewestTag({ versions: 'nope' })).toBe(null);
   });
 });

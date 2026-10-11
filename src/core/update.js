@@ -68,6 +68,26 @@ export function pickDownloadUrl(assets, platform) {
 }
 
 /**
+ * Pick the newest plain release version from a jsDelivr data-API payload
+ * ({ versions: [{ version }] }). The mirror lists every tag with no
+ * prerelease marks, so a tag only counts when it is a bare "X.Y.Z" (optionally
+ * v-prefixed) — anything with a suffix (-beta, -rc.1) or unparseable is
+ * skipped. Mirrors are used for detection only; the caller pins the download
+ * target to the official releases page. Returns the version without the v
+ * prefix, or null.
+ */
+export function pickNewestTag(raw) {
+  const versions = raw && Array.isArray(raw.versions) ? raw.versions : [];
+  let best = null;
+  for (const item of versions) {
+    const tag = item && typeof item.version === 'string' ? item.version.trim() : '';
+    if (!/^v?\d+(\.\d+){0,2}$/i.test(tag)) continue;
+    if (!best || compareVersions(tag, best) > 0) best = tag.replace(/^v/i, '');
+  }
+  return best;
+}
+
+/**
  * Map a GitHub /releases/latest payload to the update shape the app uses:
  * { version, notes, url, publishedAt, downloadUrl } — null when the payload
  * carries no parseable version tag. downloadUrl falls back to the release

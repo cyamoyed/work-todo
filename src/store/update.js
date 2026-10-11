@@ -9,6 +9,7 @@ export const updateState = reactive({
   status: 'idle', // idle | checking | available | up-to-date | no-release | error
   reason: '', // error detail: network | rate-limited | http | bad-payload | no-fetch
   latest: null, // { version, notes, url, publishedAt, downloadUrl }
+  stale: false, // latest came from the last successful check — all sources are down now
   currentVersion: getAppVersion(),
   // Native in-app update (desktop only; see lib/updater.js).
   native: {
@@ -33,10 +34,12 @@ export async function runUpdateCheck({ manual = false } = {}) {
   if (!manual && !shouldAutoCheck()) return null;
   updateState.status = 'checking';
   updateState.reason = '';
+  updateState.stale = false;
   const res = await checkForUpdates();
   updateState.status = res.status;
   updateState.reason = res.reason || '';
   updateState.latest = res.status === 'available' ? res.latest : null;
+  updateState.stale = !!res.stale;
   return res;
 }
 
@@ -119,6 +122,7 @@ export function __resetUpdateStateForTests() {
   updateState.status = 'idle';
   updateState.reason = '';
   updateState.latest = null;
+  updateState.stale = false;
   updateState.currentVersion = getAppVersion();
   const n = updateState.native;
   n.status = 'idle';

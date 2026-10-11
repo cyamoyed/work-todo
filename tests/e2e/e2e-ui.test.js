@@ -121,9 +121,13 @@ beforeAll(async () => {
     })
   );
   // Update checks fall back to the releases Atom feed when the API
-  // rate-limits — keep that path offline too (not exercised by these tests).
+  // rate-limits, then to the jsDelivr tag list — keep every mirror offline
+  // too (not exercised by these tests).
   await context.route('https://github.com/cyamoyed/work-todo/releases.atom', (route) =>
     route.fulfill({ status: 404, contentType: 'application/xml', body: '' })
+  );
+  await context.route('https://data.jsdelivr.com/**', (route) =>
+    route.fulfill({ status: 404, contentType: 'application/json', body: '{}' })
   );
   page = await context.newPage();
   page.on('console', (msg) => {

@@ -9,8 +9,15 @@ import {
   openDownload,
   LATEST_RELEASE_URL,
   ATOM_FEED_URL,
+  JSDIVLR_VERSIONS_URL,
+  RELEASES_PAGE_URL,
 } from '../../src/lib/update.js';
-import { UPDATE_KEY, UPDATE_AUTO_CHECK_MS, UPDATE_RETRY_MS } from '../../src/constants.js';
+import {
+  UPDATE_KEY,
+  UPDATE_AUTO_CHECK_MS,
+  UPDATE_RETRY_MS,
+  UPDATE_CHECK_TIMEOUT_MS,
+} from '../../src/constants.js';
 
 const RELEASE = {
   tag_name: 'v9.9.9',
@@ -89,12 +96,18 @@ describe('checkForUpdates', () => {
   });
 
   it('maps rate limiting and network failures to error', async () => {
-    // 403 on both the API and the atom fallback → rate-limited.
+    // 403/429 on the API and every mirror → rate-limited.
     const limited = await checkForUpdates({
       fetch: vi.fn(async () => jsonResponse(403, {})),
       currentVersion: '0.4.0',
     });
     expect(limited).toEqual({ status: 'error', reason: 'rate-limited' });
+
+    const throttled = await checkForUpdates({
+      fetch: vi.fn(async () => jsonResponse(429, {})),
+      currentVersion: '0.4.0',
+    });
+    expect(throttled).toEqual({ status: 'error', reason: 'rate-limited' });
 
     const down = await checkForUpdates({
       fetch: vi.fn(async () => {
@@ -116,6 +129,67 @@ describe('checkForUpdates', () => {
     expect(res.status).toBe('available');
     expect(res.latest.version).toBe('9.9.9');
     expect(res.latest.downloadUrl).toContain('/releases/tag/v9.9.9');
+  });
+
+  it('falls back to the jsDelivr tag list when the atom feed is unreachable too', async () => {
+    const fetch = vi.fn((url) => {
+      if (url === LATEST_RELEASE_URL) return jsonResponse(403, {});
+      if (url === ATOM_FEED_URL) return jsonResponse(403, {});
+      return jsonResponse(200, {
+        versions: [{ version: '9.10.0-beta.1' }, { version: '9.9.9' }, { version: '0.1.0' }],
+      });
+    });
+    const res = await checkForUpdates({ fetch, currentVersion: '0.4.0' });
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch.mock.calls[2][0]).toBe(JSDIVLR_VERSIONS_URL);
+    // The prerelease tag never wins; the download target stays on the official page.
+    expect(res.status).toBe('available');
+    expect(res.latest.version).toBe('9.9.9');
+    expect(res.latest.url).toBe(RELEASES_PAGE_URL);
+    expect(res.latest.downloadUrl).toBe(RELEASES_PAGE_URL);
+  });
+
+  it('treats 429 like 403 and still tries the mirror chain', async () => {
+    const fetch = vi.fn((url) => {
+      if (url === LATEST_RELEASE_URL) return jsonResponse(429, {});
+      if (url === ATOM_FEED_URL) return jsonResponse(403, {});
+      return jsonResponse(200, { versions: [{ version: '9.9.9' }] });
+    });
+    const res = await checkForUpdates({ fetch, currentVersion: '0.4.0' });
+    expect(fetch).toHaveBeenNthCalledWith(3, JSDIVLR_VERSIONS_URL, expect.anything());
+    expect(res.status).toBe('available');
+    expect(res.latest.version).toBe('9.9.9');
+  });
+
+  it('replays the cached release flagged stale when every source is down', async () => {
+    await checkForUpdates({
+      fetch: vi.fn(async () => jsonResponse(200, RELEASE, { etag: '"x"' })),
+      platform: 'win',
+      currentVersion: '0.4.0',
+    });
+    const allDown = vi.fn(async () => jsonResponse(403, {}));
+    const res = await checkForUpdates({ fetch: allDown, currentVersion: '0.4.0' });
+    expect(res.status).toBe('available');
+    expect(res.stale).toBe(true);
+    expect(res.reason).toBe('rate-limited');
+    expect(res.latest.version).toBe('9.9.9');
+
+    const same = await checkForUpdates({ fetch: allDown, currentVersion: '9.9.9' });
+    expect(same.status).toBe('up-to-date');
+    expect(same.stale).toBe(true);
+  });
+
+  it('aborts a hung primary request after the timeout and degrades to the mirrors', async () => {
+    vi.useFakeTimers();
+    const fetch = vi.fn((url, opts = {}) => {
+      if (url !== LATEST_RELEASE_URL) return Promise.reject(new Error('down'));
+      return new Promise((_, reject) => {
+        if (opts.signal) opts.signal.addEventListener('abort', () => reject(new Error('aborted')));
+      });
+    });
+    const pending = checkForUpdates({ fetch, currentVersion: '0.4.0' });
+    await vi.advanceTimersByTimeAsync(UPDATE_CHECK_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ status: 'error', reason: 'network' });
   });
 
   it('rejects unparseable release payloads', async () => {

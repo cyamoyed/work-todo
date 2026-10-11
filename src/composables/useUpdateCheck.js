@@ -2,6 +2,7 @@
 
 import { useUiStore } from '../store/ui.js';
 import { runUpdateCheck, updateState } from '../store/update.js';
+import { openExternal, RELEASES_PAGE_URL } from '../lib/update.js';
 
 /** Failure copies keyed by checkForUpdates' error reason. */
 const FAILURE_NOTES = {
@@ -19,11 +20,14 @@ export function useUpdateCheck() {
     if (res.status === 'available') {
       ui.openUpdateModal(anchor);
     } else if (res.status === 'up-to-date') {
-      ui.showToast(`已是最新版本 v${updateState.currentVersion}`);
+      const staleNote = res.stale ? '（基于上次检查）' : '';
+      ui.showToast(`已是最新版本 v${updateState.currentVersion}${staleNote}`);
     } else if (res.status === 'no-release') {
       ui.showToast('GitHub 上暂无发布版本');
     } else {
-      ui.showToast(FAILURE_NOTES[res.reason] || '检查更新失败，请稍后重试');
+      const note = FAILURE_NOTES[res.reason] || '检查更新失败，请稍后重试';
+      // The releases page works even when the check API is throttled or blocked.
+      ui.showToast(note, '发布页', () => openExternal(RELEASES_PAGE_URL));
     }
     return res;
   }
@@ -32,7 +36,10 @@ export function useUpdateCheck() {
   async function autoCheck() {
     const res = await runUpdateCheck();
     if (res && res.status === 'available') {
-      ui.showToast(`发现新版本 v${res.latest.version}`, '查看', () => ui.openUpdateModal(null));
+      const staleNote = res.stale ? '（基于上次检查）' : '';
+      ui.showToast(`发现新版本 v${res.latest.version}${staleNote}`, '查看', () =>
+        ui.openUpdateModal(null)
+      );
     }
     return res;
   }
