@@ -1,6 +1,6 @@
 [package]
 name = "work-todo"
-version = "0.10.1"
+version = "0.10.2"
 description = "工作待办 — lightweight work todo app"
 authors = ["work-todo"]
 edition = "2021"
