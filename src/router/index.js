@@ -8,6 +8,7 @@ import AllView from '../views/AllView.vue';
 import DoneView from '../views/DoneView.vue';
 import ReviewPage from '../views/ReviewPage.vue';
 import ProjectView from '../views/ProjectView.vue';
+import SettingsView from '../views/SettingsView.vue';
 
 const routes = [
   { path: '/', redirect: '/today' },
@@ -17,6 +18,7 @@ const routes = [
   { path: '/all', name: 'all', component: AllView },
   { path: '/done', name: 'done', component: DoneView },
   { path: '/review', name: 'review', component: ReviewPage },
+  { path: '/settings', name: 'settings', component: SettingsView },
   {
     path: '/project/:id',
     name: 'project',

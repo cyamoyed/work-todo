@@ -9,6 +9,7 @@ import { isTauri } from '../../src/lib/tauri.js';
 let wrapper;
 let ui;
 let tasks;
+let router;
 
 function mockWebDavFetch() {
   vi.stubGlobal(
@@ -36,7 +37,10 @@ beforeEach(async () => {
     getPayload: () => tasks.exportPayload(),
     applyMerged: (t, p) => tasks.applySyncResult(t, p),
   });
-  ({ wrapper, ui } = await mountApp());
+  ({ wrapper, ui, router } = await mountApp());
+  // sync entry points moved from the side footer to the /settings page
+  await router.push('/settings');
+  await flushPromises();
 });
 
 afterEach(async () => {

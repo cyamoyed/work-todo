@@ -10,10 +10,11 @@ import { useUiStore } from '../../src/store/ui.js';
 let wrapper;
 let tasks;
 let ui;
+let router;
 
 beforeEach(async () => {
   resetState();
-  ({ wrapper, tasks, ui } = await mountApp());
+  ({ wrapper, tasks, ui, router } = await mountApp());
 });
 
 afterEach(async () => {
@@ -21,7 +22,9 @@ afterEach(async () => {
 });
 
 describe('export/import HTML anchors present', () => {
-  it('sidebar transfer controls exist in the mounted DOM', () => {
+  it('settings-page transfer controls exist in the mounted DOM', async () => {
+    await router.push('/settings');
+    await flushPromises();
     expect(wrapper.find('#btn-export').exists()).toBe(true); // has btn-export
     expect(wrapper.find('#btn-import').exists()).toBe(true); // has btn-import
     expect(wrapper.find('#import-file').exists()).toBe(true); // has import-file
@@ -30,10 +33,10 @@ describe('export/import HTML anchors present', () => {
 });
 
 describe('mobile shell nodes', () => {
-  it('#btn-mobile-menu, #mobile-drawer and #btn-export-mobile exist', () => {
+  it('#btn-mobile-menu, #mobile-drawer and #btn-settings-mobile exist', () => {
     expect(wrapper.find('#btn-mobile-menu').exists()).toBe(true); // has btn-mobile-menu
     expect(wrapper.find('#mobile-drawer').exists()).toBe(true); // has mobile-drawer
-    expect(wrapper.find('#btn-export-mobile').exists()).toBe(true); // has btn-export-mobile
+    expect(wrapper.find('#btn-settings-mobile').exists()).toBe(true); // drawer settings entry
     expect(wrapper.find('#btn-mobile-menu').attributes('aria-controls')).toBe('mobile-drawer');
     expect(wrapper.find('#mobile-drawer').element.hidden).toBe(true); // closed by default
   });
@@ -56,9 +59,9 @@ describe('form / toolbar nodes present in mounted App', () => {
     expect(wrapper.find('#field-notes').exists()).toBe(true); // has field-notes
   });
 
-  it('#quick-add-form, #range-filter, #sort-select, #field-due-time, #fab-new exist', () => {
+  it('#quick-add-form, #sort-select, #field-due-time, #fab-new exist', () => {
     expect(wrapper.find('#quick-add-form').exists()).toBe(true); // has quick-add-form
-    expect(wrapper.find('#range-filter').exists()).toBe(true); // has range-filter
+    expect(wrapper.find('#range-filter').exists()).toBe(false); // range chips moved to left nav only
     expect(wrapper.find('#sort-select').exists()).toBe(true); // has sort-select
     expect(wrapper.find('#field-due-time').exists()).toBe(true); // has field-due-time
     expect(wrapper.find('#fab-new').exists()).toBe(true); // has fab-new
@@ -130,10 +133,11 @@ describe('footer / strip copy semantics', () => {
     expect(footer).toBe('2 未完成 · 1 已完成 · 逾期 0');
   });
 
-  it('strip copy: 今日到期 / 逾期 / 进行中 / 项待推进', () => {
+  it('strip stat chips: 待推进 / 今日到期 / 逾期 / 进行中', () => {
     const strip = wrapper.find('#strip');
-    // 项待推进 counts isDueTodayOpen || isOverdue — none here (no due dates)
-    expect(strip.find('.lead').text()).toBe('0 项待推进');
+    const chips = strip.findAll('.stat-chip');
+    expect(chips.length).toBe(4);
+    expect(chips[0].text()).toBe('待推进 0');
     expect(strip.text()).toContain('今日到期 0');
     expect(strip.text()).toContain('逾期 0');
     expect(strip.text()).toContain('进行中 1');
@@ -142,10 +146,10 @@ describe('footer / strip copy semantics', () => {
   it('strip flags 逾期 with the alert class when an overdue task exists', async () => {
     tasks.createTask({ title: '过期', status: 'todo', dueDate: '2000-01-01' });
     await flushPromises();
-    const overdueCell = wrapper.find('#strip .meta.alert');
-    expect(overdueCell.exists()).toBe(true);
-    expect(overdueCell.text()).toBe('逾期 1');
-    // 项待推进 counts isDueTodayOpen || isOverdue → just the overdue one (others have no due date)
-    expect(wrapper.find('#strip .lead').text()).toBe('1 项待推进');
+    const overdueChip = wrapper.find('#strip .stat-chip.alert');
+    expect(overdueChip.exists()).toBe(true);
+    expect(overdueChip.text()).toBe('逾期 1');
+    // 待推进 counts isDueTodayOpen || isOverdue → just the overdue one (others have no due date)
+    expect(wrapper.find('#strip .stat-chip').text()).toBe('待推进 1');
   });
 });

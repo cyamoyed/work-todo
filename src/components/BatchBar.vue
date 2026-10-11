@@ -1,5 +1,5 @@
 <template>
-  <div v-if="ui.state.selection.active" id="batch-bar" role="toolbar" aria-label="批量操作" @click.stop>
+  <div v-if="ui.state.selection.active" id="batch-bar" ref="rootEl" role="toolbar" aria-label="批量操作" @click.stop>
     <span class="batch-count">已选 {{ ids.length }} 项</span>
 
     <div class="pop-anchor">
@@ -51,15 +51,29 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { visibleTasks } from '../core/filters.js';
+import { clampWithinContainer } from '../composables/usePopupPlacement.js';
 import { addDays, todayString, weekRange } from '../core/dates.js';
 import { STATUS_CYCLE, STATUS_LABELS } from '../constants.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
+
+const rootEl = ref(null);
+
+// The pops open upward from a fixed bar; nudge whichever one is visible back
+// inside the window (short/narrow viewports).
+watch(
+  () => ui.state.batchMenu,
+  () => {
+    nextTick(() => {
+      clampWithinContainer(rootEl.value && rootEl.value.querySelector('.batch-bar-pop'), null);
+    });
+  }
+);
 
 const priorities = [
   { value: 'high', label: '高' },

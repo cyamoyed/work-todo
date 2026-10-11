@@ -14,7 +14,7 @@
         <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
-    <div class="pop pop-menu" id="sort-pop" :hidden="!ui.state.sortPopOpen" @click.stop>
+    <div class="pop pop-menu" id="sort-pop" ref="popEl" :hidden="!ui.state.sortPopOpen" @click.stop>
       <button
         type="button"
         data-value="due"
@@ -41,18 +41,27 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useUiStore } from '../store/ui.js';
+import { clampWithinContainer } from '../composables/usePopupPlacement.js';
 
 const ui = useUiStore();
+
+const popEl = ref(null);
 
 const sortLabel = computed(() =>
   ui.state.sortMode === 'priority' ? '按优先级' : ui.state.sortMode === 'created' ? '按创建时间' : '按截止日'
 );
 
+watch(
+  () => ui.state.sortPopOpen,
+  (open) => {
+    if (open) nextTick(() => clampWithinContainer(popEl.value, null));
+  }
+);
+
 function toggle() {
   ui.state.sortPopOpen = !ui.state.sortPopOpen;
-  ui.state.filterPopOpen = false;
 }
 
 function pick(value) {

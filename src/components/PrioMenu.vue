@@ -2,6 +2,7 @@
   <Teleport to="body">
     <div
       v-if="ui.state.prioMenu.open"
+      ref="rootEl"
       class="row-menu prio-menu"
       role="menu"
       :style="{ position: 'absolute', top: ui.state.prioMenu.top + 'px', left: ui.state.prioMenu.left + 'px' }"
@@ -23,15 +24,29 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
+import { placeMenuInViewport } from '../composables/usePopupPlacement.js';
 import { PRIORITY_LABELS } from '../constants.js';
 
 const PRIORITIES = ['high', 'medium', 'low'];
 
 const tasks = useTaskStore();
 const ui = useUiStore();
+
+const rootEl = ref(null);
+
+watch(
+  () => ui.state.prioMenu.open,
+  (open) => {
+    if (open) {
+      nextTick(() => {
+        placeMenuInViewport(rootEl.value, ui.state.prioMenu.anchor, ui.state.prioMenu);
+      });
+    }
+  }
+);
 
 const currentPriority = computed(() => {
   const task = tasks.getTask(ui.state.prioMenu.taskId);

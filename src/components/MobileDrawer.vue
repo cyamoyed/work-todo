@@ -21,12 +21,23 @@
       >{{ item.label }} <span class="n">{{ counts[item.view] }}</span></button>
     </nav>
     <div class="drawer-ops">
+      <button
+        type="button"
+        id="btn-settings-mobile"
+        class="drawer-settings"
+        :class="{ active: ui.state.viewMode === 'settings' }"
+        @click="goSettings"
+      >
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="2.25" stroke="currentColor" stroke-width="1.4" />
+          <path
+            d="M8 1.6l.7 1.9a4.7 4.7 0 0 1 1.6.66l1.97-.6 1.17 2.02-1.27 1.6a4.75 4.75 0 0 1 0 1.84l1.27 1.6-1.17 2.02-1.97-.6a4.7 4.7 0 0 1-1.6.66L8 14.4l-.7-1.9a4.7 4.7 0 0 1-1.6-.66l-1.97.6-1.17-2.02 1.27-1.6a4.75 4.75 0 0 1 0-1.84L2.56 5.38l1.17-2.02 1.97.6a4.7 4.7 0 0 1 1.6-.66L8 1.6Z"
+            stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"
+          />
+        </svg>
+        <span>设置</span>
+      </button>
       <ThemeToggle />
-      <button type="button" id="btn-export-mobile" @click="exportMobile">导出数据</button>
-      <button type="button" id="btn-import-mobile" @click="importMobile">导入数据</button>
-      <button v-if="desktop" type="button" id="btn-backup-mobile" @click="backupMobile">数据备份</button>
-      <button type="button" id="btn-sync-settings-mobile" @click="syncMobile">同步设置</button>
-      <button type="button" id="btn-check-update-mobile" @click="updateMobile">检查更新</button>
     </div>
   </aside>
 </template>
@@ -37,17 +48,11 @@ import { useRouter } from 'vue-router';
 import ThemeToggle from './ThemeToggle.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
-import { useTransfer } from '../composables/useTransfer.js';
-import { useUpdateCheck } from '../composables/useUpdateCheck.js';
-import { isTauri } from '../lib/tauri.js';
 import { navCounts } from '../core/filters.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
 const router = useRouter();
-const { doExport } = useTransfer();
-const { checkNow } = useUpdateCheck();
-const desktop = isTauri();
 
 const navItems = [
   { view: 'today', label: '今天' },
@@ -69,29 +74,8 @@ function go(view) {
   ui.closeDrawer();
 }
 
-function exportMobile() {
-  doExport();
+function goSettings() {
+  router.push('/settings');
   ui.closeDrawer();
-}
-
-function importMobile() {
-  ui.closeDrawer();
-  const input = document.getElementById('import-file');
-  if (input) input.click();
-}
-
-function backupMobile() {
-  ui.closeDrawer();
-  ui.openBackupModal(null);
-}
-
-function syncMobile() {
-  ui.closeDrawer();
-  ui.openSyncModal(null);
-}
-
-function updateMobile() {
-  ui.closeDrawer();
-  checkNow(null);
 }
 </script>

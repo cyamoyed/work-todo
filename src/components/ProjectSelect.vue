@@ -32,9 +32,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, watch } from 'vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
+import { clampWithinContainer } from '../composables/usePopupPlacement.js';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -46,6 +47,16 @@ const ui = useUiStore();
 
 const options = computed(() => [{ id: '', name: '无项目', color: 'slate' }].concat(tasks.state.projects));
 const current = computed(() => (props.modelValue ? tasks.getProject(props.modelValue) : null));
+
+watch(
+  () => ui.state.projectPopOpen,
+  (open) => {
+    nextTick(() => {
+      const pop = document.getElementById('project-pop');
+      if (open && pop) clampWithinContainer(pop, pop.closest('.modal'));
+    });
+  }
+);
 
 function toggle() {
   ui.state.projectPopOpen = !ui.state.projectPopOpen;

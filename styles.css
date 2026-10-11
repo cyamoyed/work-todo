@@ -249,10 +249,6 @@ kbd {
   padding: 24px 14px 18px;
   min-height: 0; overflow: auto;
 }
-.logo { display: flex; align-items: center; gap: 10px; padding: 2px 10px 22px; flex: none; }
-.logo-mark { width: 22px; height: 22px; flex: none; }
-.logo-text { font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
-
 .nav { display: flex; flex-direction: column; gap: 2px; flex: none; }
 .nav-item {
   display: flex; align-items: center; justify-content: space-between;
@@ -268,13 +264,11 @@ kbd {
 }
 .nav-item.active .n { color: var(--muted); }
 
-/* Logo + nav stay pinned; projects and the footer share .side-scroll. The
-   footer's margin-top:auto pins it to the bottom when content is short and
-   collapses to zero when the region overflows — the sidebar itself never
-   grows a scrollbar on typical viewports. */
+/* Logo + nav + footer stay pinned; only the project section scrolls, inside
+   .side-scroll. The sidebar itself keeps overflow:auto as a fallback for very
+   short viewports where even the fixed chrome cannot fit. */
 .side-scroll {
   flex: 1; min-height: 0; overflow-y: auto;
-  display: flex; flex-direction: column;
 }
 .side-sec { margin-top: 22px; display: flex; flex-direction: column; gap: 2px; }
 .side-sec-head {
@@ -335,19 +329,22 @@ kbd {
  opacity: 0.55;
 }
 
-/* Inside .side-scroll: auto margin pushes the footer to the bottom when the
-   region has spare room, and resolves to zero once it overflows. */
-.side-foot { margin-top: auto; padding: 8px 10px 0; }
-.side-ops { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
-.side-ops button {
-  text-align: left; padding: 7px 8px;
-  font-size: 12.5px; color: var(--muted);
+/* Direct child of .side, below the flex:1 .side-scroll — it sits at the
+   bottom and never scrolls; flex:none keeps it intact on short viewports
+   (the sidebar itself scrolls as the fallback). */
+.side-foot { flex: none; padding: 8px 10px 0; }
+/* Footer row: 设置 entry on the left, theme icons on the right. Data ops,
+ * sync config and the version line moved to the /settings page. */
+.side-foot-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
 }
-.side-ops button:hover { background: var(--hover-side); color: var(--ink); }
-.side-hint {
-  border-top: 1px solid var(--line-strong);
-  padding-top: 14px; font-size: 11px; color: var(--faint); line-height: 1.7;
+.side-settings {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 10px; font-size: 13px; color: var(--ink-2);
 }
+.side-settings:hover { background: var(--hover-side); color: var(--ink); }
+.side-settings.active { background: var(--side-active); color: var(--ink); font-weight: 550; }
 
 /* —— Main —— */
 .main {
@@ -356,7 +353,7 @@ kbd {
 }
 .top {
   display: flex; align-items: center; gap: 10px;
-  padding: 18px 32px 16px;
+  padding: 10px 32px;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
 }
@@ -364,12 +361,14 @@ kbd {
 
 /* —— Custom titlebar (Tauri desktop, decorations:false) ——
    .top carries data-tauri-drag-region: its padding strips, item gaps and the
-   empty right end all drag the window (click target must be .top itself);
-   interactive children keep working. The control group cancels .top padding
-   so the buttons sit flush in the window's top-right corner. */
+   empty middle all drag the window (click target must be .top itself);
+   interactive children keep working. The control group pins itself right with
+   an auto left margin (once .search hits its max-width the free flex space
+   would otherwise stay to its right) and cancels .top padding on all three
+   outer sides so the buttons fill the window's top-right corner. */
 .win-controls {
   display: flex; align-self: stretch;
-  margin: -18px -32px 0 0;
+  margin: -10px -32px -10px auto;
   user-select: none;
 }
 .win-btn {
@@ -435,50 +434,78 @@ kbd {
   flex: 1; overflow: auto; padding: 22px 32px 40px; min-height: 0;
 }
 
-/* strip */
-.strip {
-  display: flex; align-items: center; gap: 16px; margin-bottom: 18px;
-  font-size: 13px; flex-wrap: wrap;
-}
-.strip .lead { font-weight: 550; color: var(--ink); }
-.strip .sep { width: 1px; height: 12px; background: var(--line-strong); }
-.strip .meta { color: var(--muted); }
-.strip .meta.alert { color: var(--danger); font-weight: 550; }
-.strip .proj {
-  display: inline-flex; align-items: center; gap: 7px;
-  font-weight: 550; color: var(--ink);
-}
-.strip .proj i {
-  width: 8px; height: 8px;
-}
-
 /* quick add */
 .quick {
+  position: relative;
   display: flex; align-items: center; gap: 10px;
-  height: 44px; padding: 0 6px 0 14px;
+  flex: 1; max-width: 440px; height: 36px; padding: 0 12px;
   border: 1px solid var(--line-strong);
-  background: var(--panel); margin-bottom: 16px;
+  background: var(--panel);
 }
 .quick:focus-within {
   border-color: var(--focus-border); box-shadow: var(--focus-ring);
 }
 .quick input {
-  flex: 1; border: 0; outline: 0; background: transparent; font-size: 13.5px;
+  flex: 1; border: 0; outline: 0; background: transparent; font-size: 13.5px; min-width: 0;
 }
 .quick input::placeholder { color: var(--faint); }
-
-/* filters — three filter types, each on its own row */
-.filters {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px 12px; align-items: center;
-  margin-bottom: 12px;
+/* 聚焦时向下展开的快捷选项面板(不推动下方内容) */
+.quick-extra {
+  display: none;
+  position: absolute; z-index: 65; left: 0; right: 0; top: calc(100% + 6px);
+  align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 10px 12px;
+  background: var(--panel); border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
 }
-.filters #range-filter { grid-column: 1; grid-row: 1; }
-.filters #status-filter { grid-column: 1; grid-row: 2; }
-.filters #priority-filter { grid-column: 1; grid-row: 3; }
-.filters .toolbar-right { grid-column: 2; grid-row: 1; margin-left: 0; }
-.chipbar { display: flex; gap: 4px; flex-wrap: wrap; }
+.quick:focus-within .quick-extra { display: flex; }
+.quick-extra-label { font-size: 11px; color: var(--faint); }
+.quick-sep { width: 1px; height: 14px; background: var(--line-strong); margin: 0 4px; }
+
+/* —— 主区工具栏:统计 chip 行 + 单行下拉工具栏 —— */
+.toolbar-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.filters {
+  display: flex; align-items: center; gap: 8px;
+  margin-left: auto;
+}
+.filter-dd-value { color: var(--muted); }
+.filter-dd.is-filtered { border-color: var(--accent); }
+.filter-dd.is-filtered .filter-dd-value { color: var(--accent-text); font-weight: 550; }
+.filter-dd-pop { min-width: 150px; }
+
+/* 统计 chip:数字即筛选,点击开/关 */
+.strip {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+}
+.strip .sep { width: 1px; height: 12px; background: var(--line-strong); }
+.strip .meta { color: var(--muted); }
+.strip .proj {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--ink-2); font-weight: 550;
+}
+.strip .proj i { width: 8px; height: 8px; }
+.stat-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 10px;
+  border: 1px solid var(--line); background: transparent;
+  font-size: 12.5px; color: var(--muted);
+}
+.stat-chip:hover { background: var(--line); color: var(--ink); }
+.stat-chip .stat-n {
+  font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.stat-chip.active {
+  background: var(--accent-weak); border-color: var(--accent);
+  color: var(--accent-text);
+}
+.stat-chip.alert .stat-n { color: var(--danger); }
+.stat-chip.active.alert .stat-n { color: var(--accent-text); }
 .chip {
   height: 28px; padding: 0 10px;
   font-size: 12.5px; color: var(--muted); border: 1px solid transparent;
@@ -502,9 +529,6 @@ kbd {
 }
 .chip.active .chip-count { color: var(--muted); }
 
-.toolbar-right {
-  margin-left: auto; display: flex; align-items: center; gap: 8px;
-}
 .pop-anchor { position: relative; }
 
 .pop {
@@ -517,8 +541,6 @@ kbd {
   font-size: 11px; font-weight: 650; letter-spacing: 0.08em;
   color: var(--faint); text-transform: uppercase; margin-bottom: 8px;
 }
-.pop .chipbar { margin-bottom: 12px; }
-.pop .chipbar:last-child { margin-bottom: 0; }
 .pop-menu { min-width: 160px; padding: 6px; right: 0; top: 38px; }
 .pop-item {
   display: flex; width: 100%; text-align: left;
@@ -545,7 +567,7 @@ kbd {
 .task-card {
   display: grid;
   /* check | main | prio | status-text | due | actions */
-  grid-template-columns: 28px minmax(0, 1fr) 104px 76px 110px auto;
+  grid-template-columns: 22px minmax(0, 1fr) 104px 76px 110px auto;
   gap: 12px; align-items: center;
   padding: 0 16px; min-height: var(--row-h);
   border-bottom: 1px solid var(--line);
@@ -555,11 +577,6 @@ kbd {
 .task-card.is-selected { background: var(--accent-weak); }
 .task-card.is-selected:hover { background: var(--accent-weak-hover); }
 .task-list.is-selecting .task-card { cursor: pointer; }
-/* selection mode adds a leading checkbox column */
-.task-list.is-selecting .task-card {
-  grid-template-columns: 22px 28px minmax(0, 1fr) 104px 76px 110px auto;
-  gap: 10px;
-}
 .select-check {
   width: 16px; height: 16px;
   border: 1.5px solid var(--line-input); background: var(--panel);
@@ -570,17 +587,18 @@ kbd {
 .select-check.is-on {
   background: var(--accent); border-color: var(--accent);
 }
+/* tall box + right/bottom borders, rotated +45° — the classic unclipped ✓ */
 .select-check.is-on::after {
-  content: ""; width: 8px; height: 4px;
-  border: solid #fff; border-width: 0 1.6px 1.6px 0;
-  transform: rotate(45deg) translateY(-1px);
+  content: ""; width: 5px; height: 9px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 .task-card.is-overdue { box-shadow: inset 2px 0 0 var(--danger); }
 .task-card.is-done .task-title {
   color: var(--faint); text-decoration: line-through; font-weight: 500;
 }
 
-.status-wrap { display: flex; align-items: center; }
+/* status circle — dayline rows (TaskList rows no longer carry one) */
 .status-toggle {
   width: 18px; height: 18px;
   border: 1.5px solid var(--check-border); background: transparent;
@@ -954,24 +972,21 @@ kbd {
   .app { grid-template-columns: 1fr; }
   .side { display: none; }
   .brand-mobile { display: flex; align-items: center; gap: 6px; margin-right: 4px; }
-  .top { padding: 14px 16px; }
+  .top { padding: 10px 16px; }
   .body { padding: 16px 16px 88px; }
   .task-card {
-    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-columns: 22px minmax(0, 1fr);
     padding: 12px 14px; row-gap: 4px;
-  }
-  .task-list.is-selecting .task-card {
-    grid-template-columns: 22px 28px minmax(0, 1fr);
   }
   .task-col-prio, .task-col-status { display: none; }
   .task-due { grid-column: 2; text-align: left; }
-  .task-list.is-selecting .task-due { grid-column: 3; }
   .fab-new { display: inline-flex; }
   .field-row { grid-template-columns: 1fr; }
   .search { max-width: none; }
-  .win-controls { margin: -14px -16px 0 0; }
+  /* 移动端由悬浮 FAB 承担新建入口,列表工具栏不放主按钮 */
+  #btn-new { display: none; }
+  .win-controls { margin: -10px -16px -10px auto; }
   .mobile-menu-btn { display: inline-flex; }
-  #btn-filter { display: none; }
   #batch-bar { bottom: 84px; }
 }
 
@@ -1013,6 +1028,13 @@ kbd {
   font: inherit; font-size: 13px; padding: 8px 10px; cursor: pointer;
 }
 .drawer-ops > button:hover { background: var(--hover-side); }
+.drawer-settings {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 0; background: transparent; color: var(--ink-2);
+  font: inherit; font-size: 13px; padding: 8px 10px; cursor: pointer;
+}
+.drawer-settings:hover { background: var(--hover-side); color: var(--ink); }
+.drawer-settings.active { background: var(--side-active); color: var(--ink); }
 .mobile-drawer .nav { display: flex; flex-direction: column; gap: 2px; }
 
 /* review sections sit flat on the page panel — no card-in-card */
@@ -1101,8 +1123,7 @@ kbd {
 .backup-size { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .backup-empty { padding: 0 20px 16px; color: var(--faint); font-size: 12.5px; }
 
-/* —— Theme switcher (side footer / mobile drawer) —— */
-.theme-row { margin-bottom: 10px; }
+/* —— Theme switcher (side footer / mobile drawer / settings page) —— */
 .theme-opts { display: flex; gap: 2px; }
 .theme-option {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1114,6 +1135,32 @@ kbd {
 .theme-option.active {
   background: var(--side-active); color: var(--ink);
 }
+/* settings-page variant: icon + text */
+.theme-opts.labeled { gap: 4px; }
+.theme-opts.labeled .theme-option {
+  width: auto; padding: 0 10px; gap: 6px;
+  font-size: 12.5px;
+}
+
+/* —— Settings page (/settings) —— */
+.settings-page { max-width: 620px; }
+.settings-head h2 { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+.settings-sec { margin-top: 28px; }
+.settings-sec-title {
+  font-size: 11px; font-weight: 650; letter-spacing: 0.1em;
+  color: var(--faint); text-transform: uppercase;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line-strong);
+}
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.settings-sec .settings-row:last-child { border-bottom: 0; }
+.settings-row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.settings-label { font-size: 13.5px; color: var(--ink); }
+.settings-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.settings-row-main .settings-version { align-self: flex-start; }
 
 /* project identification dots — data colors resolved per theme */
 .dotc-slate { background: var(--proj-slate); }
@@ -1122,9 +1169,10 @@ kbd {
 .dotc-amber { background: var(--proj-amber); }
 
 /* —— Sync hints (side footer) —— */
+/* —— Sync status line (settings page) —— */
 .sync-status {
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 8px; font-size: 11px; color: var(--muted);
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted);
 }
 .sync-dot {
   width: 6px; height: 6px;
@@ -1134,11 +1182,10 @@ kbd {
 .sync-dot.ok { background: var(--green); }
 .sync-dot.error { background: var(--danger); }
 
-/* —— Version line + update dialog —— */
-.side-ver { margin-bottom: 8px; }
+/* —— Version line (settings page) + update dialog —— */
 #app-version {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 2px 0; font-size: 11px; color: var(--faint);
+  padding: 2px 0; font-size: 12px; color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 #app-version:hover { color: var(--ink-2); }

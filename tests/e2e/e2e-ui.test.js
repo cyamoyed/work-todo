@@ -174,9 +174,11 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect((await page.locator('#toast').textContent()) || '').toContain('任务已创建');
   });
 
-  it('row check completes with confirm; status text menu jumps directly', async () => {
-    // completing goes through the confirm dialog
-    await page.locator('.status-toggle').first().click();
+  it('status menu completes with confirm; status text menu jumps directly', async () => {
+    // completing goes through the confirm dialog (status cell → menu → 已完成)
+    await page.locator('.task-card .task-col-status').first().click();
+    await page.waitForTimeout(50);
+    await page.locator('.status-menu-item', { hasText: '已完成' }).click();
     await page.waitForTimeout(50);
     expect(await page.locator('#confirm-backdrop').isVisible()).toBe(true);
     expect(await page.locator('#confirm-message').textContent()).toContain('标记为已完成');
@@ -187,8 +189,10 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     await page.waitForTimeout(50);
     expect(await page.locator('.task-card.is-done .meta-status').first().textContent()).toBe('已完成');
 
-    // done → one click back to 待办, no confirm
-    await page.locator('.task-card.is-done .status-toggle').first().click();
+    // done → back to 待办 via the menu, no confirm
+    await page.locator('.task-card.is-done .meta-status').first().click();
+    await page.waitForTimeout(50);
+    await page.locator('.status-menu-item', { hasText: '待办' }).click();
     await page.waitForTimeout(50);
     expect(await page.locator('.meta-status').first().textContent()).toBe('待办');
 
@@ -289,26 +293,39 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
   });
 
   it('filters', async () => {
-    await page.click('#status-filter button[data-value="done"]');
+    await page.click('#btn-status-filter');
+    await page.waitForTimeout(50);
+    await page.click('#status-filter .pop-item[data-value="done"]');
     await page.waitForTimeout(50);
     expect(await page.locator('.task-card').count()).toBeLessThanOrEqual(1);
-    await page.click('#status-filter button[data-value="todo"]');
+    await page.click('#btn-status-filter');
+    await page.waitForTimeout(50);
+    await page.click('#status-filter .pop-item[data-value="todo"]');
     await page.waitForTimeout(50);
     expect(await page.locator('.task-card').count()).toBe(2);
-    await page.click('#priority-filter button[data-value="high"]');
+    await page.click('#btn-priority-filter');
+    await page.waitForTimeout(50);
+    await page.click('#priority-filter .pop-item[data-value="high"]');
     await page.waitForTimeout(50);
     expect(await page.locator('.task-card').count()).toBe(1);
-    await page.click('#status-filter button[data-value="all"]');
-    await page.click('#priority-filter button[data-value="all"]');
+    await page.click('#btn-status-filter');
+    await page.waitForTimeout(50);
+    await page.click('#status-filter .pop-item[data-value="all"]');
+    await page.waitForTimeout(50);
+    await page.click('#btn-priority-filter');
+    await page.waitForTimeout(50);
+    await page.click('#priority-filter .pop-item[data-value="all"]');
     await page.waitForTimeout(50);
     expect(await page.locator('.task-card').count()).toBe(2);
   });
 
-  it('batch operations: select rows, set priority, exit', async () => {
-    await page.click('#btn-batch');
+  it('batch operations: checkboxes always on, select rows, set priority, exit', async () => {
+    // checkboxes are always visible; the bar only appears once one is checked
+    expect(await page.locator('.task-card .select-check').first().isVisible()).toBe(true);
+    expect(await page.locator('#batch-bar').count()).toBe(0);
+    await page.locator('.task-card .select-check').first().click();
     await page.waitForTimeout(50);
     expect(await page.locator('#batch-bar').isVisible()).toBe(true);
-    expect(await page.locator('.task-card .select-check').first().isVisible()).toBe(true);
 
     // select-all then batch-set priority to 低
     await page.locator('#batch-bar button', { hasText: '全选' }).click();
@@ -320,13 +337,9 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     await page.locator('.batch-bar-pop .row-menu-item', { hasText: '低' }).click();
     await page.waitForTimeout(80);
     expect((await page.locator('#toast').textContent()) || '').toContain('低优先级');
-    // selection cleared after the batch, still in select mode
-    expect(await page.locator('#batch-bar').isVisible()).toBe(true);
-
-    await page.click('#btn-batch'); // 退出批量
-    await page.waitForTimeout(50);
-    expect(await page.locator('#batch-bar').isHidden()).toBe(true);
-    expect(await page.locator('.task-card .select-check').count()).toBe(0);
+    // selection cleared after the batch → bar auto-hides, checkboxes stay
+    expect(await page.locator('#batch-bar').count()).toBe(0);
+    expect(await page.locator('.task-card .select-check').first().isVisible()).toBe(true);
   });
 
   it('delete + undo', async () => {
@@ -526,11 +539,12 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
   it('quick add', async () => {
     await clearTasks();
     await page.fill('#quick-title', '快速记一笔');
-    await page.click('#quick-add-form button[type="submit"]');
+    await page.press('#quick-title', 'Enter'); // 存入按钮已移除,Enter 即提交
     await page.waitForTimeout(50);
     expect(await page.locator('.task-title').first().textContent()).toBe('快速记一笔');
     expect(await page.inputValue('#quick-title')).toBe('');
-    expect((await page.locator('.due-chip').first().textContent()) || '').toContain('今天');
+    expect(await page.locator('.due-chip').first().textContent()).toContain('今天');
+    expect(await page.locator('#quick-add-form button[type="submit"]').count()).toBe(0);
   });
 
   it('notes field + search', async () => {
@@ -547,7 +561,7 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     await page.fill('#search-input', '');
   });
 
-  it('today filter chip', async () => {
+  it('today scope via left nav', async () => {
     await clearTasks();
     const todayStr = await page.evaluate(() => {
       const d = new Date();
@@ -557,19 +571,23 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     });
     await addTask({ title: 'today-one', status: 'todo', due: todayStr });
     await addTask({ title: 'no-due-one', status: 'todo' });
-    await page.locator('#range-filter [data-value="today"]').click();
+    await page.locator('#nav [data-view="today"]').click();
     await page.waitForTimeout(50);
     const titles = await page.locator('.task-title').allTextContents();
     expect(titles).toContain('today-one');
     expect(titles).not.toContain('no-due-one');
-    await page.locator('#range-filter [data-value="all"]').click();
+    await page.locator('#nav [data-view="all"]').click();
     await page.waitForTimeout(50);
   });
 
   it('export / import anchors', async () => {
+    await page.click('#btn-settings');
+    await page.waitForTimeout(80);
     expect(await page.locator('#btn-export').isVisible()).toBe(true);
     expect(await page.locator('#btn-import').isVisible()).toBe(true);
     expect(await page.locator('#import-file').count()).toBe(1);
+    await page.click('#nav [data-view="today"]');
+    await page.waitForTimeout(50);
   });
 
   it('due time field in form', async () => {
@@ -652,12 +670,13 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect(activeCount).toBe(0);
   });
 
-  it('routing: range chip navigation keeps URL in sync', async () => {
+  it('routing: left-nav range switching keeps URL in sync', async () => {
     await page.goto(BASE + '/#/today', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(50);
-    await page.locator('#range-filter [data-value="week"]').click();
+    await page.locator('#nav [data-view="week"]').click();
     await page.waitForTimeout(50);
     expect(page.url()).toContain('#/week');
-    expect(await page.locator('#range-filter [data-value="week"]').getAttribute('class')).toContain('active');
+    expect(await page.locator('#nav .nav-item[data-view="week"]').getAttribute('class')).toContain('active');
+    expect(await page.locator('#range-filter').count()).toBe(0); // main area never repeats range switching
   });
 });

@@ -2,6 +2,7 @@
   <Teleport to="body">
     <div
       v-if="ui.state.statusMenu.open"
+      ref="rootEl"
       class="status-menu"
       role="menu"
       :style="{ position: 'absolute', top: ui.state.statusMenu.top + 'px', left: ui.state.statusMenu.left + 'px' }"
@@ -28,6 +29,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { useStatusChange } from '../composables/useStatusChange.js';
+import { placeMenuInViewport } from '../composables/usePopupPlacement.js';
 import { STATUS_CYCLE, STATUS_LABELS } from '../constants.js';
 
 const tasks = useTaskStore();
@@ -44,11 +46,14 @@ function setFirstRef(el) {
   firstRef.value = el;
 }
 
+const rootEl = ref(null);
+
 watch(
   () => ui.state.statusMenu.open,
   (open) => {
     if (open) {
       nextTick(() => {
+        placeMenuInViewport(rootEl.value, ui.state.statusMenu.anchor, ui.state.statusMenu);
         if (firstRef.value && firstRef.value.focus) firstRef.value.focus();
       });
     }

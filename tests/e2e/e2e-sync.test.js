@@ -131,6 +131,8 @@ async function addTask(title) {
 }
 
 async function openSyncModal() {
+  await page.click('#btn-settings');
+  await page.waitForTimeout(80);
   await page.click('#btn-sync-settings');
   await page.waitForTimeout(80);
 }
@@ -140,6 +142,10 @@ async function syncNowViaModal() {
   await page.click('#btn-sync-now');
   await page.waitForTimeout(300);
   await page.click('#btn-cancel-sync');
+  await page.waitForTimeout(80);
+  // the sync entry lives on /settings; task-view assertions need the list back
+  // (/all shows every task regardless of due date)
+  await page.click('[data-view="all"]');
   await page.waitForTimeout(80);
 }
 

@@ -7,13 +7,38 @@
       <div class="meta">{{ projectStats.open }} 未完成 · {{ projectStats.done }} 已完成 · 共 {{ projectStats.total }}</div>
       <div class="sep"></div>
     </template>
-    <div class="lead">{{ stats.todayOpen }} 项待推进</div>
-    <div class="sep"></div>
-    <div class="meta">今日到期 {{ stats.dueToday }}</div>
-    <div class="sep"></div>
-    <div class="meta" :class="{ alert: stats.overdue > 0 }">逾期 {{ stats.overdue }}</div>
-    <div class="sep"></div>
-    <div class="meta">进行中 {{ stats.inProgress }}</div>
+    <button
+      type="button"
+      class="stat-chip"
+      :class="{ active: ui.state.filters.range === 'today' }"
+      :aria-pressed="ui.state.filters.range === 'today' ? 'true' : 'false'"
+      title="筛选：待推进（今天到期与逾期）"
+      @click="setRange('today')"
+    >待推进 <b class="stat-n">{{ stats.todayOpen }}</b></button>
+    <button
+      type="button"
+      class="stat-chip"
+      :class="{ active: ui.state.filters.range === 'due-today' }"
+      :aria-pressed="ui.state.filters.range === 'due-today' ? 'true' : 'false'"
+      title="筛选：今日到期（不含逾期）"
+      @click="setRange('due-today')"
+    >今日到期 <b class="stat-n">{{ stats.dueToday }}</b></button>
+    <button
+      type="button"
+      class="stat-chip"
+      :class="{ active: ui.state.filters.range === 'overdue', alert: stats.overdue > 0 && ui.state.filters.range !== 'overdue' }"
+      :aria-pressed="ui.state.filters.range === 'overdue' ? 'true' : 'false'"
+      title="筛选：逾期未完成"
+      @click="setRange('overdue')"
+    >逾期 <b class="stat-n">{{ stats.overdue }}</b></button>
+    <button
+      type="button"
+      class="stat-chip"
+      :class="{ active: ui.state.filters.status === 'in-progress' }"
+      :aria-pressed="ui.state.filters.status === 'in-progress' ? 'true' : 'false'"
+      title="筛选：进行中"
+      @click="toggleInProgress"
+    >进行中 <b class="stat-n">{{ stats.inProgress }}</b></button>
   </div>
 </template>
 
@@ -34,4 +59,22 @@ const projectStats = computed(() =>
   projectStatsOf(tasks.state.tasks, ui.state.filters.projectId)
 );
 const stats = computed(() => stripStats(tasks.state.tasks));
+
+/** Toggle a stat chip's range filter; clearing returns to the view's own range. */
+function setRange(v) {
+  const next = ui.state.filters.range === v ? defaultRange() : v;
+  ui.setFilters({ range: next });
+}
+
+function toggleInProgress() {
+  const cur = ui.state.filters.status;
+  ui.setFilters({ status: cur === 'in-progress' ? 'all' : 'in-progress' });
+}
+
+function defaultRange() {
+  const vm = ui.state.viewMode;
+  if (vm === 'today') return 'today';
+  if (vm === 'week') return 'week';
+  return 'all';
+}
 </script>

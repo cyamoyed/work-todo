@@ -61,6 +61,7 @@ import { computed, nextTick, watch } from 'vue';
 import { useUiStore } from '../store/ui.js';
 import { buildCalendarCells } from '../core/calendar.js';
 import { formatDueLabel, parseDateStr, todayString } from '../core/dates.js';
+import { clampWithinContainer } from '../composables/usePopupPlacement.js';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -91,6 +92,9 @@ function toggle() {
   nextTick(() => {
     const cal = document.getElementById('calendar');
     if (!cal) return;
+    // Keep the calendar inside the modal (it is much taller than one row of
+    // the form; opening near the modal bottom would otherwise clip).
+    clampWithinContainer(cal, cal.closest('.modal'));
     const selectedBtn = cal.querySelector('.cal-day.is-selected') || cal.querySelector('.cal-day.is-today');
     if (selectedBtn && selectedBtn.focus) selectedBtn.focus();
   });

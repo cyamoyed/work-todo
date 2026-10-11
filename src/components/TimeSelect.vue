@@ -33,7 +33,9 @@
 </template>
 
 <script setup>
+import { nextTick, watch } from 'vue';
 import { useUiStore } from '../store/ui.js';
+import { clampWithinContainer } from '../composables/usePopupPlacement.js';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -43,6 +45,16 @@ const emit = defineEmits(['update:modelValue']);
 const ui = useUiStore();
 
 const options = ['', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
+
+watch(
+  () => ui.state.timePopOpen,
+  (open) => {
+    nextTick(() => {
+      const pop = document.getElementById('time-pop');
+      if (open && pop) clampWithinContainer(pop, pop.closest('.modal'));
+    });
+  }
+);
 
 function toggle() {
   ui.state.timePopOpen = !ui.state.timePopOpen;

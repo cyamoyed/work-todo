@@ -6,35 +6,45 @@
       <TopBar />
 
       <div class="body">
-        <StatsSpans />
-        <Strip />
+        <StatsSpans v-if="!isSettings" />
+        <Strip v-if="!isSettings" />
 
-        <QuickAdd />
+        <div v-if="!isSettings" class="toolbar-row">
+          <QuickAdd />
+          <FilterBar />
+        </div>
 
-        <FilterBar />
+        <ErrorBanner v-if="!isSettings" />
 
-        <ErrorBanner />
-
-        <section class="list-section" aria-label="任务列表">
-          <div class="list-head">
+        <section :class="{ 'list-section': !isSettings }" :aria-label="isSettings ? '设置' : '任务列表'">
+          <div v-if="!isSettings" class="list-head">
             <h2 class="list-title" id="list-title">{{ listTitle }}</h2>
             <p class="list-meta" id="list-meta">{{ listMeta }}</p>
           </div>
           <RouterView />
         </section>
 
-        <footer class="footer">
+        <footer v-if="!isSettings" class="footer">
           <span id="task-stats">{{ footerText }}</span>
         </footer>
       </div>
     </main>
   </div>
 
-  <button type="button" id="fab-new" class="fab-new" aria-label="新建任务" @click="createNew">
+  <button v-if="!isSettings" type="button" id="fab-new" class="fab-new" aria-label="新建任务" @click="createNew">
     <svg width="22" height="22" viewBox="0 0 14 14" fill="none" aria-hidden="true">
       <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
     </svg>
   </button>
+
+  <input
+    id="import-file"
+    type="file"
+    accept="application/json,.json"
+    hidden
+    aria-label="选择要导入的 JSON 文件"
+    @change="onImportFile"
+  />
 
   <TaskFormModal />
   <ProjectModal />
@@ -76,15 +86,24 @@ import Toast from './components/Toast.vue';
 import { useTaskStore } from './store/tasks.js';
 import { useUiStore } from './store/ui.js';
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts.js';
+import { useTransfer } from './composables/useTransfer.js';
 import { footerStats, listTitleFor, visibleTasks } from './core/filters.js';
 import { isCompletedThisWeek } from './core/dates.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
+const { importFile } = useTransfer();
 
 useKeyboardShortcuts({
   onCreateNew: () => ui.openTaskModal(null, null),
 });
+
+const isSettings = computed(() => ui.state.viewMode === 'settings');
+
+function onImportFile(e) {
+  importFile(e.target.files && e.target.files[0]);
+  e.target.value = '';
+}
 
 const listTitle = computed(() =>
   listTitleFor(ui.state.viewMode, ui.state.filters, tasks.state.projects)

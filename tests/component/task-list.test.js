@@ -101,15 +101,29 @@ describe('done-collapse bar', () => {
   });
 });
 
-describe('row check: complete with confirm, un-complete directly', () => {
-  const statusToggle = () => wrapper.find('.task-card .status-toggle');
+describe('status menu: complete with confirm, un-complete directly', () => {
+  const metaStatus = () => wrapper.find('.task-card .task-col-status.meta-status');
   const confirmOk = () => wrapper.find('#btn-confirm-ok');
+
+  /** Open the status menu from the row's status cell, return the menu element. */
+  async function openMenu() {
+    await metaStatus().trigger('click');
+    await flushPromises();
+    return document.querySelector('.status-menu');
+  }
+
+  function pickItem(menu, label) {
+    return Array.from(menu.querySelectorAll('.status-menu-item')).find(
+      (n) => n.textContent.trim() === label
+    );
+  }
 
   it('completing asks for confirmation; cancel keeps the task open', async () => {
     const t = tasks.createTask({ title: 'cycle', status: 'todo' });
     await flushPromises();
 
-    await statusToggle().trigger('click');
+    const menu = await openMenu();
+    pickItem(menu, '已完成').click();
     await flushPromises();
     const backdrop = wrapper.find('#confirm-backdrop');
     expect(backdrop.element.hidden).toBe(false); // confirm dialog open
@@ -125,7 +139,8 @@ describe('row check: complete with confirm, un-complete directly', () => {
   it('confirming completes the task and toasts', async () => {
     const t = tasks.createTask({ title: 'cycle', status: 'todo' });
     await flushPromises();
-    await statusToggle().trigger('click');
+    const menu = await openMenu();
+    pickItem(menu, '已完成').click();
     await flushPromises();
     await confirmOk().trigger('click');
     await flushPromises();
@@ -133,12 +148,12 @@ describe('row check: complete with confirm, un-complete directly', () => {
     expect(wrapper.find('#toast').text()).toContain('已完成');
   });
 
-  it('a done task returns to 待办 with one click, no confirm', async () => {
+  it('a done task returns to 待办 via the menu, no confirm', async () => {
     const t = tasks.createTask({ title: '返工', status: 'done' });
     ui.setDoneExpanded(true);
     await flushPromises();
-    const doneCard = wrapper.findAll('.task-card').find((c) => c.classes().includes('is-done'));
-    await doneCard.find('.status-toggle').trigger('click');
+    const menu = await openMenu();
+    pickItem(menu, '待办').click();
     await flushPromises();
     expect(wrapper.find('#confirm-backdrop').element.hidden).toBe(true); // no confirm
     expect(tasks.getTask(t.id).status).toBe('todo');
@@ -167,17 +182,14 @@ describe('row check: complete with confirm, un-complete directly', () => {
     expect(wrapper.find('.task-card .task-col-status').text()).toBe('进行中');
   });
 
-  it('right-click on the check opens the status menu; 已完成 goes through confirm', async () => {
+  it('right-click on the status cell opens the menu; 已完成 goes through confirm', async () => {
     const t = tasks.createTask({ title: 'jump', status: 'todo' });
     await flushPromises();
 
-    await statusToggle().trigger('contextmenu');
+    await metaStatus().trigger('contextmenu');
     await flushPromises();
     const menu = document.querySelector('.status-menu');
-    const item = Array.from(menu.querySelectorAll('.status-menu-item')).find(
-      (n) => n.textContent.trim() === '已完成'
-    );
-    item.click();
+    pickItem(menu, '已完成').click();
     await flushPromises();
     // picking 已完成 lands in the confirm dialog first
     expect(wrapper.find('#confirm-backdrop').element.hidden).toBe(false);
@@ -190,7 +202,9 @@ describe('row check: complete with confirm, un-complete directly', () => {
   it('completing a recurring task toasts 已生成下一次 with 查看 action', async () => {
     const t = tasks.createTask({ title: '每日例会', status: 'todo', repeat: 'daily' });
     await flushPromises();
-    await statusToggle().trigger('click'); // ask to complete
+    const menu = await openMenu();
+    pickItem(menu, '已完成').click(); // ask to complete
+    await flushPromises();
     await confirmOk().trigger('click');
     await flushPromises();
     expect(tasks.getTask(t.id).status).toBe('done');
@@ -205,8 +219,17 @@ describe('row check: complete with confirm, un-complete directly', () => {
 });
 
 describe('multi-select batch operations', () => {
-  const batchBtn = () => wrapper.find('#btn-batch');
   const batchBar = () => wrapper.find('#batch-bar');
+
+  /** Check a card's (always-visible) checkbox; first check enters selection. */
+  async function checkCard(match) {
+    const card = match
+      ? wrapper.findAll('.task-card').find(match)
+      : wrapper.findAll('.task-card')[0];
+    await card.find('.select-check').trigger('click');
+    await flushPromises();
+    return card;
+  }
 
   beforeEach(async () => {
     tasks.createTask({ title: 'A', priority: 'low' });
@@ -215,28 +238,29 @@ describe('multi-select batch operations', () => {
     await flushPromises();
   });
 
-  it('批量 toggles selection mode; rows get select checkboxes and no per-row actions', async () => {
+  it('checkboxes are always visible; checking one summons the batch bar', async () => {
     expect(batchBar().exists()).toBe(false);
-    await batchBtn().trigger('click');
+    expect(wrapper.find('.task-card .select-check').exists()).toBe(true);
+    await checkCard();
     await flushPromises();
     expect(batchBar().exists()).toBe(true);
     expect(taskList().classes()).toContain('is-selecting');
-    expect(wrapper.find('.task-card .select-check').exists()).toBe(true);
     expect(wrapper.find('.task-card [aria-label="删除任务"]').exists()).toBe(false);
-    await batchBtn().trigger('click'); // 退出批量
+    // unchecking the last box exits selection; the checkbox itself stays
+    const card = wrapper.findAll('.task-card')[0];
+    await card.find('.select-check').trigger('click');
     await flushPromises();
     expect(batchBar().exists()).toBe(false);
-    expect(wrapper.find('.task-card .select-check').exists()).toBe(false);
+    expect(wrapper.find('.task-card .select-check').exists()).toBe(true);
   });
 
   it('clicking rows selects them; batch priority applies to all and clears selection', async () => {
-    await batchBtn().trigger('click');
-    await flushPromises();
+    await checkCard(); // first check enters selection mode
     const cardsEls = wrapper.findAll('.task-card');
-    await cardsEls[0].trigger('click');
     await cardsEls[1].trigger('click');
+    await cardsEls[2].trigger('click');
     await flushPromises();
-    expect(batchBar().text()).toContain('已选 2 项');
+    expect(batchBar().text()).toContain('已选 3 项');
 
     const prioBtn = batchBar().findAll('button').find((b) => b.text() === '优先级');
     await prioBtn.trigger('click');
@@ -247,15 +271,16 @@ describe('multi-select batch operations', () => {
     );
     high.click();
     await flushPromises();
-    expect(tasks.state.tasks.filter((t) => t.priority === 'high').length).toBe(2);
+    expect(tasks.state.tasks.filter((t) => t.priority === 'high').length).toBe(3);
     expect(ui.state.selection.ids.length).toBe(0); // selection cleared after batch
     expect(wrapper.find('#toast').text()).toContain('高优先级');
   });
 
   it('batch status 已完成 goes through one confirm for the whole set', async () => {
-    await batchBtn().trigger('click');
-    await flushPromises();
-    for (const c of wrapper.findAll('.task-card')) await c.trigger('click');
+    await checkCard();
+    for (const c of wrapper.findAll('.task-card')) {
+      if (!c.find('.select-check').classes().includes('is-on')) await c.trigger('click');
+    }
     await flushPromises();
     const statusBtn = batchBar().findAll('button').find((b) => b.text() === '状态');
     await statusBtn.trigger('click');
@@ -275,12 +300,8 @@ describe('multi-select batch operations', () => {
   });
 
   it('batch delete confirms, removes all, and undo restores', async () => {
-    await batchBtn().trigger('click');
-    await flushPromises();
     // find the card by title — list order is sort-dependent
-    const cardC = wrapper.findAll('.task-card').find((c) => c.text().includes('C'));
-    await cardC.trigger('click'); // C only
-    await flushPromises();
+    await checkCard((c) => c.text().includes('C')); // C only
     const delBtn = batchBar().findAll('button').find((b) => b.text() === '删除');
     await delBtn.trigger('click');
     await flushPromises();
@@ -296,8 +317,7 @@ describe('multi-select batch operations', () => {
   });
 
   it('全选 selects every visible task; Esc exits selection mode', async () => {
-    await batchBtn().trigger('click');
-    await flushPromises();
+    await checkCard();
     const allBtn = batchBar().findAll('button').find((b) => b.text() === '全选');
     await allBtn.trigger('click');
     await flushPromises();

@@ -1,17 +1,19 @@
-/* Component tests — filter bar, chips, sort menu, search (port of
+/* Component tests — filter dropdowns, stat chips, sort menu, search (port of
  * tests/dom-behavior.test.js sections: filter chip counts, search input
- * updates filters + clear). */
+ * updates filters + clear). Range switching lives in the left nav only. */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { mountApp, resetState, cleanup } from './helpers/mountApp.js';
+import { todayString } from '../../src/core/dates.js';
 
 let wrapper;
 let tasks;
 let ui;
+let router;
 
 beforeEach(async () => {
   resetState();
-  ({ wrapper, tasks, ui } = await mountApp());
+  ({ wrapper, tasks, ui, router } = await mountApp());
 });
 
 afterEach(async () => {
@@ -23,9 +25,9 @@ const cards = () =>
     (c) => c.classList && c.classList.contains('task-card')
   );
 
-const chip = (barId, value) => wrapper.find(`#${barId} .chip[data-value="${value}"]`);
+const option = (popId, value) => wrapper.find(`#${popId} .pop-item[data-value="${value}"]`);
 
-describe('filter chip counts', () => {
+describe('filter dropdown counts', () => {
   beforeEach(async () => {
     tasks.createTask({ title: '1', status: 'todo' });
     tasks.createTask({ title: '2', status: 'todo' });
@@ -33,7 +35,7 @@ describe('filter chip counts', () => {
     await flushPromises();
   });
 
-  it('status chips carry data-count numbers matching the store', () => {
+  it('status dropdown options carry data-count numbers matching the store', () => {
     const count = (v) => wrapper.find(`#status-filter .chip-count[data-count="${v}"]`).text();
     expect(count('all')).toBe('3');
     expect(count('todo')).toBe('2');
@@ -41,57 +43,106 @@ describe('filter chip counts', () => {
     expect(count('done')).toBe('1');
   });
 
-  it('clicking status chips narrows the rendered list (todo → 2, done → 1)', async () => {
-    await chip('status-filter', 'todo').trigger('click');
+  it('picking status options narrows the rendered list without navigating', async () => {
+    ui.setDoneExpanded(true); // done tasks collapse by default — expand to count them
+    await flushPromises();
+    await option('status-filter', 'todo').trigger('click');
     await flushPromises();
     expect(cards().length).toBe(2); // filter todo count
-    expect(chip('status-filter', 'todo').classes()).toContain('active');
+    expect(option('status-filter', 'todo').classes()).toContain('active');
+    expect(ui.state.viewMode).toBe('today'); // dropdowns never push routes
 
-    await chip('status-filter', 'done').trigger('click');
+    await option('status-filter', 'done').trigger('click');
     await flushPromises();
     expect(cards().length).toBe(1); // filter done count
-    expect(ui.state.viewMode).toBe('done'); // done status navigates to /done
-    expect(chip('status-filter', 'done').classes()).toContain('active');
+    expect(ui.state.filters.status).toBe('done');
 
-    // leaving done view goes to /all with the chosen status preserved (legacy)
-    await chip('status-filter', 'todo').trigger('click');
+    await option('status-filter', 'all').trigger('click');
     await flushPromises();
-    expect(ui.state.viewMode).toBe('all');
-    expect(ui.state.filters.status).toBe('todo');
-    expect(cards().length).toBe(2);
+    expect(ui.state.filters.status).toBe('all');
+    expect(cards().length).toBe(3);
   });
 });
 
-describe('chip active toggling', () => {
-  it('range chips navigate and toggle active state (今天/本周/全部)', async () => {
-    await chip('range-filter', 'week').trigger('click');
+describe('range dimension: left nav only', () => {
+  it('main area has no range chips; navigation drives the range filter', async () => {
+    expect(wrapper.find('#range-filter').exists()).toBe(false);
+
+    await router.push('/week');
     await flushPromises();
-    expect(ui.state.viewMode).toBe('week');
     expect(ui.state.filters.range).toBe('week');
-    expect(chip('range-filter', 'week').classes()).toContain('active');
 
-    await chip('range-filter', 'today').trigger('click');
+    await router.push('/today');
     await flushPromises();
-    expect(ui.state.viewMode).toBe('today');
     expect(ui.state.filters.range).toBe('today');
-    expect(chip('range-filter', 'today').classes()).toContain('active');
 
-    await chip('range-filter', 'all').trigger('click');
+    await router.push('/all');
     await flushPromises();
-    expect(ui.state.viewMode).toBe('all');
     expect(ui.state.filters.range).toBe('all');
-    expect(chip('range-filter', 'all').classes()).toContain('active');
+  });
+});
+
+describe('stat chips filter and toggle', () => {
+  beforeEach(async () => {
+    tasks.createTask({ title: '今天到期', status: 'todo', dueDate: todayString() });
+    tasks.createTask({ title: '逾期项', status: 'todo', dueDate: '2000-01-01' });
+    tasks.createTask({ title: '推进中', status: 'in-progress' });
+    await flushPromises();
   });
 
-  it('priority chips toggle active state without navigation', async () => {
-    await chip('priority-filter', 'high').trigger('click');
-    expect(ui.state.filters.priority).toBe('high');
-    expect(chip('priority-filter', 'high').classes()).toContain('active');
-    expect(chip('priority-filter', 'all').classes()).not.toContain('active');
+  it('chips reflect the strip stats', () => {
+    const chips = wrapper.findAll('#strip .stat-chip');
+    expect(chips.length).toBe(4);
+    expect(chips[0].text()).toBe('待推进 2');
+    expect(chips[1].text()).toBe('今日到期 1');
+    expect(chips[2].text()).toBe('逾期 1');
+    expect(chips[3].text()).toBe('进行中 1');
+  });
 
-    await chip('priority-filter', 'all').trigger('click');
+  it('逾期 chip filters to overdue and toggles back to the view range', async () => {
+    const overdueChip = wrapper.findAll('#strip .stat-chip')[2];
+    await overdueChip.trigger('click');
+    await flushPromises();
+    expect(ui.state.filters.range).toBe('overdue');
+    expect(overdueChip.classes()).toContain('active');
+    expect(cards().length).toBe(1);
+
+    await overdueChip.trigger('click');
+    await flushPromises();
+    expect(ui.state.filters.range).toBe('today'); // /today view default
+    expect(overdueChip.classes()).not.toContain('active');
+  });
+
+  it('进行中 chip toggles the status filter', async () => {
+    const chip = wrapper.findAll('#strip .stat-chip')[3];
+    await chip.trigger('click');
+    await flushPromises();
+    expect(ui.state.filters.status).toBe('in-progress');
+    expect(chip.classes()).toContain('active');
+    expect(cards().length).toBe(1);
+
+    await chip.trigger('click');
+    await flushPromises();
+    expect(ui.state.filters.status).toBe('all');
+    expect(cards().length).toBe(3);
+  });
+});
+
+describe('priority dropdown', () => {
+  it('picking a priority filters without navigation', async () => {
+    tasks.createTask({ title: '普通', priority: 'low' });
+    tasks.createTask({ title: '急', priority: 'high' });
+    await flushPromises();
+
+    await option('priority-filter', 'high').trigger('click');
+    expect(ui.state.filters.priority).toBe('high');
+    expect(option('priority-filter', 'high').classes()).toContain('active');
+    expect(option('priority-filter', 'all').classes()).not.toContain('active');
+    expect(cards().length).toBe(1);
+
+    await option('priority-filter', 'all').trigger('click');
     expect(ui.state.filters.priority).toBe('all');
-    expect(chip('priority-filter', 'all').classes()).toContain('active');
+    expect(cards().length).toBe(2);
   });
 });
 

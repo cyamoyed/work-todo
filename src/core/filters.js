@@ -64,6 +64,13 @@ export function matchRange(t, filters) {
   if (filters.range === 'today') {
     return isTodayScope(t);
   }
+  // 统计 chip 专属档位:待推进(今天)的两个子集
+  if (filters.range === 'due-today') {
+    return isDueTodayOpen(t) && !isOverdue(t);
+  }
+  if (filters.range === 'overdue') {
+    return isOverdue(t);
+  }
   if (filters.range === 'week') {
     return (t.status !== 'done' && isThisWeek(t.dueDate)) || isOverdue(t);
   }

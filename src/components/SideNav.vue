@@ -1,10 +1,5 @@
 <template>
   <aside class="side">
-    <div class="logo">
-      <div class="logo-mark" aria-hidden="true"><BrandMark :size="22" /></div>
-      <div class="logo-text">Work Todo</div>
-    </div>
-
     <nav class="nav" id="nav" aria-label="视图">
       <button
         v-for="item in navItems"
@@ -32,49 +27,29 @@
         <i :style="{ width: progress ? progress + '%' : '0%' }"></i>
       </div>
     </div>
+    </div>
 
     <div class="side-foot">
-      <div class="side-ops">
-        <button type="button" id="btn-export" @click="doExport">导出数据</button>
-        <button type="button" id="btn-import" @click="openImport">导入数据</button>
-        <button v-if="desktop" type="button" id="btn-backup" @click="openBackup">数据备份</button>
-        <button type="button" id="btn-sync-settings" @click="openSync">同步设置</button>
+      <div class="side-foot-row">
         <button
           type="button"
-          id="btn-check-update"
-          :disabled="updateState.status === 'checking'"
-          @click="checkUpdate"
-        >{{ checkLabel }}</button>
-        <input
-          id="import-file"
-          type="file"
-          accept="application/json,.json"
-          hidden
-          aria-label="选择要导入的 JSON 文件"
-          @change="onImportFile"
-        />
+          id="btn-settings"
+          class="side-settings"
+          :class="{ active: isSettings }"
+          aria-label="打开设置"
+          @click="goSettings"
+        >
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="2.25" stroke="currentColor" stroke-width="1.4" />
+            <path
+              d="M8 1.6l.7 1.9a4.7 4.7 0 0 1 1.6.66l1.97-.6 1.17 2.02-1.27 1.6a4.75 4.75 0 0 1 0 1.84l1.27 1.6-1.17 2.02-1.97-.6a4.7 4.7 0 0 1-1.6.66L8 14.4l-.7-1.9a4.7 4.7 0 0 1-1.6-.66l-1.97.6-1.17-2.02 1.27-1.6a4.75 4.75 0 0 1 0-1.84L2.56 5.38l1.17-2.02 1.97.6a4.7 4.7 0 0 1 1.6-.66L8 1.6Z"
+              stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"
+            />
+          </svg>
+          <span>设置</span>
+        </button>
+        <ThemeToggle />
       </div>
-      <ThemeToggle />
-      <div class="side-hint">
-        <div class="side-ver">
-          <button
-            type="button"
-            id="app-version"
-            :class="{ 'has-update': hasUpdate }"
-            :title="hasUpdate ? '发现新版本，点击查看' : '当前版本，点击检查更新'"
-            @click="versionClick"
-          >
-            <i v-if="hasUpdate" class="version-dot" aria-hidden="true"></i>
-            <span>v{{ updateState.currentVersion }}</span>
-            <span v-if="hasUpdate"> · 有新版 v{{ updateState.latest.version }}</span>
-          </button>
-        </div>
-        <span class="sync-status" id="sync-status" :title="syncState.lastError || ''">
-          <i class="sync-dot" :class="syncDotClass" aria-hidden="true"></i>{{ syncText }}
-        </span>
-        <kbd>N</kbd> 新建 · <kbd>/</kbd> 搜索 · <kbd>Esc</kbd> 关闭
-      </div>
-    </div>
     </div>
   </aside>
 </template>
@@ -84,33 +59,15 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import ProjectList from './ProjectList.vue';
 import ThemeToggle from './ThemeToggle.vue';
-import BrandMark from './BrandMark.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
-import { useTransfer } from '../composables/useTransfer.js';
-import { useUpdateCheck } from '../composables/useUpdateCheck.js';
-import { updateState } from '../store/update.js';
-import { isTauri } from '../lib/tauri.js';
-import { syncState, syncStatusText } from '../store/sync.js';
 import { navCounts, projectStats } from '../core/filters.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
 const router = useRouter();
-const { doExport, importFile } = useTransfer();
-const { checkNow } = useUpdateCheck();
-const desktop = isTauri();
 
-const hasUpdate = computed(() => updateState.status === 'available' && !!updateState.latest);
-const checkLabel = computed(() => (updateState.status === 'checking' ? '检查中…' : '检查更新'));
-
-const syncText = computed(() => syncStatusText());
-const syncDotClass = computed(() => {
-  if (!syncState.configured) return '';
-  if (syncState.status === 'syncing') return 'syncing';
-  if (syncState.status === 'ok') return 'ok';
-  return 'error';
-});
+const isSettings = computed(() => ui.state.viewMode === 'settings');
 
 const navItems = [
   { view: 'today', label: '今天' },
@@ -142,30 +99,7 @@ function newProject() {
   ui.openProjectModal(null, document.getElementById('btn-new-project'));
 }
 
-function openImport() {
-  const input = document.getElementById('import-file');
-  if (input) input.click();
-}
-
-function openBackup() {
-  ui.openBackupModal(document.getElementById('btn-backup'));
-}
-
-function openSync() {
-  ui.openSyncModal(document.getElementById('btn-sync-settings'));
-}
-
-function checkUpdate() {
-  checkNow(document.getElementById('btn-check-update'));
-}
-
-function versionClick() {
-  if (hasUpdate.value) ui.openUpdateModal(document.getElementById('app-version'));
-  else checkNow(document.getElementById('app-version'));
-}
-
-function onImportFile(e) {
-  importFile(e.target.files && e.target.files[0]);
-  e.target.value = '';
+function goSettings() {
+  router.push('/settings');
 }
 </script>

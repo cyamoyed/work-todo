@@ -48,10 +48,6 @@ describe('HTML/CSS source contracts (styles.css)', () => {
   it('has mobile-drawer styles', () => {
     expect(css.includes('mobile-drawer')).toBe(true);
   });
-
-  it('hides the filter button on mobile', () => {
-    expect(css.includes('#btn-filter { display: none; }')).toBe(true);
-  });
 });
 
 describe('weekRange contracts', () => {

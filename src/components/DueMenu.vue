@@ -2,6 +2,7 @@
   <Teleport to="body">
     <div
       v-if="ui.state.dueMenu.open"
+      ref="rootEl"
       class="row-menu due-menu"
       :style="{ position: 'absolute', top: ui.state.dueMenu.top + 'px', left: ui.state.dueMenu.left + 'px' }"
       @click.stop
@@ -25,13 +26,27 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
+import { placeMenuInViewport } from '../composables/usePopupPlacement.js';
 import { addDays, formatDue, todayString, weekRange } from '../core/dates.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
+
+const rootEl = ref(null);
+
+watch(
+  () => ui.state.dueMenu.open,
+  (open) => {
+    if (open) {
+      nextTick(() => {
+        placeMenuInViewport(rootEl.value, ui.state.dueMenu.anchor, ui.state.dueMenu);
+      });
+    }
+  }
+);
 
 const task = computed(() => tasks.getTask(ui.state.dueMenu.taskId));
 const dueDate = computed(() => (task.value && task.value.dueDate) || '');

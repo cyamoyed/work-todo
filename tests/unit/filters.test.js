@@ -10,6 +10,7 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { useTaskStore } from '../../src/store/tasks.js';
 import { useUiStore } from '../../src/store/ui.js';
 import { sortTasks, visibleTasks } from '../../src/core/filters.js';
+import { addDays, todayString } from '../../src/core/dates.js';
 
 const store = useTaskStore();
 const ui = useUiStore();
@@ -180,5 +181,33 @@ describe('visibleTasks — filter + search AND semantics', () => {
   it('visibleTasks is sorted (active first)', () => {
     const titles = visible().map((t) => t.title);
     expect(titles[titles.length - 1]).toBe('发布 gamma');
+  });
+});
+
+describe('matchRange — stat-chip range values (due-today / overdue)', () => {
+  const filters = (range) => ({ status: 'all', priority: 'all', range, search: '', projectId: null });
+
+  it("range 'due-today' keeps only open tasks due today that are not time-overdue", () => {
+    const today = todayString();
+    const list = [
+      { title: 'today-open', status: 'todo', dueDate: today },
+      { title: 'today-done', status: 'done', dueDate: today },
+      { title: 'tomorrow', status: 'todo', dueDate: addDays(today, 1) },
+      { title: 'overdue-old', status: 'todo', dueDate: '2000-01-01' },
+    ];
+    const out = visibleTasks(list, filters('due-today'), 'due').map((t) => t.title);
+    expect(out).toEqual(['today-open']);
+  });
+
+  it("range 'overdue' keeps only overdue open tasks", () => {
+    const today = todayString();
+    const list = [
+      { title: 'today-open', status: 'todo', dueDate: today },
+      { title: 'overdue-old', status: 'todo', dueDate: '2000-01-01' },
+      { title: 'overdue-done', status: 'done', dueDate: '2000-01-01' },
+      { title: 'no-due', status: 'todo', dueDate: null },
+    ];
+    const out = visibleTasks(list, filters('overdue'), 'due').map((t) => t.title);
+    expect(out).toEqual(['overdue-old']);
   });
 });

@@ -1,6 +1,6 @@
 <template>
   <div class="theme-row" role="radiogroup" aria-label="界面主题">
-    <div class="theme-opts">
+    <div class="theme-opts" :class="{ labeled: labels }">
       <button
         v-for="t in options"
         :key="t.value"
@@ -28,6 +28,7 @@
         <svg v-else width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M8 2a4 4 0 0 0 6 6 6 6 0 1 1-6-6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
         </svg>
+        <span v-if="labels">{{ t.label }}</span>
       </button>
     </div>
   </div>
@@ -35,6 +36,11 @@
 
 <script setup>
 import { useThemeStore } from '../store/theme.js';
+
+defineProps({
+  // 设置页带文字;侧边栏/抽屉保持纯图标(空间小)
+  labels: { type: Boolean, default: false },
+});
 
 const theme = useThemeStore();
 theme.init(); // idempotent — safe for the two mount points (side nav + drawer)

@@ -28,10 +28,14 @@ function mockFetch(status, body) {
 
 let wrapper;
 let ui;
+let router;
 
 beforeEach(async () => {
   resetState();
-  ({ wrapper, ui } = await mountApp());
+  ({ wrapper, ui, router } = await mountApp());
+  // update entry points moved from the side footer to the /settings page
+  await router.push('/settings');
+  await flushPromises();
 });
 
 afterEach(async () => {
@@ -39,7 +43,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-describe('sidebar update entries', () => {
+describe('settings update entries', () => {
   it('shows the current version and a check button', () => {
     const ver = wrapper.find('#app-version');
     expect(ver.exists()).toBe(true);
@@ -48,7 +52,7 @@ describe('sidebar update entries', () => {
     const btn = wrapper.find('#btn-check-update');
     expect(btn.exists()).toBe(true);
     expect(btn.text()).toBe('检查更新');
-    expect(wrapper.find('#btn-check-update-mobile').exists()).toBe(true);
+    expect(wrapper.find('#btn-settings-mobile').exists()).toBe(true);
   });
 });
 

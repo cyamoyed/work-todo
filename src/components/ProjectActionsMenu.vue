@@ -2,6 +2,7 @@
   <Teleport to="body">
     <div
       v-if="ui.state.projectMenu.open"
+      ref="rootEl"
       class="ctx-menu"
       role="menu"
       :style="{ position: 'absolute', top: ui.state.projectMenu.top + 'px', left: ui.state.projectMenu.left + 'px' }"
@@ -13,13 +14,28 @@
 </template>
 
 <script setup>
+import { nextTick, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
+import { placeMenuInViewport } from '../composables/usePopupPlacement.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
 const router = useRouter();
+
+const rootEl = ref(null);
+
+watch(
+  () => ui.state.projectMenu.open,
+  (open) => {
+    if (open) {
+      nextTick(() => {
+        placeMenuInViewport(rootEl.value, ui.state.projectMenu.anchor, ui.state.projectMenu);
+      });
+    }
+  }
+);
 
 function rename() {
   const id = ui.state.projectMenu.projectId;

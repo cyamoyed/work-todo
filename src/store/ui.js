@@ -38,17 +38,18 @@ const state = reactive({
     action: null,
   },
   drawerOpen: false,
-  filterPopOpen: false,
   sortPopOpen: false,
+  statusPopOpen: false,
+  priorityPopOpen: false,
   projectPopOpen: false,
   timePopOpen: false,
   calOpen: false,
   calCursor: { y: new Date().getFullYear(), m: new Date().getMonth() },
   lastFocus: null,
-  statusMenu: { open: false, taskId: null, top: 0, left: 0 },
-  prioMenu: { open: false, taskId: null, top: 0, left: 0 },
-  dueMenu: { open: false, taskId: null, top: 0, left: 0 },
-  projectMenu: { open: false, projectId: null, top: 0, left: 0 },
+  statusMenu: { open: false, taskId: null, anchor: null, top: 0, left: 0 },
+  prioMenu: { open: false, taskId: null, anchor: null, top: 0, left: 0 },
+  dueMenu: { open: false, taskId: null, anchor: null, top: 0, left: 0 },
+  projectMenu: { open: false, projectId: null, anchor: null, top: 0, left: 0 },
   selection: { active: false, ids: [] },
   batchMenu: null, // 'status' | 'prio' | 'due' while a batch popover is open
   _preserveStatusOnSync: false,
@@ -63,12 +64,21 @@ function clearToastTimer() {
   }
 }
 
-/** Anchor a teleported popup menu under the clicked element (legacy menu contract). */
-function positionMenu(menu, anchor, taskId) {
-  const rect = anchor && anchor.getBoundingClientRect
+/** Viewport-space rect of an anchor element, as plain numbers for menu state. */
+function anchorRect(anchor) {
+  return anchor && anchor.getBoundingClientRect
     ? anchor.getBoundingClientRect()
-    : { top: 0, left: 0, bottom: 0 };
+    : { top: 0, left: 0, bottom: 0, right: 0 };
+}
+
+/** Anchor a teleported popup menu under the clicked element (legacy menu
+ * contract). The naive below-anchor position renders first; the menu
+ * component then measures itself and rewrites top/left via
+ * placeMenuInViewport to stay inside the window. */
+function positionMenu(menu, anchor, taskId) {
+  const rect = anchorRect(anchor);
   menu.taskId = taskId;
+  menu.anchor = { top: rect.top, left: rect.left, bottom: rect.bottom, right: rect.right };
   menu.top = rect.bottom + 6 + (window.scrollY || 0);
   menu.left = rect.left + (window.scrollX || 0);
   menu.open = true;
@@ -298,8 +308,9 @@ export function useUiStore() {
     },
 
     closeAllPops() {
-      state.filterPopOpen = false;
       state.sortPopOpen = false;
+      state.statusPopOpen = false;
+      state.priorityPopOpen = false;
       state.projectPopOpen = false;
       state.timePopOpen = false;
       state.calOpen = false;
@@ -310,11 +321,22 @@ export function useUiStore() {
       state.batchMenu = null;
     },
 
-    /** Multi-select mode: ids are task ids; view filtering may hide them, so
-     *  the set lives here rather than in the DOM. */
-    startSelection() {
-      state.selection.active = true;
-      state.selection.ids = [];
+    /** Multi-select: ids are task ids; view filtering may hide them, so
+     *  the set lives here rather than in the DOM. Checking the first box
+     *  enters selection mode; emptying the set exits it (bar auto-hides). */
+    toggleSelect(id) {
+      const ids = state.selection.ids;
+      const i = ids.indexOf(id);
+      if (i === -1) {
+        state.selection.active = true;
+        ids.push(id);
+      } else {
+        ids.splice(i, 1);
+      }
+      if (!ids.length) {
+        state.selection.active = false;
+        state.batchMenu = null;
+      }
     },
 
     stopSelection() {
@@ -323,15 +345,10 @@ export function useUiStore() {
       state.batchMenu = null;
     },
 
-    toggleSelect(id) {
-      const ids = state.selection.ids;
-      const i = ids.indexOf(id);
-      if (i === -1) ids.push(id);
-      else ids.splice(i, 1);
-    },
-
     selectAll(ids) {
       state.selection.ids = Array.isArray(ids) ? ids.slice() : [];
+      state.selection.active = state.selection.ids.length > 0;
+      if (!state.selection.active) state.batchMenu = null;
     },
 
     isSelected(id) {
@@ -378,13 +395,14 @@ export function useUiStore() {
     },
 
     openProjectMenu(anchor, projectId) {
-      const rect = anchor && anchor.getBoundingClientRect
-        ? anchor.getBoundingClientRect()
-        : { top: 0, left: 0, bottom: 0 };
-      state.projectMenu.projectId = projectId;
-      state.projectMenu.top = rect.bottom + 6 + (window.scrollY || 0);
-      state.projectMenu.left = rect.left + (window.scrollX || 0);
-      state.projectMenu.open = true;
+      this.closeAllPops();
+      const rect = anchorRect(anchor);
+      const menu = state.projectMenu;
+      menu.projectId = projectId;
+      menu.anchor = { top: rect.top, left: rect.left, bottom: rect.bottom, right: rect.right };
+      menu.top = rect.bottom + 6 + (window.scrollY || 0);
+      menu.left = rect.left + (window.scrollX || 0);
+      menu.open = true;
     },
 
     closeProjectMenu() {

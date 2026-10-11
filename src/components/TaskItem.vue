@@ -11,7 +11,6 @@
     @click="onCardClick"
   >
     <button
-      v-if="selecting"
       type="button"
       class="select-check"
       :class="{ 'is-on': selected }"
@@ -19,19 +18,6 @@
       :aria-pressed="selected"
       @click.stop="toggleSelect"
     ></button>
-
-    <div class="status-wrap">
-      <button
-        type="button"
-        class="status-toggle"
-        :class="'st-' + task.status"
-        :title="checkTitle"
-        :aria-label="checkLabel"
-        aria-haspopup="menu"
-        @click.stop="onCheckClick"
-        @contextmenu.prevent.stop="openStatus"
-      ></button>
-    </div>
 
     <div class="task-main">
       <h3
@@ -100,7 +86,6 @@
 import { computed } from 'vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
-import { useStatusChange } from '../composables/useStatusChange.js';
 import { formatDue, isDueTodayOpen, isOverdue } from '../core/dates.js';
 import { PRIORITY_LABELS, REPEAT_LABELS, STATUS_LABELS } from '../constants.js';
 
@@ -110,10 +95,9 @@ const props = defineProps({
 
 const tasks = useTaskStore();
 const ui = useUiStore();
-const { requestSetStatus } = useStatusChange();
 
 const selecting = computed(() => ui.state.selection.active);
-const selected = computed(() => selecting.value && ui.isSelected(props.task.id));
+const selected = computed(() => ui.isSelected(props.task.id));
 
 const project = computed(() => (props.task.projectId ? tasks.getProject(props.task.projectId) : null));
 const projColorKey = computed(() => (project.value ? project.value.color : 'slate'));
@@ -125,25 +109,12 @@ const dueText = computed(() => formatDue(props.task));
 const dueOverdue = computed(() => !!dueText.value && overdue.value);
 const dueToday = computed(() => !!dueText.value && isDueTodayOpen(props.task) && !overdue.value);
 
-const isDone = computed(() => props.task.status === 'done');
-const checkLabel = computed(() =>
-  isDone.value ? '标记为待办' : `标记为已完成（当前${STATUS_LABELS[props.task.status]}）`
-);
-const checkTitle = computed(
-  () => `${checkLabel.value} · 右键选择状态`
-);
-
 function edit() {
   ui.openTaskModal(props.task.id);
 }
 
 function remove() {
   ui.openConfirmDelete(props.task.id);
-}
-
-/** Left check: complete (with confirm) / un-complete. */
-function onCheckClick() {
-  requestSetStatus(props.task, isDone.value ? 'todo' : 'done');
 }
 
 function openStatus(e) {
