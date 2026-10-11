@@ -5,7 +5,7 @@
 # 应用内「检查更新」读取 releases/latest（不含 draft / prerelease）。草稿 →
 # 统一转正的两段式发布保证 releases/latest 永远不会指向缺安装包的半成品
 # （某个平台构建失败时 Release 停留在草稿，删掉重试即可）。资产保持 Tauri
-# 默认命名（*-setup.exe / .msi / .dmg / .AppImage / .deb），src/core/update.js
+# 默认命名（*-setup.exe / .dmg / .AppImage / .deb），src/core/update.js
 # 按文件后缀挑选下载目标，不要在上传时改名。
 #
 # 桌面端应用内更新（plugin:updater）依赖 Release 里的 latest.json 签名清单：
@@ -101,7 +101,7 @@ jobs:
               printf '维护性更新。\n\n'
             fi
             echo '---'
-            echo '下载：Windows 选 `*-setup.exe` 或 `.msi`；macOS 选 `.dmg`（通用二进制，未签名，首次打开请右键 → 打开）；Linux 选 `.AppImage` / `.deb` / `.rpm`。'
+            echo '下载：Windows 选 `*-setup.exe`；macOS 选 `.dmg`（通用二进制，未签名，首次打开请右键 → 打开）；Linux 选 `.AppImage` / `.deb` / `.rpm`。'
             echo 'WORK_TODO_EOF'
           } >> "$GITHUB_OUTPUT"
       - name: 创建草稿 Release
@@ -144,12 +144,12 @@ jobs:
               src-tauri/target/release/bundle/deb/*.deb
               src-tauri/target/release/bundle/rpm/*.rpm
               src-tauri/target/release/bundle/appimage/*.AppImage
+          # Windows 只出 NSIS setup.exe，不再构建 MSI（WiX 打包省约半分钟）；
+          # 发布校验与 src/core/update.js 均按后缀挑选，无其它改动。
           - platform: windows-latest
             rust-targets: ''
-            args: ''
-            artifacts: |
-              src-tauri/target/release/bundle/msi/*.msi
-              src-tauri/target/release/bundle/nsis/*.exe
+            args: '--bundles nsis'
+            artifacts: src-tauri/target/release/bundle/nsis/*.exe
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
@@ -168,10 +168,17 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust-targets }}
+      # 只读缓存：tag 触发的运行写入的缓存被 GitHub 限定在该 tag 的 ref 作用域
+      # 内，下一次发版（新 tag）永远读不到——这是过去每次发版都全量冷编译约
+      # 500 个依赖的原因。真正落缓存的是 rust-cache-warm.yml 在 main 分支上的
+      # 预热构建；shared-key 必须与它保持一致才能对上 key，save-if 关掉以免
+      # 继续往各 tag 作用域写无效缓存。
       - name: 缓存 Rust 编译产物
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: release
+          save-if: "false"
       - name: 安装前端依赖
         run: npm ci
       # tag 推送：上传到 prepare 建好的草稿 Release（只上传，不改变草稿状态）；
@@ -244,7 +251,7 @@ jobs:
           check() {
             echo "$ASSETS" | grep -Eq "$1" || { echo "::error::安装包资产不齐全：$2"; exit 1; }
           }
-          check '-setup\.exe$|\.exe$|\.msi$' 'Windows（*-setup.exe / .msi）'
+          check '\.exe$' 'Windows（*-setup.exe）'
           check '\.dmg$' 'macOS（.dmg）'
           check '\.AppImage$|\.deb$' 'Linux（.AppImage / .deb）'
           check '^latest\.json$' 'latest.json（应用内更新的签名清单）'

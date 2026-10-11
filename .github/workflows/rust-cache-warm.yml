@@ -1,0 +1,87 @@
+# Rust 编译缓存预热：为「打包发布」流水线准备一份可命中的 cargo 编译缓存。
+#
+# 为什么需要它：GitHub Actions 的缓存按 ref 作用域隔离，「运行只能恢复自己
+# ref 或默认分支上保存的缓存」。release.yml 仅由 v* 标签触发，它写入的缓存
+# 被限定在该 tag 的 ref 下，下一次发版（新 tag）永远读不到——历史上每次发版
+# 都因此全量冷编译约 500 个依赖。只有默认分支上保存的缓存对所有运行可见，
+# 所以由本工作流在 main 上用与发布完全相同的参数编译一遍（tauri build
+# --no-bundle，仅省去打包器环节，cargo 侧参数逐字一致以命中同一份指纹），
+# rust-cache 将 target/ 产物缓存到 main 作用域供发布流水线恢复。
+#
+# key 构成（rust-cache 默认）：prefix + shared-key + 操作系统 + 依赖环境哈希
+# （Cargo.lock 等）+ rustc 版本哈希，与 Cargo.toml 里的版本号无关（实测升版
+# 不改变 key）；依赖升级或 rustc 升级会自然轮换。release.yml 的 rust-cache
+# 必须使用相同的 shared-key（release）且 save-if: "false"（只有这里写缓存），
+# 两处务必同步修改。
+#
+# 触发：src-tauri 依赖清单变更、每周一次（覆盖 rustc stable 升级后的 key
+# 轮换，并防 GitHub 缓存 7 天未使用被驱逐）、以及手动（发版前可先跑一次）。
+
+name: Rust 缓存预热
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src-tauri/Cargo.lock'
+      - 'src-tauri/Cargo.toml'
+  schedule:
+    - cron: '0 20 * * 1' # 每周一 UTC 20:00（北京时间周二 04:00）
+  workflow_dispatch:
+
+concurrency:
+  group: rust-cache-warm
+  cancel-in-progress: true
+
+jobs:
+  warm:
+    name: 预热编译缓存（${{ matrix.platform }}）
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS 与发布矩阵一致：universal 两个架构目录都要预热
+          - platform: macos-latest
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+            args: '--target universal-apple-darwin --no-bundle'
+          - platform: ubuntu-22.04
+            rust-targets: ''
+            args: '--no-bundle'
+          - platform: windows-latest
+            rust-targets: ''
+            args: '--no-bundle'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: 安装 Linux 系统依赖
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-bin
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - name: 缓存 Rust 编译产物
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: release
+      - name: 安装前端依赖
+        run: npm ci
+      # 签名 secret 与 release.yml 相同来源：--no-bundle 不产生签名产物，传入
+      # 只为防 tauri 在校验 updater 配置时因缺私钥报错。
+      - name: 预热编译（产物仅用于填充缓存，不打包、不发布）
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          args: ${{ matrix.args }}

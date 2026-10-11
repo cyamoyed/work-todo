@@ -14,7 +14,7 @@ npm run build        # production build → dist/ (never edit dist/ by hand)
 npm test             # vitest unit + component (tests/unit, tests/component)
 npm run test:e2e     # npm run build + playwright e2e against dist/ (tests/e2e)
 cargo tauri dev      # desktop dev (runs npm run dev first via devUrl)
-cargo tauri build    # desktop installers (msi/nsis on Windows)
+cargo tauri build    # desktop installer (NSIS setup.exe on Windows)
 ```
 
 Prereqs for desktop: Rust ≥ 1.88 (recent stable; the tauri-plugin-updater dependency tree requires it), `cargo install tauri-cli --version "^2"`, VS C++ Build Tools + WebView2. macOS bundles must be built on a Mac.

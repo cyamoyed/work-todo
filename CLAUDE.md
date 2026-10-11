@@ -20,7 +20,7 @@ npm run test:e2e     # build + playwright e2e against dist/ (tests/e2e)
 
 ```bash
 cargo tauri dev                  # runs `npm run dev` first (devUrl), loads the dev server
-cargo tauri build                # runs `npm run build` first, produces installers (msi/nsis on Windows)
+cargo tauri build                # runs `npm run build` first, produces the installer (NSIS setup.exe on Windows)
 ```
 
 Prereqs: Node ≥ 18 (20 LTS recommended), Rust ≥ 1.77, `cargo install tauri-cli --version "^2"`, VS C++ Build Tools + WebView2. macOS bundles must be built on a Mac. Icons regenerate via `cargo tauri icon <png>` from `src-tauri/`.
