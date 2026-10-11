@@ -249,6 +249,13 @@ kbd {
   padding: 24px 14px 18px;
   min-height: 0; overflow: auto;
 }
+/* App icon + name pinned above the nav, aligned with .nav-item's inner padding */
+.side-brand {
+  flex: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 6px 16px;
+  font-size: 14px; font-weight: 650; color: var(--ink);
+}
 .nav { display: flex; flex-direction: column; gap: 2px; flex: none; }
 .nav-item {
   display: flex; align-items: center; justify-content: space-between;
@@ -333,7 +340,7 @@ kbd {
    bottom and never scrolls; flex:none keeps it intact on short viewports
    (the sidebar itself scrolls as the fallback). */
 .side-foot { flex: none; padding: 8px 10px 0; }
-/* Footer row: 设置 entry on the left, theme icons on the right. Data ops,
+/* Footer row: theme icons on the left, 设置 entry on the right. Data ops,
  * sync config and the version line moved to the /settings page. */
 .side-foot-row {
   display: flex; align-items: center; justify-content: space-between;

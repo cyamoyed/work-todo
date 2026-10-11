@@ -1,5 +1,9 @@
 <template>
   <aside class="side">
+    <div class="side-brand">
+      <BrandMark :size="22" />
+      <span>Work Todo</span>
+    </div>
     <nav class="nav" id="nav" aria-label="视图">
       <button
         v-for="item in navItems"
@@ -31,6 +35,7 @@
 
     <div class="side-foot">
       <div class="side-foot-row">
+        <ThemeToggle />
         <button
           type="button"
           id="btn-settings"
@@ -47,7 +52,6 @@
           </svg>
           <span>设置</span>
         </button>
-        <ThemeToggle />
       </div>
     </div>
   </aside>
@@ -58,6 +62,7 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import ProjectList from './ProjectList.vue';
 import ThemeToggle from './ThemeToggle.vue';
+import BrandMark from './BrandMark.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { navCounts, projectStats } from '../core/filters.js';
