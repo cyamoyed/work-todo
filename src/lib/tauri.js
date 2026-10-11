@@ -6,10 +6,21 @@ export function isTauri() {
   return typeof window !== 'undefined' && !!(window.__TAURI__ || window.__TAURI_INTERNALS__);
 }
 
+/* 契约：无论桥接层状态如何都返回 Promise——invoke 同步抛错或返回非 Promise
+ * （环境异常 / 测试 mock 不完整）一律转为 rejection，调用方统一 catch 降级。 */
+function asInvokePromise(result) {
+  if (result && typeof result.then === 'function') return result;
+  return Promise.reject(new Error('tauri invoke did not return a promise'));
+}
+
 export function tauriInvoke(cmd, args) {
   const t = typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__);
-  if (t && t.core && typeof t.core.invoke === 'function') return t.core.invoke(cmd, args);
-  if (t && typeof t.invoke === 'function') return t.invoke(cmd, args);
+  try {
+    if (t && t.core && typeof t.core.invoke === 'function') return asInvokePromise(t.core.invoke(cmd, args));
+    if (t && typeof t.invoke === 'function') return asInvokePromise(t.invoke(cmd, args));
+  } catch (err) {
+    return Promise.reject(err instanceof Error ? err : new Error(String(err)));
+  }
   return Promise.reject(new Error('tauri invoke unavailable'));
 }
 

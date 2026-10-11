@@ -214,7 +214,11 @@ describe('startup auto check', () => {
  * handlers, mirroring how plugin:updater streams download progress. */
 describe('desktop in-app install (plugin:updater)', () => {
   const channelHandlers = new Map();
-  let invokeMock;
+  /* 默认实现必须返回 Promise：应用挂载发生在文件级 beforeEach（早于本 describe
+   * 的 beforeEach 重赋 invokeMock），挂载期 TitleBarControls 会调用
+   * plugin:window|is_maximized——空 vi.fn() 返回 undefined 会以 unhandled
+   * rejection 形式炸掉整个测试文件。 */
+  let invokeMock = vi.fn(async () => null);
   let channelSeq = 0;
 
   beforeAll(() => {
@@ -231,7 +235,7 @@ describe('desktop in-app install (plugin:updater)', () => {
     delete window.__TAURI_INTERNALS__;
   });
   beforeEach(() => {
-    invokeMock = vi.fn();
+    invokeMock = vi.fn(async () => null);
     channelHandlers.clear();
   });
 

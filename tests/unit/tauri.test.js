@@ -64,6 +64,16 @@ describe('isTauri / tauriInvoke', () => {
     await expect(tauriInvoke('load_tasks')).resolves.toBe('ok');
     expect(invoke).toHaveBeenCalledWith('load_tasks', undefined);
   });
+
+  it('malformed bridge (non-promise return / sync throw) degrades to rejection', async () => {
+    withTauri(() => undefined);
+    await expect(tauriInvoke('load_tasks')).rejects.toThrow('did not return a promise');
+    withTauri(() => {
+      throw new Error('boom');
+    });
+    await expect(tauriInvoke('load_tasks')).rejects.toThrow('boom');
+    await expect(isWindowMaximized()).resolves.toBe(false);
+  });
 });
 
 describe('mirrorSaveTasks', () => {
