@@ -242,7 +242,17 @@ describe('desktop in-app install (plugin:updater)', () => {
     channelHandlers.clear();
   });
 
-  const CHECK_OK = { rid: 7, available: true, version: '9.9.9', body: '更新内容摘要' };
+  // Real plugin:updater|check response shape (tauri-plugin-updater Metadata,
+  // camelCase): availability is implied by a non-null response with a rid —
+  // the plugin never sends an `available` field.
+  const CHECK_OK = {
+    rid: 7,
+    currentVersion: '0.10.3',
+    version: '9.9.9',
+    date: '2026-10-11T11:22:05.564Z',
+    body: '更新内容摘要',
+    rawJson: { version: '9.9.9' },
+  };
 
   async function openModalWithNative(checkResult = CHECK_OK) {
     // Only intercept the modal-open check; tests may install their own
@@ -263,11 +273,33 @@ describe('desktop in-app install (plugin:updater)', () => {
     expect(updateState.native.installable).toBe(true);
   });
 
-  it('keeps the browser download primary when the plugin has no installable update', async () => {
-    await openModalWithNative({ available: false });
+  it('keeps the browser download primary when the plugin reports no update (null)', async () => {
+    await openModalWithNative(null);
     expect(wrapper.find('#btn-install-update').exists()).toBe(false);
     expect(wrapper.find('#btn-open-download').exists()).toBe(true);
     expect(updateState.native.installable).toBe(false);
+  });
+
+  it('re-checks the native update when the dialog reopens without a confirmed update', async () => {
+    await openModalWithNative(null); // this check fails to confirm installability
+    expect(updateState.native.installable).toBe(false);
+    await wrapper.find('#btn-update-later').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('#update-modal').isVisible()).toBe(false);
+    await openModalWithNative(); // reopening must retry, not stick to the failed result
+    expect(updateState.native.installable).toBe(true);
+    expect(wrapper.find('#btn-install-update').exists()).toBe(true);
+  });
+
+  it('does not re-check when the dialog reopens with an update already confirmed', async () => {
+    await openModalWithNative();
+    expect(updateState.native.installable).toBe(true);
+    await wrapper.find('#btn-update-later').trigger('click');
+    await flushPromises();
+    await openModalWithNative(); // confirmed installable update is kept as-is
+    const checkCalls = invokeMock.mock.calls.filter(([cmd]) => cmd === 'plugin:updater|check').length;
+    expect(checkCalls).toBe(1);
+    expect(wrapper.find('#btn-install-update').exists()).toBe(true);
   });
 
   it('downloads with progress, installs, then offers 重启应用', async () => {

@@ -21,16 +21,19 @@ export function isUpdaterSupported() {
 }
 
 /**
- * Ask plugin:updater for the newest installable update. Resolves to
- * { available, version, body, rid } — `rid` identifies the update resource for
- * downloadAndInstall — or null when unavailable (web build / plugin error /
- * endpoint without latest.json yet).
+ * Ask plugin:updater for the newest installable update. The plugin's `check`
+ * command resolves null when there is no update, or a Metadata object
+ * { currentVersion, version, date, body, rawJson, rid } — availability is
+ * implied by the response being non-null (the plugin never sends an
+ * `available` field; see tauri-plugin-updater commands.rs). We normalize to
+ * { available, version, body, rid } for the store, or null when unavailable
+ * (web build / plugin error / endpoint without latest.json yet).
  */
 export function nativeUpdaterCheck() {
   if (!isTauri()) return Promise.resolve(null);
   return tauriInvoke('plugin:updater|check', {})
     .then((raw) =>
-      raw && raw.available
+      raw && typeof raw === 'object' && raw.rid !== undefined
         ? { available: true, version: raw.version || '', body: raw.body || '', rid: raw.rid }
         : { available: false }
     )

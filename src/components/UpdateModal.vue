@@ -101,12 +101,21 @@ const installLabel = computed(() => {
 });
 const receivedText = computed(() => formatBytes(native.received));
 
-// On desktop, confirm installability when the dialog opens (quiet; the
-// browser-download button stays primary until the plugin answers).
+// On desktop, confirm installability every time the dialog opens — a failed
+// earlier check (transient network, endpoint without latest.json) must not
+// stick for the whole session. Skip while a check or install is in flight,
+// when the plugin already confirmed an installable update, or when an
+// installed update waits for the relaunch (ready keeps its 重启应用 action).
 watch(
   () => ui.state.updateModalOpen,
   (open) => {
-    if (open && isDesktop && !native.checked) checkNativeUpdate();
+    if (!open || !isDesktop) return;
+    const busy =
+      native.status === 'checking' ||
+      native.status === 'downloading' ||
+      native.status === 'installing';
+    if (busy || native.installable || native.status === 'ready') return;
+    checkNativeUpdate();
   }
 );
 
