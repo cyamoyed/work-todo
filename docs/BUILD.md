@@ -112,7 +112,7 @@ work-todo/
 - **桌面数据**：Tauri 应用数据目录下的 `tasks.json`（通过 `load_tasks` / `save_tasks` 命令读写）。启动时会尝试从桌面文件恢复。
 - **桌面备份**：应用数据目录 `backups/work-todo-YYYYMMDD-HHmmss.json`，启动与导入后自动备份，滚动保留 10 份；侧栏「数据备份」可查看/恢复（`backup_tasks` / `list_backups` / `restore_backup`）。
 - **多端同步**：侧栏「同步设置」。支持 PocketBase（自建，需一个数据集合，名称可在应用内配置、默认 `work_todo`）与 WebDAV（网盘 JSON 文件）；pull-merge-push + rev/ETag 乐观锁，实体级 LWW 自动解决冲突。详见 `docs/SYNC-DESIGN.md`。
-- **测试**：`npm test`（单元 + 组件）、`npm run test:e2e`（构建后真浏览器端到端）。
+- **测试**：`npm test`（单元 + 组件）、`npm run test:e2e`（构建后真浏览器端到端）。e2e 首次运行前需 `npx playwright-core install chromium` 装一次浏览器（与 playwright-core 1.49 配套的修订版会装到本机 ms-playwright 目录，CI 上由流水线自动安装）。
 
 ## 版本
 
@@ -149,7 +149,7 @@ work-todo/
 
 ## CI 自动打包发布（GitHub Actions）
 
-`.github/workflows/release.yml` 在推送 `v*` 标签时自动完成整条发布链：单元/组件测试 → 校验 tag 与版本号一致 → 生成更新日志并创建**草稿** Release → 三平台并行构建、上传安装包到草稿 → 校验资产齐全后**统一转正式发布**。
+`.github/workflows/release.yml` 在推送 `v*` 标签时自动完成整条发布链：单元/组件测试 → e2e（真实 Chromium 跑构建后的 dist/）→ 校验 tag 与版本号一致 → 生成更新日志并创建**草稿** Release → 三平台并行构建、上传安装包到草稿 → 校验资产齐全后**统一转正式发布**。
 
 - **产物覆盖**：Windows（NSIS `*-setup.exe`，不再构建 MSI）、macOS（通用二进制 `.dmg`，同时支持 Intel / Apple Silicon）、Linux（`.deb` / `.rpm` / `.AppImage`）。
 - **触发方式**：
@@ -161,5 +161,5 @@ work-todo/
 - **命名约束**：资产保持 Tauri 默认命名（`*_setup.exe` / `.dmg` / `.AppImage` 等），`src/core/update.js` 按后缀与 `*-setup.exe` 优先级挑选下载目标，不要上传时改名。
 - **版本号防漂移**：`.github/workflows/version-guard.yml` 在 main 分支有新提交但 `Cargo.toml` 版本号未升时给出 warning 提醒（不阻断），避免发版前忘记升版。
 - **缓存**：npm 随 setup-node 缓存；Rust 编译缓存由 `rust-cache-warm.yml` 在 main 分支预热——tag 触发的构建写入的缓存被 GitHub 限定在该 tag 的 ref 作用域内、其它任何运行都读不到，因此发布流水线只读不写（`save-if: "false"`），预热流水线专职写入；两处 rust-cache 的 `shared-key`（`release`）必须一致。冷启动全量构建约 10–20 分钟，缓存命中后约 4–6 分钟。
-- e2e 测试不进 CI：Chromium 由 `vitest.e2e.config.js` 扫描本机 `%LOCALAPPDATA%/ms-playwright` 定位，依赖本机环境。
+- e2e 进 CI：release.yml 的 test 任务在 ubuntu 上执行 `npx playwright-core install chromium --with-deps` 后跑 `npm run test:e2e`，未通过则发布链中止。本机定位 Chromium 的扫描逻辑在 `tests/e2e/helpers/chrome.js`（Windows 扫 `%LOCALAPPDATA%\ms-playwright`、Linux 扫 `~/.cache/ms-playwright`，均取最新 `chromium-*` 修订版；`WORK_TODO_CHROME_PATH` 可强制指定）。
 - **发布流程**：升版 `src-tauri/Cargo.toml` 的 `version`（版本号唯一源头，`tauri.conf.json` 与 `package.json` 均不携带版本号）→ 提交并推送 `vX.Y.Z` tag → GitHub Actions 自动构建三平台安装包、校验后发布 Release（详见上方「CI 自动打包发布」；也可按本节旧流程手工 `cargo tauri build` + 手动建 Release）。用户端应用会检测到新版。

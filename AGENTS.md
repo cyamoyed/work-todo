@@ -40,7 +40,7 @@ Keep the layering: core pure, lib I/O, stores orchestrate, components render.
 ## Tests
 
 - Vitest config is `vite.config.js` (`test.include`: unit + component, happy-dom). E2e uses the separate `vitest.e2e.config.js` (node env) — do not merge the include lists.
-- E2e drives real Chromium against the **built `dist/`** via playwright-core; Chromium located by scanning `%LOCALAPPDATA%/ms-playwright/...` (override `WORK_TODO_CHROME_PATH`). E2e intercepts `https://api.github.com/**` so it never touches the network.
+- E2e drives real Chromium against the **built `dist/`** via playwright-core; Chromium is located by `tests/e2e/helpers/chrome.js` (scans `%LOCALAPPDATA%/ms-playwright` on Windows, `~/.cache/ms-playwright` on Linux, newest `chromium-*` first; override `WORK_TODO_CHROME_PATH`; install once via `npx playwright-core install chromium`). E2e intercepts `https://api.github.com/**` so it never touches the network. Release CI runs e2e in the `test` job before building installers.
 
 ## Design constraints
 

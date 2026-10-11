@@ -47,7 +47,7 @@ Keep the layering: `src/core` pure, `src/lib` I/O, stores orchestrate, component
 
 - `tests/unit/` — vitest specs importing `src/core` / `src/store` / `src/lib` directly. Storage failures are injected via `__setStorageForTests`.
 - `tests/component/` — vitest + @vue/test-utils + happy-dom; mounts real components against the real store (`tests/component/helpers/mountApp.js`).
-- `tests/e2e/e2e-ui.test.js` — playwright-core (devDependency; no NODE_PATH hacks) driving real Chromium against the **built `dist/`** served by an in-process static server. Chromium is located by scanning `%LOCALAPPDATA%/ms-playwright/chromium-*/chrome-win64/chrome.exe` (override with `WORK_TODO_CHROME_PATH`). e2e intercepts `https://api.github.com/**` (update checks answer "already current") so the suite never touches the network.
+- `tests/e2e/` (`e2e-ui.test.js` + `e2e-sync.test.js`) — playwright-core (devDependency; no NODE_PATH hacks) driving real Chromium against the **built `dist/`** served by an in-process static server. Chromium is located by the shared `tests/e2e/helpers/chrome.js` (scans the playwright browsers dirs on Windows/Linux, newest `chromium-*` first; override with `WORK_TODO_CHROME_PATH`; install once via `npx playwright-core install chromium`). e2e intercepts `https://api.github.com/**` (update checks answer "already current") so the suite never touches the network. Release CI (`release.yml` test job) runs e2e before building installers.
 - The vitest config lives in `vite.config.js` (happy-dom for unit/component); `vitest.e2e.config.js` is a separate node-env config (do not merge their include lists).
 
 ### Design constraints

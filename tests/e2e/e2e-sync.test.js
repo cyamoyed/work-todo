@@ -10,26 +10,11 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { chromium } from 'playwright-core';
+import { findChrome } from './helpers/chrome.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..', '..');
 const DIST = path.join(ROOT, 'dist');
-
-function findChrome() {
-  if (process.env.WORK_TODO_CHROME_PATH) return process.env.WORK_TODO_CHROME_PATH;
-  const base = path.join(process.env.LOCALAPPDATA || '', 'ms-playwright');
-  try {
-    for (const entry of fs.readdirSync(base)) {
-      if (entry.startsWith('chromium-') && !entry.includes('headless')) {
-        const candidate = path.join(base, entry, 'chrome-win64', 'chrome.exe');
-        if (fs.existsSync(candidate)) return candidate;
-      }
-    }
-  } catch (_) {
-    /* fall through */
-  }
-  return chromium.executablePath();
-}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

@@ -39,6 +39,12 @@ jobs:
         run: npm ci
       - name: 单元 + 组件测试
         run: npm test
+      # E2E 跑构建后的 dist/（真实 Chromium），是最强的回归防线，必须挡在
+      # 打包前。用例内已拦截 api.github.com，无需外网。
+      - name: 安装 e2e 用 Chromium
+        run: npx playwright-core install chromium --with-deps
+      - name: E2E 测试（构建 dist + 真实 Chromium）
+        run: npm run test:e2e
       # AGENTS.md 契约：版本号唯一源头是 src-tauri/Cargo.toml，tag 必须与之一致，
       # 否则应用内版本比较与 releases/latest 对不上。
       - name: 校验 tag 与版本号一致
