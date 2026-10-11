@@ -32,14 +32,17 @@ npm install -g @tauri-apps/cli
    - **Windows**：Visual Studio C++ Build Tools + WebView2 Runtime（Win11 自带）
    - **macOS**：Xcode Command Line Tools（`xcode-select --install`）
 
-### 首次准备图标
+### 重新生成图标
+
+图标唯一源是 `design/export-icon.js`（node canvas 渲染，设计说明见文件头注释；色板与 `styles.css` token 一一对应）。
 
 ```bash
-cd src-tauri
-cargo tauri icon /path/to/icon.png
+npm install                 # 首次需装 devDependency @napi-rs/canvas
+node design/export-icon.js  # 全量导出 src-tauri/icons/（png/ico/icns/Android/iOS）+ favicon 家族
+node design/verify-icons.js # 校验像素探针 / 尺寸 / 容器结构
 ```
 
-会生成 `src-tauri/icons/` 下所需的 png / icns / ico。
+`public/favicon.svg` 是同几何的手写矢量版，改 `export-icon.js` 几何常量时需同步。
 
 ### 构建命令
 

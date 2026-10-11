@@ -1,11 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- work-todo 图标:与 design/app-icon.html 同源的纸面三色清单(几何按 1024 基准 1/16 缩放) -->
-  <rect width="64" height="64" rx="14.5" fill="#F4EDDE"/>
-  <circle cx="19.75" cy="15.25" r="10.5" fill="#27A566"/>
-  <path d="M16.75 15.38 19 17.75 22.75 12.63" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="19.75" cy="32" r="4.44" fill="none" stroke="#F59E1B" stroke-width="1.63"/>
-  <circle cx="19.75" cy="48.75" r="4.44" fill="none" stroke="#E8502E" stroke-width="1.63"/>
-  <rect x="30.75" y="13.25" width="20.5" height="4" rx="2" fill="#26221B"/>
-  <rect x="30.75" y="30" width="20.5" height="4" rx="2" fill="#26221B"/>
-  <rect x="30.75" y="46.75" width="12.5" height="4" rx="2" fill="#26221B"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- work-todo 图标：与 design/export-icon.js 同源的「墨面台 · 三态清单」（深色 token 版）。
+       三态即 styles.css 的行首勾选语言：待办=锌灰空框 / 进行中=靛青左半填充 / 已完成=靛青实心+白勾。 -->
+  <rect width="1024" height="1024" rx="232" fill="#18181B"/>
+  <rect x="5" y="5" width="1014" height="1014" rx="227" fill="none" stroke="#303034" stroke-width="10"/>
+  <line x1="204" y1="378" x2="820" y2="378" stroke="#27272A" stroke-width="8"/>
+  <line x1="204" y1="646" x2="820" y2="646" stroke="#27272A" stroke-width="8"/>
+  <!-- 待办：锌灰描边空框 -->
+  <rect x="243" y="171" width="146" height="146" rx="3" fill="none" stroke="#A1A1AA" stroke-width="26"/>
+  <rect x="492" y="212" width="328" height="64" rx="32" fill="#F4F4F5"/>
+  <!-- 进行中：锌灰描边 + 靛青左半填充（硬切 50%） -->
+  <rect x="243" y="439" width="146" height="146" rx="3" fill="none" stroke="#A1A1AA" stroke-width="26"/>
+  <rect x="256" y="452" width="60" height="120" fill="#6366F1"/>
+  <rect x="492" y="480" width="328" height="64" rx="32" fill="#F4F4F5"/>
+  <!-- 已完成：靛青实心 + 白勾 -->
+  <rect x="230" y="694" width="172" height="172" rx="16" fill="#6366F1"/>
+  <path d="M276 782 308 816 362 744" fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="492" y="748" width="200" height="64" rx="32" fill="#71717A"/>
 </svg>

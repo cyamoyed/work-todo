@@ -23,7 +23,7 @@ cargo tauri dev                  # runs `npm run dev` first (devUrl), loads the 
 cargo tauri build                # runs `npm run build` first, produces the installer (NSIS setup.exe on Windows)
 ```
 
-Prereqs: Node ≥ 18 (20 LTS recommended), Rust ≥ 1.77, `cargo install tauri-cli --version "^2"`, VS C++ Build Tools + WebView2. macOS bundles must be built on a Mac. Icons regenerate via `cargo tauri icon <png>` from `src-tauri/`.
+Prereqs: Node ≥ 18 (20 LTS recommended), Rust ≥ 1.77, `cargo install tauri-cli --version "^2"`, VS C++ Build Tools + WebView2. macOS bundles must be built on a Mac. Icons regenerate via `node design/export-icon.js` (single source: node-canvas script; colors mirror `styles.css` tokens, verify with `design/verify-icons.js`).
 
 ## Architecture
 
