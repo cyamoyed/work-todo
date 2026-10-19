@@ -13,17 +13,20 @@
 
         <ErrorBanner />
 
-        <section class="list-section" aria-label="任务列表">
-          <div class="list-head">
-            <h2 class="list-title" id="list-title">{{ listTitle }}</h2>
-            <p class="list-meta" id="list-meta">{{ listMeta }}</p>
-          </div>
-          <RouterView />
-        </section>
+        <!-- 固定上半区（速记/统计/筛选）之下，只有任务列表滚动 -->
+        <div class="body-scroll">
+          <section class="list-section" aria-label="任务列表">
+            <div class="list-head">
+              <h2 class="list-title" id="list-title">{{ listTitle }}</h2>
+              <p class="list-meta" id="list-meta">{{ listMeta }}</p>
+            </div>
+            <RouterView />
+          </section>
 
-        <footer class="footer">
-          <span id="task-stats">{{ footerText }}</span>
-        </footer>
+          <footer class="footer">
+            <span id="task-stats">{{ footerText }}</span>
+          </footer>
+        </div>
       </div>
     </main>
   </div>
