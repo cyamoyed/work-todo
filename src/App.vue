@@ -6,13 +6,10 @@
       <TopBar />
 
       <div class="body">
+        <QuickAdd ref="quickAddRef" />
         <StatsSpans />
         <Strip />
-
-        <div class="toolbar-row">
-          <QuickAdd />
-          <FilterBar />
-        </div>
+        <FilterBar />
 
         <ErrorBanner />
 
@@ -63,7 +60,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import SideNav from './components/SideNav.vue';
 import TopBar from './components/TopBar.vue';
 import StatsSpans from './components/StatsSpans.vue';
@@ -95,9 +92,12 @@ import { isCompletedThisWeek } from './core/dates.js';
 const tasks = useTaskStore();
 const ui = useUiStore();
 const { importFile } = useTransfer();
+const quickAddRef = ref(null);
 
+// N 聚焦捕获条；Shift+N 打开完整新建表单
 useKeyboardShortcuts({
   onCreateNew: () => ui.openTaskModal(null, null),
+  onFocusQuickAdd: () => quickAddRef.value && quickAddRef.value.focusInput(),
 });
 
 function onImportFile(e) {

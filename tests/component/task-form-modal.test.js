@@ -133,11 +133,18 @@ describe('modal close paths', () => {
   });
 });
 
-describe('keyboard: N opens create modal', () => {
-  it('pressing N on a non-typing target opens the create modal', async () => {
+describe('keyboard: Shift+N opens create modal, N focuses quick add', () => {
+  it('Shift+N on a non-typing target opens the create modal', async () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'N', shiftKey: true }));
+    await flushPromises();
+    expect(backdrop().element.hidden).toBe(false); // Shift+N opens modal
+    expect(wrapper.find('#modal-title').text()).toBe('新建任务');
+  });
+
+  it('N focuses the quick-capture input', async () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'n' }));
     await flushPromises();
-    expect(backdrop().element.hidden).toBe(false); // N opens modal
-    expect(wrapper.find('#modal-title').text()).toBe('新建任务');
+    expect(backdrop().element.hidden).toBe(true); // N does not open the modal
+    expect(document.activeElement && document.activeElement.id).toBe('quick-title');
   });
 });

@@ -364,7 +364,14 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('n');
     await page.waitForTimeout(50);
-    expect(await page.locator('#modal-backdrop').isVisible()).toBe(true);
+    expect(
+      await page.evaluate(() => document.activeElement && document.activeElement.id === 'quick-title')
+    ).toBe(true); // N focuses quick capture
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(50);
+    await page.keyboard.press('Shift+N');
+    await page.waitForTimeout(50);
+    expect(await page.locator('#modal-backdrop').isVisible()).toBe(true); // Shift+N opens create modal
     await page.keyboard.press('Escape');
     await page.waitForTimeout(50);
     expect(await page.locator('#modal-backdrop').isHidden()).toBe(true);

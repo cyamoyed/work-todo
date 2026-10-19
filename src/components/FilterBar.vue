@@ -29,12 +29,6 @@
       :hidden="!hasDone || ui.state.selection.active"
       @click="ui.clearCompleted()"
     >清除已完成</button>
-    <button type="button" id="btn-new" class="btn sm btn-primary" @click="createNew">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-      </svg>
-      <span>新建任务</span>
-    </button>
   </section>
 </template>
 
@@ -72,9 +66,5 @@ function onStatus(v) {
 
 function onPriority(v) {
   ui.setFilters({ priority: v });
-}
-
-function createNew() {
-  ui.openTaskModal(null, document.getElementById('btn-new'));
 }
 </script>

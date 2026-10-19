@@ -1,4 +1,4 @@
-/* work-todo — global keyboard shortcuts: N new · / search · Esc close · Tab focus trap */
+/* work-todo — global keyboard shortcuts: N 速记 · Shift+N 新建 · / search · Esc close · Tab focus trap */
 
 import { onMounted, onUnmounted } from 'vue';
 import { useUiStore } from '../store/ui.js';
@@ -13,7 +13,7 @@ function isTypingTarget(target) {
   );
 }
 
-export function useKeyboardShortcuts({ onCreateNew } = {}) {
+export function useKeyboardShortcuts({ onCreateNew, onFocusQuickAdd } = {}) {
   const ui = useUiStore();
 
   function onKeydown(e) {
@@ -63,10 +63,21 @@ export function useKeyboardShortcuts({ onCreateNew } = {}) {
       }
       return;
     }
-    if (isTypingTarget(e.target)) return;
+    // Shift+N 在速记框里也生效（改走完整表单）；其余快捷键不在输入态触发
+    const isQuickTitle = e.target && e.target.id === 'quick-title';
+    if (isTypingTarget(e.target) && !(isQuickTitle && e.shiftKey && (e.key === 'n' || e.key === 'N'))) {
+      return;
+    }
     if (e.key === 'n' || e.key === 'N') {
       e.preventDefault();
-      if (onCreateNew) onCreateNew();
+      // Shift+N = 完整新建表单；N = 聚焦速记
+      if (e.shiftKey) {
+        if (onCreateNew) onCreateNew();
+      } else if (onFocusQuickAdd) {
+        onFocusQuickAdd();
+      } else if (onCreateNew) {
+        onCreateNew();
+      }
     } else if (e.key === '/') {
       e.preventDefault();
       const input = document.querySelector('#search-input');
