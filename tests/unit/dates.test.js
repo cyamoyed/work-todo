@@ -19,6 +19,7 @@ import {
   isoToLocalDateStr,
   isCompletedToday,
   isCompletedThisWeek,
+  formatIsoStamp,
 } from '../../src/core/dates.js';
 
 // Same helper as the old suite, rebased on the new toDateStr export.
@@ -200,5 +201,18 @@ describe('isoToLocalDateStr / isCompletedToday (local-vs-UTC stamp)', () => {
     const iso = new Date(2026, 9, 11, 1, 0).toISOString();
     expect(isCompletedThisWeek({ status: 'done', completedAt: iso })).toBe(true);
     expect(isCompletedThisWeek({ status: 'done', completedAt: '2020-01-01T00:00:00.000Z' })).toBe(false);
+  });
+});
+
+describe('formatIsoStamp', () => {
+  it('renders local YYYY-MM-DD HH:mm', () => {
+    const iso = new Date(2026, 9, 7, 9, 5).toISOString(); // local Wed 09:05
+    expect(formatIsoStamp(iso)).toBe('2026-10-07 09:05');
+  });
+
+  it('empty / invalid → empty string', () => {
+    expect(formatIsoStamp('')).toBe('');
+    expect(formatIsoStamp(null)).toBe('');
+    expect(formatIsoStamp('not-a-date')).toBe('');
   });
 });

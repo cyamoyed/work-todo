@@ -115,6 +115,14 @@ export function formatDue(task) {
   return `${d.getMonth() + 1} 月 ${d.getDate()} 日${time}`;
 }
 
+/** ISO stamp (UTC) → local "YYYY-MM-DD HH:mm" for the task info menu. */
+export function formatIsoStamp(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${dateStr(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
 export function formatDueLabel(value) {
   const parsed = parseDateStr(value);
   if (!parsed) return '选择日期';

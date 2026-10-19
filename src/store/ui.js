@@ -50,6 +50,7 @@ const state = reactive({
   statusMenu: { open: false, taskId: null, anchor: null, top: 0, left: 0 },
   prioMenu: { open: false, taskId: null, anchor: null, top: 0, left: 0 },
   dueMenu: { open: false, taskId: null, anchor: null, top: 0, left: 0 },
+  infoMenu: { open: false, taskId: null, anchor: null, top: 0, left: 0 },
   projectMenu: { open: false, projectId: null, anchor: null, top: 0, left: 0 },
   selection: { active: false, ids: [] },
   batchMenu: null, // 'status' | 'prio' | 'due' while a batch popover is open
@@ -328,6 +329,7 @@ export function useUiStore() {
       state.statusMenu.open = false;
       state.prioMenu.open = false;
       state.dueMenu.open = false;
+      state.infoMenu.open = false;
       state.projectMenu.open = false;
       state.batchMenu = null;
     },
@@ -403,6 +405,16 @@ export function useUiStore() {
     closeDueMenu() {
       state.dueMenu.open = false;
       state.dueMenu.taskId = null;
+    },
+
+    openInfoMenu(anchor, taskId) {
+      this.closeAllPops();
+      positionMenu(state.infoMenu, anchor, taskId);
+    },
+
+    closeInfoMenu() {
+      state.infoMenu.open = false;
+      state.infoMenu.taskId = null;
     },
 
     openProjectMenu(anchor, projectId) {

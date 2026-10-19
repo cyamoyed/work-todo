@@ -973,6 +973,13 @@ kbd {
   background: var(--accent-weak); color: var(--accent-text); font-weight: 550;
 }
 .due-menu { min-width: 236px; padding: 10px; }
+.info-menu { min-width: 216px; padding: 6px 4px; }
+.info-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 6px 10px; font-size: 12.5px;
+}
+.info-label { color: var(--muted); flex-shrink: 0; }
+.info-value { color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
 .due-quick { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .due-field {
   display: flex; align-items: center; gap: 8px;
