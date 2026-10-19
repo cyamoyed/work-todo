@@ -448,9 +448,10 @@ kbd {
   border: 1px solid var(--line-strong);
   margin-bottom: 14px;
 }
+/* 聚焦：只改外框颜色，不用 inset 再描一圈（会像多一条 1px 线） */
 .capture:focus-within {
   border-color: var(--accent);
-  box-shadow: var(--focus-ring);
+  border-bottom-color: transparent;
 }
 .capture-main {
   display: flex; align-items: center; gap: 12px;
@@ -465,7 +466,8 @@ kbd {
 .btn-new-task {
   flex: none;
   height: 32px; padding: 0 12px;
-  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-on);
+  border: 1px solid transparent; /* 与底同色，不单独描边 */
+  background: var(--accent); color: var(--accent-on);
   font-size: 12.5px; font-weight: 550;
   display: inline-flex; align-items: center; gap: 6px;
 }
@@ -473,19 +475,21 @@ kbd {
 .btn-new-task:active { background: var(--accent-active); border-color: var(--accent-active); }
 
 /* 聚焦后展开的属性区：灰底 + 分段控件（表单形态，区别于筛选）。
- * 覆盖展开、不推动下方列表——否则失焦收起会让行位置跳动，打断正在进行的点击。 */
+ * 覆盖展开、不推动下方列表；与输入行连成一块，中间无分隔线、无第二圈描边。 */
 .capture-attrs {
   display: none;
   position: absolute; z-index: 65;
-  left: 0; right: 0; top: 100%;
+  left: -1px; right: -1px; top: 100%;
   align-items: center; gap: 16px; flex-wrap: wrap;
   padding: 10px 16px 12px;
   border: 1px solid var(--line-strong);
   border-top: 0;
   background: var(--bg);
-  box-shadow: var(--shadow-pop);
 }
-.capture:focus-within .capture-attrs { display: flex; }
+.capture:focus-within .capture-attrs {
+  display: flex;
+  border-color: var(--accent);
+}
 .attr-field { display: inline-flex; align-items: center; gap: 8px; }
 .attr-field > .lab { font-size: 12px; color: var(--muted); }
 .segmented {
