@@ -8,6 +8,8 @@ import {
   backupTasks,
   listBackups,
   restoreBackup,
+  isAutostartEnabled,
+  setAutostart,
   minimizeWindow,
   toggleMaximizeWindow,
   closeWindow,
@@ -171,6 +173,33 @@ describe('backup bridge + helpers', () => {
     expect(await listBackupFiles()).toEqual([]);
     expect(await readBackupPayload('x.json')).toBeNull();
     expect(isBackupAvailable()).toBe(false);
+  });
+});
+
+describe('autostart bridge', () => {
+  it('isAutostartEnabled reflects the plugin result', async () => {
+    withTauri(vi.fn(async (cmd) => (cmd === 'plugin:autostart|is_enabled' ? true : undefined)));
+    expect(await isAutostartEnabled()).toBe(true);
+    withTauri(vi.fn(async () => false));
+    expect(await isAutostartEnabled()).toBe(false);
+  });
+
+  it('setAutostart routes to enable/disable and echoes the target', async () => {
+    const invoke = vi.fn().mockResolvedValue(undefined);
+    withTauri(invoke);
+    await expect(setAutostart(true)).resolves.toBe(true);
+    expect(invoke).toHaveBeenNthCalledWith(1, 'plugin:autostart|enable', undefined);
+    await expect(setAutostart(false)).resolves.toBe(false);
+    expect(invoke).toHaveBeenNthCalledWith(2, 'plugin:autostart|disable', undefined);
+  });
+
+  it('degrades to false on rejection or outside Tauri', async () => {
+    withTauri(() => Promise.reject(new Error('denied')));
+    expect(await isAutostartEnabled()).toBe(false);
+    expect(await setAutostart(true)).toBe(false);
+    globalThis.window = {};
+    expect(await isAutostartEnabled()).toBe(false);
+    expect(await setAutostart(true)).toBe(false);
   });
 });
 

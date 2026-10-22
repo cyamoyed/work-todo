@@ -22,6 +22,24 @@
       </div>
     </section>
 
+    <section v-if="desktop" class="settings-sec" aria-label="通用">
+      <h4 class="settings-sec-title">通用</h4>
+      <div class="settings-row">
+        <div class="settings-row-main">
+          <span class="settings-label">开机自动启动</span>
+          <span class="settings-desc">登录系统后自动打开工作待办</span>
+        </div>
+        <button
+          type="button"
+          id="btn-autostart"
+          class="btn sm"
+          :aria-pressed="autostartOn"
+          :disabled="autostartBusy"
+          @click="toggleAutostart"
+        >{{ autostartLabel }}</button>
+      </div>
+    </section>
+
     <section class="settings-sec" aria-label="数据">
       <h4 class="settings-sec-title">数据</h4>
       <div class="settings-row">
@@ -93,19 +111,41 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import ThemeToggle from '../components/ThemeToggle.vue';
 import { useUiStore } from '../store/ui.js';
 import { useUpdateCheck } from '../composables/useUpdateCheck.js';
 import { useTransfer } from '../composables/useTransfer.js';
 import { updateState } from '../store/update.js';
-import { isTauri } from '../lib/tauri.js';
+import { isTauri, isAutostartEnabled, setAutostart } from '../lib/tauri.js';
 import { syncState, syncStatusText } from '../store/sync.js';
 
 const ui = useUiStore();
 const { doExport } = useTransfer();
 const { checkNow } = useUpdateCheck();
 const desktop = isTauri();
+
+/* —— 开机自启动：状态存在 OS（注册表 / LaunchAgent），这里只读写它 —— */
+const autostartOn = ref(false);
+const autostartBusy = ref(false);
+const autostartLabel = computed(() => {
+  if (autostartBusy.value) return '处理中…';
+  return autostartOn.value ? '已开启' : '已关闭';
+});
+
+if (desktop) isAutostartEnabled().then((on) => { autostartOn.value = on; });
+
+async function toggleAutostart() {
+  if (autostartBusy.value) return;
+  autostartBusy.value = true;
+  const target = !autostartOn.value;
+  await setAutostart(target);
+  // Re-read the real OS state — the toggle may have been refused (e.g. Linux
+  // without an installed .desktop entry).
+  autostartOn.value = await isAutostartEnabled();
+  autostartBusy.value = false;
+  if (autostartOn.value !== target) ui.showToast('设置开机自启动失败');
+}
 
 function close() {
   ui.closeSettingsModal();

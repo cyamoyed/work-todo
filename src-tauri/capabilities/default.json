@@ -1,11 +1,14 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "主窗口权限：应用自有命令不受权限体系限制；opener 供「检查更新」用系统浏览器打开下载页；updater/process 供应用内更新（下载安装 + 重启）；window 供自定义标题栏（拖拽 + 最小化/最大化/关闭）。",
+  "description": "主窗口权限：应用自有命令不受权限体系限制；opener 供「检查更新」用系统浏览器打开下载页；updater/process 供应用内更新（下载安装 + 重启）；autostart 供设置里的开机自启动开关；window 供自定义标题栏（拖拽 + 最小化/最大化/关闭）。",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "opener:default",
+    "autostart:allow-is-enabled",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
     "updater:default",
     "process:allow-restart",
     "core:window:allow-minimize",

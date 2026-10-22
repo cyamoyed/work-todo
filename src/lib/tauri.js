@@ -71,6 +71,25 @@ export function restoreBackup(name) {
   return tauriInvoke('restore_backup', { name }).catch(() => null);
 }
 
+/* —— Autostart (tauri-plugin-autostart; state lives in the OS, not localStorage) —— */
+
+/** Current OS-level autostart state; false outside Tauri or on error. */
+export function isAutostartEnabled() {
+  if (!isTauri()) return Promise.resolve(false);
+  return tauriInvoke('plugin:autostart|is_enabled')
+    .then((v) => v === true)
+    .catch(() => false);
+}
+
+/** Enable/disable autostart; resolves to the resulting state (false on error). */
+export function setAutostart(enabled) {
+  if (!isTauri()) return Promise.resolve(false);
+  const cmd = enabled ? 'plugin:autostart|enable' : 'plugin:autostart|disable';
+  return tauriInvoke(cmd)
+    .then(() => enabled)
+    .catch(() => false);
+}
+
 /* —— Custom titlebar window controls (Tauri 2 window plugin, main window) —— */
 
 const WINDOW_LABEL = 'main';
