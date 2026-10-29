@@ -1,7 +1,9 @@
-/* work-todo — browser Notification helpers (work-todo.notified.v1 dedupe) */
+/* work-todo — system notification helpers (work-todo.notified.v1 dedupe) */
 
 import { NOTIFY_KEY } from '../constants.js';
-import { isOverdue, isCompletedToday, nowTimeHM, todayString } from '../core/dates.js';
+import { isOverdue, isCompletedToday, todayString } from '../core/dates.js';
+import { computeDueReminders } from '../core/reminders.js';
+import { isTauri, tauriInvoke } from '../lib/tauri.js';
 
 export function notifiedStamp() {
   try {
@@ -29,12 +31,33 @@ export function markNotified(key) {
   }
 }
 
+/** Whether notifications may go out at all — dedupe stamps are only written when
+ * this passes, so a denied browser permission never consumes reminders. */
+function canNotify() {
+  if (isTauri()) return true; // desktop: plugin permission is requested at startup; notify errors are swallowed
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
+  return true;
+}
+
+/** Fire one system notification: native plugin on desktop, Web Notification API in the browser. */
+function sendSystemNotification(title, body) {
+  if (isTauri()) {
+    tauriInvoke('plugin:notification|notify', { title, body }).catch(() => {});
+    return;
+  }
+  try {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    new Notification(title, { body });
+  } catch (_) {
+    /* ignore */
+  }
+}
+
 export function notifyOverdue(tasks) {
   try {
-    const overdue = tasks.filter((t) => isOverdue(t));
+    const overdue = (tasks || []).filter((t) => !t.shelvedAt && isOverdue(t));
     if (!overdue.length) return;
-    if (typeof Notification === 'undefined') return;
-    if (Notification.permission !== 'granted') return;
+    if (!canNotify()) return;
     const stamp = notifiedStamp();
     const dayKey = 'overdue:' + todayString();
     if (stamp[dayKey]) return;
@@ -42,47 +65,54 @@ export function notifyOverdue(tasks) {
       .slice(0, 3)
       .map((t) => t.title)
       .join('、');
-    new Notification('work-todo · 有逾期任务', {
-      body: overdue.length > 3 ? `${body} 等 ${overdue.length} 项` : body,
-    });
+    sendSystemNotification('work-todo · 有逾期任务', overdue.length > 3 ? `${body} 等 ${overdue.length} 项` : body);
     markNotified(dayKey);
   } catch (_) {
     /* ignore */
   }
 }
 
-export function notifyDueSoon(tasks) {
+/** Reminder tick: fire today's due reminders once each (dedupe via NOTIFY_KEY). */
+export function notifyReminders(tasks, now = new Date()) {
   try {
-    if (typeof Notification === 'undefined') return;
-    if (Notification.permission !== 'granted') return;
-    const today = todayString();
-    const now = nowTimeHM();
-    const soon = tasks.filter((t) => {
-      if (t.status === 'done' || !t.dueDate || t.dueDate !== today || !t.dueTime) return false;
-      if (t.dueTime < now) return false;
-      // within 60 minutes
-      const [th, tm] = t.dueTime.split(':').map(Number);
-      const [nh, nm] = now.split(':').map(Number);
-      const diff = th * 60 + tm - (nh * 60 + nm);
-      return diff > 0 && diff <= 60;
-    });
-    if (!soon.length) return;
+    if (!canNotify()) return;
     const stamp = notifiedStamp();
-    for (const t of soon) {
-      const key = 'due:' + t.id + ':' + today;
-      if (stamp[key]) continue;
-      new Notification(`work-todo · ${t.dueTime} 到期`, {
-        body: t.title,
-      });
-      markNotified(key);
+    for (const r of computeDueReminders(tasks, now)) {
+      if (stamp[r.key]) continue;
+      markNotified(r.key);
+      sendSystemNotification(r.title, r.body);
     }
   } catch (_) {
     /* ignore */
   }
 }
 
+const REMINDER_TICK_MS = 30 * 1000;
+
+/** Minute-granularity reminder loop: tick now, then every 30s and on tab focus
+ * (throttled timers after sleep/wake are covered by the same catch-up rules). */
+export function startReminderLoop(getTasks) {
+  const tick = () => notifyReminders(getTasks());
+  tick();
+  const timer = setInterval(tick, REMINDER_TICK_MS);
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') tick();
+  };
+  document.addEventListener('visibilitychange', onVisible);
+  return () => {
+    clearInterval(timer);
+    document.removeEventListener('visibilitychange', onVisible);
+  };
+}
+
 export function requestNotifyPermission() {
   try {
+    if (isTauri()) {
+      tauriInvoke('plugin:notification|is_permission_granted')
+        .then((granted) => (granted === true ? undefined : tauriInvoke('plugin:notification|request_permission')))
+        .catch(() => {});
+      return;
+    }
     if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
       Notification.requestPermission();
     }

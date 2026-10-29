@@ -12,7 +12,7 @@ import { initSync, bootSync, scheduleSync } from './lib/sync/engine.js';
 import {
   requestNotifyPermission,
   notifyOverdue,
-  notifyDueSoon,
+  startReminderLoop,
 } from './composables/useNotifications.js';
 import { useUpdateCheck } from './composables/useUpdateCheck.js';
 import { UPDATE_RETRY_MS } from './constants.js';
@@ -77,7 +77,8 @@ bootSync();
 
 setTimeout(requestNotifyPermission, 800);
 setTimeout(() => notifyOverdue(tasks.state.tasks), 1200);
-setTimeout(() => notifyDueSoon(tasks.state.tasks), 1400);
+// 到期提醒循环：有时间的任务前一小时/准点各一次，无时间的任务当天 17:00 汇总一次
+startReminderLoop(() => tasks.state.tasks);
 
 // Update check: silent startup check, then re-check while the app stays open
 // (both throttled in lib/update.js — success opens the 6h window, failure the

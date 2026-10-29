@@ -138,9 +138,8 @@ fn restore_backup(app: tauri::AppHandle, name: String) -> Result<String, String>
 
 #[tauri::command]
 fn notify_overdue(title: String, body: String) -> Result<(), String> {
-    // Best-effort desktop toast via PowerShell / osascript is too heavy;
-    // the WebView Notification API is used from JS. This command is a
-    // stable extension point for a future native notification plugin.
+    // Kept as a stable no-op: due reminders now go through the native
+    // tauri-plugin-notification (registered below) from src/lib/tauri.js.
     let _ = (title, body);
     Ok(())
 }
@@ -164,6 +163,7 @@ pub fn run() {
             None,
         ))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![
