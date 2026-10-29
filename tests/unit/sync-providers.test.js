@@ -83,6 +83,24 @@ describe('PocketBase provider', () => {
     await expect(pb().login({ identity: 'x', password: 'y' })).rejects.toBeInstanceOf(SyncAuthError);
   });
 
+  it('refresh: auth-refresh rotates the token', async () => {
+    mockFetch((req) => {
+      expect(req.method).toBe('POST');
+      expect(req.url).toContain('/users/auth-refresh');
+      expect(req.headers.Authorization).toBe('tok');
+      return jsonResponse(200, { token: 'tok2', record: { id: 'u1', email: 'a@b.c' } });
+    });
+    const auth = await pb().refresh({ token: 'tok', userId: 'u1', identity: 'a@b.c' });
+    expect(auth).toEqual({ token: 'tok2', identity: 'a@b.c', userId: 'u1' });
+  });
+
+  it('refresh: a dead token maps to SyncAuthError', async () => {
+    mockFetch(() => jsonResponse(401, ''));
+    await expect(pb().refresh({ token: 'stale', userId: 'u1' })).rejects.toBeInstanceOf(
+      SyncAuthError
+    );
+  });
+
   it('pull: empty when no record exists', async () => {
     mockFetch(() => jsonResponse(200, { page: 1, items: [] }));
     const r = await pb().pull({ token: 'tok', userId: 'u1' });

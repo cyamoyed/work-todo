@@ -9,8 +9,11 @@ import { SYNC_KEY } from '../../constants.js';
  *   url: string,
  *   identity: string,        // email / username (not a secret)
  *   userId: string | null,   // pocketbase user record id
- *   token: string | null,    // pocketbase API token
- *   password: string | null, // webdav basic-auth secret (kept on-device only)
+ *   token: string | null,    // pocketbase API token (JWT; auto-renewed before exp)
+ *   password: string | null, // provider secret kept on-device only (webdav
+ *                            // basic-auth / pocketbase silent re-login) —
+ *                            // never exported, never synced, never in
+ *                            // sessionStorage
  *   collection: string | null, // pocketbase data collection (default work_todo)
  *   version: string | number | null, // last seen remote version (rev / etag)
  *   lastSyncedAt: string | null,

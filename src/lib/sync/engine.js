@@ -7,6 +7,7 @@
  */
 
 import { buildExportPayload, mergeImportTasks, parseImportPayload } from '../../core/transfer.js';
+import { shouldRenewToken } from '../../core/auth.js';
 import { loadSession, saveSession, clearSession } from './session.js';
 import { isConflict, isAuthError, SyncConflictError } from './errors.js';
 import { createPocketBaseProvider } from './providers/pocketbase.js';
@@ -128,7 +129,9 @@ export async function configureSync({
     identity: auth.identity || identity || '',
     userId: auth.userId || null,
     token: auth.token || null,
-    password: kind === 'webdav' ? password || null : null,
+    // Kept on-device only (never exported/synced): WebDAV basic-auth secret,
+    // PocketBase silent re-login once a token dies.
+    password: password || null,
     collection: kind === 'pocketbase' ? p.collection : null,
     version: null,
     lastSyncedAt: null,
@@ -201,6 +204,45 @@ function scheduleRetry() {
   retryDelay = Math.min(retryDelay * 2, RETRY_MAX_MS);
 }
 
+/** Persist fresh credentials from a refresh / silent re-login. */
+function applyAuth(auth) {
+  if (!auth || !session) return;
+  if (auth.token) session.token = auth.token;
+  if (auth.userId) session.userId = auth.userId;
+  if (auth.identity) session.identity = auth.identity;
+  saveSession(session);
+}
+
+/**
+ * Keep the login alive across long-running sessions: renew a PocketBase token
+ * before its JWT `exp`, or silently re-login with the on-device password once
+ * the token is dead (revoked / missing). Never throws — a false return means
+ * nothing recoverable is stored and the user has to log in again. WebDAV basic
+ * auth has no token to renew (credentials travel with every request).
+ */
+async function renewAuth() {
+  if (!session || session.provider !== 'pocketbase') return true;
+  if (!session.token) return silentRelogin();
+  if (!shouldRenewToken(session.token, Date.now())) return true;
+  try {
+    applyAuth(await provider.refresh(session));
+    return true;
+  } catch (_) {
+    return silentRelogin();
+  }
+}
+
+/** Re-run the stored-password login (PocketBase only). Never throws. */
+async function silentRelogin() {
+  if (!session || session.provider !== 'pocketbase' || !session.password) return false;
+  try {
+    applyAuth(await provider.login({ identity: session.identity, password: session.password }));
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 /**
  * One full cycle: pull → merge → apply → push.
  * Serializes concurrent calls; a call during a run sets a follow-up pass.
@@ -215,36 +257,19 @@ export async function syncNow() {
   lastRunAt = Date.now();
   setStatus('syncing');
   try {
-    let done = false;
-    for (let attempt = 0; attempt < CONFLICT_RETRIES && !done; attempt++) {
-      const remote = await provider.pull(session);
-      const remotePayload = normalizeRemote(remote && remote.payload);
-      const local = getPayload();
-      const merged = mergeImportTasks(
-        { tasks: local.tasks, projects: local.projects },
-        remotePayload,
-        'merge'
-      );
-      // Re-merge against the live store inside applyMerged — edits made while
-      // this cycle was in flight must survive.
-      applyMerged(merged.tasks, merged.projects);
-      const pushPayload = buildExportPayload(merged.tasks, merged.projects);
-      try {
-        const res = await provider.push(session, pushPayload, remote.version);
-        session.version = res.version;
-        session.lastSyncedAt = new Date().toISOString();
-        saveSession(session);
-        lastSyncedAt = session.lastSyncedAt;
-        lastError = null;
-        retryDelay = RETRY_BASE_MS;
-        setStatus('ok');
-        done = true;
-      } catch (e) {
-        if (!isConflict(e)) throw e;
-        // fall through: re-pull and re-merge
-      }
+    const renewed = await renewAuth();
+    try {
+      await runSyncCycle();
+    } catch (e) {
+      // The token can die mid-session (revoked / server clock): silently
+      // re-login with the on-device password once and retry the cycle before
+      // surfacing the failure.
+      if (!isAuthError(e) || renewed === false || !(await silentRelogin())) throw e;
+      await runSyncCycle();
     }
-    if (!done) throw new SyncConflictError('同步冲突重试超限');
+    lastError = null;
+    retryDelay = RETRY_BASE_MS;
+    setStatus('ok');
   } catch (e) {
     lastError = (e && e.message) || String(e);
     if (isAuthError(e)) {
@@ -265,6 +290,37 @@ export async function syncNow() {
     emit();
   }
   return getSyncState();
+}
+
+/** One pull → merge → apply → push pass with conflict retries. Throws on failure. */
+async function runSyncCycle() {
+  let done = false;
+  for (let attempt = 0; attempt < CONFLICT_RETRIES && !done; attempt++) {
+    const remote = await provider.pull(session);
+    const remotePayload = normalizeRemote(remote && remote.payload);
+    const local = getPayload();
+    const merged = mergeImportTasks(
+      { tasks: local.tasks, projects: local.projects },
+      remotePayload,
+      'merge'
+    );
+    // Re-merge against the live store inside applyMerged — edits made while
+    // this cycle was in flight must survive.
+    applyMerged(merged.tasks, merged.projects);
+    const pushPayload = buildExportPayload(merged.tasks, merged.projects);
+    try {
+      const res = await provider.push(session, pushPayload, remote.version);
+      session.version = res.version;
+      session.lastSyncedAt = new Date().toISOString();
+      saveSession(session);
+      lastSyncedAt = session.lastSyncedAt;
+      done = true;
+    } catch (e) {
+      if (!isConflict(e)) throw e;
+      // fall through: re-pull and re-merge
+    }
+  }
+  if (!done) throw new SyncConflictError('同步冲突重试超限');
 }
 
 /** Remote payloads may be stale/foreign — normalize or drop. */

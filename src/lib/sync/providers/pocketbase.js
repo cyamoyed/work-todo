@@ -101,6 +101,27 @@ export function createPocketBaseProvider({ url, collection }) {
       };
     },
 
+    /**
+     * Renew an expiring auth token (PocketBase `auth-refresh`: a valid token
+     * comes back as a new one with a refreshed `exp` claim). Throws
+     * SyncAuthError when the token is no longer valid.
+     */
+    async refresh(session) {
+      const res = await api('/api/collections/users/auth-refresh', {
+        method: 'POST',
+        token: session.token,
+      });
+      if (res.status === 401 || res.status === 403) throw new SyncAuthError();
+      if (!res.ok) throw new Error(`登录续期失败（${res.status}）`);
+      const data = await res.json();
+      if (!data || !data.token) throw new SyncAuthError('登录响应异常');
+      return {
+        token: data.token,
+        identity: (data.record && (data.record.email || data.record.username)) || session.identity || '',
+        userId: (data.record && data.record.id) || session.userId || null,
+      };
+    },
+
     async pull(session) {
       const doc = await readDoc(session);
       return {

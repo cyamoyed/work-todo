@@ -95,7 +95,7 @@
 
         <p class="sync-note">
           {{ provider === 'pocketbase'
-            ? '仅登录令牌保存在本机。服务端只需一个数据集合（默认 ' + DEFAULT_SYNC_COLLECTION + '）。'
+            ? '登录凭据仅保存在本机，自动续期登录，无需重复输入密码。服务端只需一个数据集合（默认 ' + DEFAULT_SYNC_COLLECTION + '）。'
             : '账号与密码保存在本机，用于访问网盘上的同步文件。' }}
         </p>
 

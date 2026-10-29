@@ -148,11 +148,11 @@ lastActionAt(e) = max(e.updatedAt, e.deletedAt || '')
 
 ### 5.5 会话持久化
 
-localStorage 新键 `work-todo.sync.v1`：`{ provider, url, username/email, token, rev, lastSyncedAt }`。
+localStorage 新键 `work-todo.sync.v1`：`{ provider, url, username/email, token, password, rev, lastSyncedAt }`。
 
-- PocketBase 仅存 API token（标准做法）；
+- PocketBase 存 API token（JWT，带 `exp`）+ 密码（仅本机）：token 到期前经 `auth-refresh` 自动续期，token 失效时用密码静默重新登录，长时间使用不掉登录；
 - WebDAV 需要 Basic 认证凭据，存于本机并在 UI 明示「凭据保存在本机」；
-- 密码不进 sessionStorage、不进导出文件。
+- 密码不进 sessionStorage、不进导出/同步文件；UI 明示「登录凭据仅保存在本机」。
 
 ---
 
@@ -232,5 +232,5 @@ Tauri `app_data_dir/backups/`：
 | 设备时钟不准导致 LWW 误判 | 单实体粒度影响可接受；rev 仲裁不受时钟影响；文档明示 |
 | 30 天墓碑过期后离线设备复活删除项 | 设计取舍，UI 文档明示；TOMBSTONE_DAYS 可调 |
 | 同步服务不可用 | 本地功能零依赖同步层；退避重试；状态诚实显示 |
-| 凭据存储（WebDAV 密码在 localStorage） | UI 明示「凭据保存在本机」；优先推荐 PocketBase token 方案 |
+| 凭据存储（密码在 localStorage） | UI 明示「登录凭据仅保存在本机」；PocketBase 以 token 为主、密码仅用于到期/失效时自动续登 |
 | 存储契约变更影响测试 | schema 只增字段 + `SCHEMA_VERSION=3`；同步更新 CLAUDE.md/BUILD.md 与全部测试夹具 |
