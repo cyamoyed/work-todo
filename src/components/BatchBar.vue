@@ -40,6 +40,13 @@
 
     <button
       type="button"
+      class="btn sm"
+      :disabled="!shelveableIds.length"
+      @click="toggleShelve"
+    >{{ shelvedView ? '恢复' : '搁置' }}</button>
+
+    <button
+      type="button"
       class="btn sm btn-danger"
       :disabled="!ids.length"
       @click="confirmDelete"
@@ -98,6 +105,17 @@ const allOn = computed(
   () => visibleIds.value.length > 0 && ids.value.length === visibleIds.value.length
 );
 
+/** 当前视图的搁置方向：普通视图批量搁置；「搁置」视图批量恢复。 */
+const shelvedView = computed(() => ui.state.filters.shelved === 'only');
+
+/** 可参与批量搁置/恢复的选中项：只动未完成任务（已完成不属于搁置流转）。 */
+const shelveableIds = computed(() =>
+  ids.value.filter((id) => {
+    const t = tasks.getTask(id);
+    return !!t && t.status !== 'done';
+  })
+);
+
 function toggleMenu(kind) {
   ui.state.batchMenu === kind ? ui.closeBatchMenu() : ui.openBatchMenu(kind);
 }
@@ -135,6 +153,18 @@ function applyBatch(picked, patch, message) {
   const { cloned } = tasks.batchUpdateTasks(picked, patch);
   ui.selectAll([]);
   ui.showToast(cloned ? `${message}，已生成 ${cloned} 项重复任务` : message);
+}
+
+function toggleShelve() {
+  ui.closeBatchMenu();
+  const picked = shelveableIds.value.slice();
+  if (!picked.length) return;
+  const toShelve = !shelvedView.value;
+  applyBatch(
+    picked,
+    { shelvedAt: toShelve },
+    toShelve ? `已搁置 ${picked.length} 项` : `已恢复 ${picked.length} 项`
+  );
 }
 
 function confirmDelete() {

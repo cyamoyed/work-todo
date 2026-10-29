@@ -76,6 +76,7 @@ const navItems = [
   { view: 'week', label: '本周' },
   { view: 'dayline', label: '日程' },
   { view: 'all', label: '全部' },
+  { view: 'shelved', label: '搁置' },
   { view: 'done', label: '已完成' },
   { view: 'review', label: '本周回顾' },
 ];

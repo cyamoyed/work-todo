@@ -52,6 +52,22 @@ export function normalizeCompletedAt(status, v) {
   return new Date().toISOString();
 }
 
+export function normalizeShelvedAt(v) {
+  return typeof v === 'string' && v ? v : null;
+}
+
+/** 搁置（shelved）= 暂缓推进：任务从今天/本周/日程/全部等视图与提醒中隐藏，
+ *  只在「搁置」视图可见，直到用户恢复。旧数据/旧载荷读入自动补 null。 */
+export function isShelved(t) {
+  return !!(t && typeof t.shelvedAt === 'string' && t.shelvedAt);
+}
+
+/** shelvedAt 的 patch 语义：ISO 字符串原样保留；真值 → 记此刻；假值 → 清除。 */
+export function applyShelvedPatch(value, now) {
+  if (typeof value === 'string' && value) return value;
+  return value ? now : null;
+}
+
 export function isValidTask(t) {
   return (
     t &&
@@ -77,6 +93,7 @@ export function normalizeTask(raw) {
     projectId: typeof raw.projectId === 'string' && raw.projectId ? raw.projectId : null,
     tags: normalizeTags(raw.tags),
     repeat: normalizeRepeat(raw.repeat),
+    shelvedAt: normalizeShelvedAt(raw.shelvedAt),
     completedAt: normalizeCompletedAt(status, raw.completedAt),
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : '',
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : '',
@@ -130,6 +147,7 @@ export function createTaskData(
     projectId: projectId || opts.defaultProjectId || null,
     tags: normalizeTags(tags),
     repeat: normalizeRepeat(repeat),
+    shelvedAt: null,
     completedAt: normalizeCompletedAt(st, null),
     createdAt: now,
     updatedAt: now,
@@ -154,6 +172,12 @@ export function applyTaskPatch(prev, patch, opts = {}) {
       completedAt = null;
     }
   }
+  // 完成即离开搁置：搁置只用于暂缓推进的未完成任务（显式传入 shelvedAt 时以其为准）
+  let shelvedAt =
+    'shelvedAt' in patch
+      ? applyShelvedPatch(patch.shelvedAt, now)
+      : normalizeShelvedAt(prev.shelvedAt);
+  if (status === 'done' && !('shelvedAt' in patch)) shelvedAt = null;
   return {
     ...prev,
     title: typeof patch.title === 'string' ? patch.title.trim() : prev.title,
@@ -167,6 +191,7 @@ export function applyTaskPatch(prev, patch, opts = {}) {
       : prev.projectId,
     tags: 'tags' in patch ? normalizeTags(patch.tags) : prev.tags,
     repeat: 'repeat' in patch ? normalizeRepeat(patch.repeat) : prev.repeat,
+    shelvedAt,
     completedAt,
     createdAt: prev.createdAt,
     updatedAt: now,
@@ -189,6 +214,7 @@ export function buildNextOccurrence(task, opts = {}) {
     projectId: task.projectId,
     tags: task.tags ? task.tags.slice() : [],
     repeat: task.repeat,
+    shelvedAt: null,
     completedAt: null,
     createdAt: now,
     updatedAt: now,

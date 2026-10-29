@@ -1,6 +1,7 @@
 /* work-todo — pure filtering / sorting / grouping (no DOM / no Vue) */
 
 import { PRIORITY_RANK } from '../constants.js';
+import { isShelved } from './tasks.js';
 import {
   addDays,
   dayDiff,
@@ -82,9 +83,24 @@ export function matchProject(t, filters) {
   return t.projectId === filters.projectId;
 }
 
+/**
+ * 搁置分流：默认（active）把搁置任务挡在所有推进视图之外；
+ * filters.shelved === 'only'（「搁置」视图）只看搁置任务。
+ */
+export function matchShelved(t, filters) {
+  const only = filters.shelved === 'only';
+  return only ? isShelved(t) : !isShelved(t);
+}
+
+/** 推进语义下的任务集：搁置任务不参与任何视图/统计（内部共用）。 */
+function activeTasks(tasks) {
+  return tasks.filter((t) => !isShelved(t));
+}
+
 export function visibleTasks(tasks, filters, sortMode) {
   const q = filters.search.trim().toLowerCase();
   const list = tasks.filter((t) => {
+    if (!matchShelved(t, filters)) return false;
     if (filters.status !== 'all' && t.status !== filters.status) return false;
     if (filters.priority !== 'all' && t.priority !== filters.priority) return false;
     if (!matchProject(t, filters)) return false;
@@ -96,58 +112,64 @@ export function visibleTasks(tasks, filters, sortMode) {
 }
 
 export function projectStats(tasks, projectId) {
-  const list = tasks.filter((t) => t.projectId === projectId);
+  const list = activeTasks(tasks).filter((t) => t.projectId === projectId);
   const done = list.filter((t) => t.status === 'done').length;
   return { total: list.length, done, open: list.length - done };
 }
 
 export function navCounts(tasks) {
+  const active = activeTasks(tasks);
   return {
-    today: tasks.filter((t) => isDueTodayOpen(t) || isOverdue(t)).length,
-    week: tasks.filter((t) => t.status !== 'done' && (isThisWeek(t.dueDate) || isOverdue(t))).length,
-    dayline: tasks.filter((t) => t.status !== 'done').length,
-    all: tasks.length,
-    done: tasks.filter((t) => t.status === 'done').length,
-    review: tasks.filter((t) => isCompletedThisWeek(t)).length,
+    today: active.filter((t) => isDueTodayOpen(t) || isOverdue(t)).length,
+    week: active.filter((t) => t.status !== 'done' && (isThisWeek(t.dueDate) || isOverdue(t))).length,
+    dayline: active.filter((t) => t.status !== 'done').length,
+    all: active.length,
+    done: active.filter((t) => t.status === 'done').length,
+    review: active.filter((t) => isCompletedThisWeek(t)).length,
+    shelved: tasks.length - active.length,
   };
 }
 
 export function statusCounts(tasks) {
+  const active = activeTasks(tasks);
   return {
-    all: tasks.length,
-    todo: tasks.filter((t) => t.status === 'todo').length,
-    'in-progress': tasks.filter((t) => t.status === 'in-progress').length,
-    done: tasks.filter((t) => t.status === 'done').length,
+    all: active.length,
+    todo: active.filter((t) => t.status === 'todo').length,
+    'in-progress': active.filter((t) => t.status === 'in-progress').length,
+    done: active.filter((t) => t.status === 'done').length,
   };
 }
 
 export function stripStats(tasks) {
-  const todayOpen = tasks.filter((t) => isDueTodayOpen(t) || isOverdue(t)).length;
-  const dueToday = tasks.filter((t) => isDueTodayOpen(t) && !isOverdue(t)).length;
-  const overdue = tasks.filter((t) => isOverdue(t)).length;
-  const inProgress = tasks.filter((t) => t.status === 'in-progress').length;
-  const doneToday = tasks.filter((t) => isCompletedToday(t)).length;
+  const active = activeTasks(tasks);
+  const todayOpen = active.filter((t) => isDueTodayOpen(t) || isOverdue(t)).length;
+  const dueToday = active.filter((t) => isDueTodayOpen(t) && !isOverdue(t)).length;
+  const overdue = active.filter((t) => isOverdue(t)).length;
+  const inProgress = active.filter((t) => t.status === 'in-progress').length;
+  const doneToday = active.filter((t) => isCompletedToday(t)).length;
   // today-scope: doneToday + (in-progress | overdue | due-today)
-  const todayScope = tasks.filter(
+  const todayScope = active.filter(
     (t) => isCompletedToday(t) || t.status === 'in-progress' || isOverdue(t) || isDueTodayOpen(t)
   ).length;
   return { todayOpen, dueToday, overdue, inProgress, doneToday, todayScope };
 }
 
 export function overviewSub(tasks) {
-  const overdue = tasks.filter((t) => isOverdue(t)).length;
-  const inProgress = tasks.filter((t) => t.status === 'in-progress').length;
-  if (!tasks.length) return '先记下要做的事';
+  const active = activeTasks(tasks);
+  const overdue = active.filter((t) => isOverdue(t)).length;
+  const inProgress = active.filter((t) => t.status === 'in-progress').length;
+  if (!active.length) return '先记下要做的事';
   if (overdue) return `${overdue} 项已逾期，优先处理`;
   if (inProgress) return `${inProgress} 项进行中，继续推进`;
-  if (tasks.every((t) => t.status === 'done')) return '全部完成，今天可以收工了';
+  if (active.every((t) => t.status === 'done')) return '全部完成，今天可以收工了';
   return '按计划推进即可';
 }
 
 export function footerStats(tasks) {
-  const open = tasks.filter((t) => t.status !== 'done').length;
-  const done = tasks.filter((t) => t.status === 'done').length;
-  const overdue = tasks.filter((t) => isOverdue(t)).length;
+  const active = activeTasks(tasks);
+  const open = active.filter((t) => t.status !== 'done').length;
+  const done = active.filter((t) => t.status === 'done').length;
+  const overdue = active.filter((t) => isOverdue(t)).length;
   return { open, done, overdue, text: `${open} 未完成 · ${done} 已完成 · 逾期 ${overdue}` };
 }
 
@@ -159,6 +181,7 @@ export function listTitleFor(viewMode, filters, projects) {
   if (viewMode === 'done') return '已完成';
   if (viewMode === 'review') return '本周回顾';
   if (viewMode === 'dayline') return '日程';
+  if (viewMode === 'shelved') return '搁置';
   return '任务台账';
 }
 
@@ -191,7 +214,7 @@ export function groupDayline(list) {
 /** Review view data, ported from renderReviewInto. */
 export function reviewBlocks(tasks) {
   const week = weekRange();
-  const done = tasks
+  const done = activeTasks(tasks)
     .filter((t) => isCompletedThisWeek(t))
     .sort((a, b) =>
       String(b.completedAt || b.updatedAt || '').localeCompare(String(a.completedAt || a.updatedAt || ''))

@@ -263,6 +263,19 @@ export function useTaskStore() {
       return this.updateTask(id, { status }, opts);
     },
 
+    /**
+     * 搁置 / 恢复单个任务（搁置 = 暂缓推进：从推进视图、统计与提醒中隐藏，
+     * 只在「搁置」视图可见）。完成任务会自动脱离搁置（见 core applyTaskPatch）。
+     */
+    shelveTask(id, shelved = true, opts = {}) {
+      return this.updateTask(id, { shelvedAt: shelved }, opts);
+    },
+
+    /** 批量搁置 / 恢复（一次持久化）。 */
+    shelveTasks(ids, shelved = true, opts = {}) {
+      return this.batchUpdateTasks(ids, { shelvedAt: shelved }, opts);
+    },
+
     /** Complete + clone next occurrence for recurring tasks. */
     cloneNextOccurrence(task, opts = {}) {
       const next = buildNextOccurrence(task, opts);

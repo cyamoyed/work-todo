@@ -13,6 +13,7 @@ import TodayView from '../../../src/views/TodayView.vue';
 import WeekView from '../../../src/views/WeekView.vue';
 import DaylinePage from '../../../src/views/DaylinePage.vue';
 import AllView from '../../../src/views/AllView.vue';
+import ShelvedView from '../../../src/views/ShelvedView.vue';
 import DoneView from '../../../src/views/DoneView.vue';
 import ReviewPage from '../../../src/views/ReviewPage.vue';
 import ProjectView from '../../../src/views/ProjectView.vue';
@@ -29,6 +30,7 @@ const routes = [
   { path: '/week', name: 'week', component: WeekView },
   { path: '/dayline', name: 'dayline', component: DaylinePage },
   { path: '/all', name: 'all', component: AllView },
+  { path: '/shelved', name: 'shelved', component: ShelvedView },
   { path: '/done', name: 'done', component: DoneView },
   { path: '/review', name: 'review', component: ReviewPage },
   {
@@ -46,6 +48,7 @@ const DEFAULT_FILTERS = {
   range: 'all',
   search: '',
   projectId: null,
+  shelved: 'active',
 };
 
 let currentWrapper = null;
@@ -106,6 +109,8 @@ export async function mountApp({ route = '/today' } = {}) {
   // were visible. The router sync above would set range 'today'; put the
   // filters back to the legacy defaults while keeping the route/view intact.
   ui.setFilters({ ...DEFAULT_FILTERS });
+  // 「搁置」视图的分流跟随视图（applyView 设为 only）；上面的默认重置会抹掉，按视图补回
+  if (ui.state.viewMode === 'shelved') ui.setFilters({ shelved: 'only' });
   await flushPromises();
 
   return { wrapper, router, tasks, ui };

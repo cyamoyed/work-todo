@@ -15,6 +15,8 @@ const state = reactive({
     range: 'all',
     search: '',
     projectId: null,
+    // active：默认，隐藏搁置任务；only：「搁置」视图，只看搁置任务（随视图切换，不持久化）
+    shelved: 'active',
   },
   sortMode: 'due',
   doneExpanded: false,
@@ -89,10 +91,13 @@ function positionMenu(menu, anchor, taskId) {
 /**
  * Single source of truth for view + filter sync — the legacy setView() semantics:
  * today/week/all → filters.range = view (status 'done' resets to 'all' unless resetStatus:false);
- * done → status:'done', range:'all'; dayline/review/project → range:'all'.
+ * done → status:'done', range:'all'; dayline/review/project → range:'all';
+ * shelved → filters.shelved:'only' (any other view → 'active', i.e. hide shelved tasks).
  */
 export function applyView(view, opts = {}) {
   state.viewMode = view;
+  // 「搁置」视图只看搁置任务；其余视图一律隐藏搁置任务
+  state.filters.shelved = view === 'shelved' ? 'only' : 'active';
   if (view === 'project') {
     if (opts.projectId) state.filters.projectId = opts.projectId;
   } else {

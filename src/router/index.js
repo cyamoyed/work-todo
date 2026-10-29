@@ -5,6 +5,7 @@ import TodayView from '../views/TodayView.vue';
 import WeekView from '../views/WeekView.vue';
 import DaylinePage from '../views/DaylinePage.vue';
 import AllView from '../views/AllView.vue';
+import ShelvedView from '../views/ShelvedView.vue';
 import DoneView from '../views/DoneView.vue';
 import ReviewPage from '../views/ReviewPage.vue';
 import ProjectView from '../views/ProjectView.vue';
@@ -15,6 +16,7 @@ const routes = [
   { path: '/week', name: 'week', component: WeekView },
   { path: '/dayline', name: 'dayline', component: DaylinePage },
   { path: '/all', name: 'all', component: AllView },
+  { path: '/shelved', name: 'shelved', component: ShelvedView },
   { path: '/done', name: 'done', component: DoneView },
   { path: '/review', name: 'review', component: ReviewPage },
   {
