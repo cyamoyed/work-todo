@@ -593,23 +593,28 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     await page.waitForTimeout(50);
   });
 
-  it('shelve: row button parks a task in the 搁置 view; restore brings it back', async () => {
+  it('shelve: multi-select parks a task in the 搁置 view; batch restore brings it back', async () => {
     await clearTasks();
     await page.goto(BASE + '/#/all', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(50);
     await addTask({ title: 'shelve-me', status: 'todo' });
     await addTask({ title: 'keep-me', status: 'todo' });
 
+    // 行内不再提供搁置按钮，唯一入口是多选后的批量条
+    expect(await page.locator('[aria-label="搁置任务"]').count()).toBe(0);
+
     await page
       .locator('.task-card', { hasText: 'shelve-me' })
-      .locator('[aria-label="搁置任务"]')
+      .locator('.select-check')
       .click();
+    await page.waitForTimeout(60);
+    await page.locator('#batch-bar .btn', { hasText: '搁置' }).click();
     await page.waitForTimeout(60);
 
     let titles = await page.locator('.task-title').allTextContents();
     expect(titles).not.toContain('shelve-me');
     expect(titles).toContain('keep-me');
-    expect(await page.locator('#toast').textContent()).toContain('已搁置「shelve-me」');
+    expect(await page.locator('#toast').textContent()).toContain('已搁置 1 项');
     expect(await page.locator('#nav-count-shelved').textContent()).toBe('1');
     expect(await page.locator('#nav-count-all').textContent()).toBe('1');
 
@@ -619,10 +624,16 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect(await page.locator('#list-title').textContent()).toBe('搁置');
     titles = await page.locator('.task-title').allTextContents();
     expect(titles).toEqual(['shelve-me']);
+    expect(await page.locator('[aria-label="取消搁置"]').count()).toBe(0);
 
-    await page.locator('[aria-label="取消搁置"]').click();
+    await page
+      .locator('.task-card', { hasText: 'shelve-me' })
+      .locator('.select-check')
+      .click();
     await page.waitForTimeout(60);
-    expect(await page.locator('#toast').textContent()).toContain('已恢复「shelve-me」');
+    await page.locator('#batch-bar .btn', { hasText: '恢复' }).click();
+    await page.waitForTimeout(60);
+    expect(await page.locator('#toast').textContent()).toContain('已恢复 1 项');
     expect(await page.locator('.task-card').count()).toBe(0);
 
     await page.locator('#nav [data-view="all"]').click();

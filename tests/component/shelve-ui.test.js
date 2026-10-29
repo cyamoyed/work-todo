@@ -1,4 +1,4 @@
-/* Component tests — 搁置功能：行内搁置/恢复 + 撤销 toast、搁置视图、批量搁置、侧栏计数。 */
+/* Component tests — 搁置功能：仅多选批量入口（搁置/恢复）、搁置视图、侧栏计数。 */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { mountApp, resetState, cleanup } from './helpers/mountApp.js';
@@ -22,53 +22,44 @@ afterEach(async () => {
 
 const toast = () => wrapper.find('#toast');
 const cards = () => wrapper.findAll('#task-list .task-card');
-const shelfButtons = () => wrapper.findAll('.task-card [aria-label="搁置任务"]');
+const rowShelveButtons = () =>
+  wrapper.findAll('.task-card [aria-label="搁置任务"], .task-card [aria-label="取消搁置"]');
 const batchBarBtn = (label) =>
   wrapper.findAll('#batch-bar .btn').find((b) => b.text() === label);
 
-describe('行内搁置', () => {
-  it('未完成任务有搁置按钮，点击后移出列表并给出可撤销 toast', async () => {
-    expect(shelfButtons().length).toBe(2);
-
-    const first = cards()[0];
-    const firstId = first.attributes('data-id');
-    await first.find('[aria-label="搁置任务"]').trigger('click');
-    await flushPromises();
-
-    expect(cards().length).toBe(1);
-    expect(cards()[0].attributes('data-id')).not.toBe(firstId);
-    expect(toast().text()).toContain(`已搁置「${tasks.getTask(firstId).title}」`);
-    expect(tasks.getTask(firstId).shelvedAt).toBeTruthy();
-
-    await toast().find('button').trigger('click'); // 撤销
-    await flushPromises();
-    expect(cards().length).toBe(2);
-    expect(tasks.state.tasks.every((t) => !t.shelvedAt)).toBe(true);
-  });
-
-  it('已完成任务不显示搁置按钮', async () => {
+describe('列表行不提供搁置入口', () => {
+  it('未完成与已完成行都没有搁置按钮，批量条是唯一入口', async () => {
     tasks.createTask({ title: '已完成的', status: 'done' });
     await flushPromises();
-    expect(shelfButtons().length).toBe(2); // 两个未完成各一个，done 没有
+    expect(rowShelveButtons().length).toBe(0);
+
+    await cards()[0].find('.select-check').trigger('click');
+    await flushPromises();
+    expect(batchBarBtn('搁置')).toBeTruthy();
   });
 
-  it('侧栏搁置计数随之增加，其余视图计数不受影响', async () => {
+  it('批量搁置后移出列表并汇报数量，侧栏计数随之变化', async () => {
     expect(wrapper.find('#nav-count-all').text()).toBe('2');
     expect(wrapper.find('#nav-count-shelved').text()).toBe('0');
 
-    await shelfButtons()[0].trigger('click');
+    await cards()[0].find('.select-check').trigger('click');
+    await flushPromises();
+    await batchBarBtn('搁置').trigger('click');
     await flushPromises();
 
+    expect(cards().length).toBe(1);
+    expect(toast().text()).toContain('已搁置 1 项');
+    expect(tasks.state.tasks.filter((t) => t.shelvedAt).length).toBe(1);
     expect(wrapper.find('#nav-count-shelved').text()).toBe('1');
     expect(wrapper.find('#nav-count-all').text()).toBe('1');
   });
 });
 
 describe('搁置视图', () => {
-  it('路由 /shelved 只列搁置任务，可恢复并回到普通视图', async () => {
+  it('路由 /shelved 只列搁置任务，经批量条恢复并回到普通视图', async () => {
     const shelvedId = cards()[0].attributes('data-id');
     const shelvedTitle = tasks.getTask(shelvedId).title;
-    await cards()[0].find('[aria-label="搁置任务"]').trigger('click');
+    tasks.shelveTask(shelvedId, true);
     await flushPromises();
 
     await router.push('/shelved');
@@ -81,13 +72,16 @@ describe('搁置视图', () => {
     expect(cards()[0].text()).toContain(shelvedTitle);
     expect(cards()[0].text()).toContain('搁置中');
     expect(cards()[0].classes()).toContain('is-shelved');
+    expect(rowShelveButtons().length).toBe(0); // 恢复同样走批量入口
 
-    const resume = wrapper.find('.task-card [aria-label="取消搁置"]');
-    expect(resume.exists()).toBe(true);
+    await cards()[0].find('.select-check').trigger('click');
+    await flushPromises();
+    const resume = batchBarBtn('恢复');
+    expect(resume).toBeTruthy();
     await resume.trigger('click');
     await flushPromises();
 
-    expect(toast().text()).toContain(`已恢复「${shelvedTitle}」`);
+    expect(toast().text()).toContain('已恢复 1 项');
     expect(cards().length).toBe(0); // 恢复后离开搁置视图列表
     expect(tasks.getTask(shelvedId).shelvedAt).toBe(null);
 
@@ -102,6 +96,7 @@ describe('搁置视图', () => {
     const empty = wrapper.find('#task-list .empty-state');
     expect(empty.exists()).toBe(true);
     expect(empty.text()).toContain('没有搁置的任务');
+    expect(empty.text()).toContain('多选');
   });
 });
 

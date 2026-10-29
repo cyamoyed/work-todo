@@ -12,7 +12,7 @@
         </template>
         <template v-else-if="ui.state.filters.shelved === 'only'">
           <h2>没有搁置的任务</h2>
-          <p>暂缓推进的任务，点行内「搁置」会收进这里，随时可以恢复。</p>
+          <p>多选后点「搁置」收进来的任务都在这里，随时可以批量恢复。</p>
         </template>
         <template v-else-if="ui.state.filters.projectId">
           <h2>这个项目里还没有任务</h2>

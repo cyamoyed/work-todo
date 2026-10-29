@@ -74,21 +74,6 @@
 
     <div class="task-actions" v-if="!selecting">
       <button
-        v-if="task.status !== 'done'"
-        type="button"
-        class="btn-icon"
-        :title="shelved ? '恢复推进' : '搁置，暂缓推进'"
-        :aria-label="shelved ? '取消搁置' : '搁置任务'"
-        @click.stop="toggleShelve"
-      >
-        <!-- 搁置：收纳箱（线性描边，非填充） -->
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M2.6 3.2h10.8v2.6H2.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
-          <path d="M3.8 5.8v6.2c0 .33.27.6.6.6h7.2c.33 0 .6-.27.6-.6V5.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M6.5 8.7h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-        </svg>
-      </button>
-      <button
         type="button"
         class="btn-icon"
         title="查看创建与完成时间"
@@ -142,22 +127,6 @@ const dueOverdue = computed(() => !!dueText.value && overdue.value);
 const dueToday = computed(() => !!dueText.value && isDueTodayOpen(props.task) && !overdue.value);
 const shelved = computed(() => isShelved(props.task));
 const shelvedText = computed(() => formatIsoStamp(props.task.shelvedAt) || '—');
-
-/** 搁置 ↔ 恢复，toast 带撤销（恢复原值，包括原搁置时间）。 */
-function toggleShelve() {
-  const t = props.task;
-  const prev = shelved.value;
-  tasks.updateTask(t.id, { shelvedAt: !prev });
-  if (prev) {
-    ui.showToast(`已恢复「${t.title}」`, '撤销', () => {
-      tasks.updateTask(t.id, { shelvedAt: t.shelvedAt });
-    });
-  } else {
-    ui.showToast(`已搁置「${t.title}」`, '撤销', () => {
-      tasks.updateTask(t.id, { shelvedAt: false });
-    });
-  }
-}
 
 function edit() {
   ui.openTaskModal(props.task.id);
