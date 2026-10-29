@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } 
 import { flushPromises } from '@vue/test-utils';
 import { mountApp, resetState, cleanup } from './helpers/mountApp.js';
 import { useUpdateCheck } from '../../src/composables/useUpdateCheck.js';
-import { updateState } from '../../src/store/update.js';
+import { updateState, runUpdateCheck } from '../../src/store/update.js';
 
 const NEWER = {
   tag_name: 'v9.9.9',
@@ -262,6 +262,42 @@ describe('desktop in-app install (plugin:updater)', () => {
     await wrapper.find('#btn-check-update').trigger('click');
     await flushPromises();
   }
+
+  it('starts the plugin check as soon as an update is found, before the dialog opens', async () => {
+    mockFetch(200, NEWER);
+    await runUpdateCheck({ manual: true });
+    await flushPromises();
+    expect(invokeMock).toHaveBeenCalledWith('plugin:updater|check', {});
+    expect(ui.state.updateModalOpen).toBe(false);
+  });
+
+  it('holds a disabled 检测中… action while the plugin check is in flight — no 前往下载 flash', async () => {
+    let resolveCheck = null;
+    invokeMock.mockImplementation((cmd) => {
+      if (cmd === 'plugin:updater|check') {
+        return new Promise((resolve) => {
+          resolveCheck = () => resolve(CHECK_OK);
+        });
+      }
+      return Promise.resolve(null);
+    });
+    mockFetch(200, NEWER);
+    await wrapper.find('#btn-check-update').trigger('click');
+    await flushPromises();
+    const pending = wrapper.find('#btn-update-checking');
+    expect(pending.exists()).toBe(true);
+    expect(pending.text()).toBe('检测中…');
+    expect(pending.attributes('disabled')).toBeDefined();
+    expect(wrapper.find('#btn-open-download').exists()).toBe(false);
+    expect(wrapper.find('#btn-install-update').exists()).toBe(false);
+
+    resolveCheck();
+    await flushPromises();
+    expect(wrapper.find('#btn-update-checking').exists()).toBe(false);
+    const btn = wrapper.find('#btn-install-update');
+    expect(btn.exists()).toBe(true);
+    expect(btn.text()).toBe('立即更新');
+  });
 
   it('swaps the primary action to 立即更新 once the plugin confirms an update', async () => {
     await openModalWithNative();

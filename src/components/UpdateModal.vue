@@ -40,7 +40,14 @@
         <button type="button" id="btn-update-later" class="btn btn-ghost" @click="close">稍后</button>
         <template v-if="isDesktop && native.status !== 'ready'">
           <button
-            v-if="installable"
+            v-if="pendingCheck"
+            type="button"
+            id="btn-update-checking"
+            class="btn btn-primary"
+            disabled
+          >检测中…</button>
+          <button
+            v-else-if="installable"
             type="button"
             id="btn-install-update"
             class="btn btn-primary"
@@ -96,6 +103,9 @@ const publishedText = computed(() => {
 // update (latest.json present + signature verifiable); until then (or when it
 // errors out) the browser download stays the primary action.
 const installable = computed(() => isDesktop && native.installable && native.status !== 'error');
+// First plugin check still in flight: hold a neutral disabled action instead
+// of flashing 前往下载 and swapping to 立即更新 once the check resolves.
+const pendingCheck = computed(() => isDesktop && !native.checked);
 const busyInstalling = computed(() => native.status === 'checking' || native.status === 'downloading' || native.status === 'installing');
 const installing = computed(() => isDesktop && native.status !== 'idle' && native.status !== 'checking');
 const installLabel = computed(() => {

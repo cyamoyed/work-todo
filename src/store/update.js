@@ -2,7 +2,12 @@
 
 import { reactive } from 'vue';
 import { getAppVersion, checkForUpdates, shouldAutoCheck, openDownload } from '../lib/update.js';
-import { nativeUpdaterCheck, nativeDownloadAndInstall, nativeRelaunch } from '../lib/updater.js';
+import {
+  nativeUpdaterCheck,
+  nativeDownloadAndInstall,
+  nativeRelaunch,
+  isUpdaterSupported,
+} from '../lib/updater.js';
 import { createDownloadProgress } from '../core/update.js';
 
 export const updateState = reactive({
@@ -40,7 +45,31 @@ export async function runUpdateCheck({ manual = false } = {}) {
   updateState.reason = res.reason || '';
   updateState.latest = res.status === 'available' ? res.latest : null;
   updateState.stale = !!res.stale;
+  // Desktop: confirm in-app installability the moment an update is known so
+  // the dialog can open on its final action (立即更新 / 前往下载) instead of
+  // swapping from the download fallback once the plugin check lands.
+  if (res.status === 'available') startNativeCheckIfIdle();
   return res;
+}
+
+/**
+ * Fire the plugin check in the background (never awaited — a slow check must
+ * not delay the update flow). Skipped on web builds and while a check/install
+ * is already in flight or the plugin already confirmed an installable update.
+ */
+function startNativeCheckIfIdle() {
+  if (!isUpdaterSupported()) return;
+  const n = updateState.native;
+  if (
+    n.installable ||
+    n.status === 'checking' ||
+    n.status === 'downloading' ||
+    n.status === 'installing' ||
+    n.status === 'ready'
+  ) {
+    return;
+  }
+  checkNativeUpdate().catch(() => {});
 }
 
 /**
