@@ -55,6 +55,14 @@
 
     <button
       type="button"
+      class="task-due due-chip"
+      :class="{ 'is-overdue': dueOverdue, 'is-today': dueToday, 'is-empty': !dueText }"
+      :aria-label="dueText ? `修改截止：${dueText}` : '设置截止时间'"
+      @click.stop="openDue"
+    >{{ dueText || '' }}</button>
+
+    <button
+      type="button"
       class="task-col-status meta-status"
       :class="'st-' + task.status"
       :title="`状态：${STATUS_LABELS[task.status]} · 点击修改`"
@@ -63,14 +71,6 @@
       @click.stop="openStatus"
       @contextmenu.prevent.stop="openStatus"
     >{{ STATUS_LABELS[task.status] }}</button>
-
-    <button
-      type="button"
-      class="task-due due-chip"
-      :class="{ 'is-overdue': dueOverdue, 'is-today': dueToday, 'is-empty': !dueText }"
-      :aria-label="dueText ? `修改截止：${dueText}` : '设置截止时间'"
-      @click.stop="openDue"
-    >{{ dueText || '' }}</button>
 
     <div class="task-actions" v-if="!selecting">
       <button

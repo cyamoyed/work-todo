@@ -624,8 +624,8 @@ kbd {
 
 .task-card {
   display: grid;
-  /* check | main | prio | status-text | due | actions */
-  grid-template-columns: 22px minmax(0, 1fr) 104px 76px 110px auto;
+  /* check | main | prio | due | status-text | actions */
+  grid-template-columns: 22px minmax(0, 1fr) 104px 110px 76px auto;
   gap: 12px; align-items: center;
   padding: 0 16px; min-height: var(--row-h);
   border-bottom: 1px solid var(--line);
