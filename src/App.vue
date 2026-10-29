@@ -57,7 +57,6 @@
   <StatusMenu />
   <PrioMenu />
   <DueMenu />
-  <InfoMenu />
   <ProjectActionsMenu />
   <BatchBar />
   <Toast />
@@ -83,7 +82,6 @@ import MobileDrawer from './components/MobileDrawer.vue';
 import StatusMenu from './components/StatusMenu.vue';
 import PrioMenu from './components/PrioMenu.vue';
 import DueMenu from './components/DueMenu.vue';
-import InfoMenu from './components/InfoMenu.vue';
 import ProjectActionsMenu from './components/ProjectActionsMenu.vue';
 import BatchBar from './components/BatchBar.vue';
 import Toast from './components/Toast.vue';

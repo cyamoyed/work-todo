@@ -41,6 +41,7 @@
       </div>
       <div class="task-repeat" v-if="task.repeat">{{ REPEAT_LABELS[task.repeat] || task.repeat }}</div>
       <div class="task-shelved" v-if="shelved">搁置中 · {{ shelvedText }}</div>
+      <div class="task-times" v-if="task.status === 'done'">创建于 {{ createdText }} · 完成于 {{ completedText }}</div>
     </div>
 
     <button
@@ -73,20 +74,6 @@
     >{{ STATUS_LABELS[task.status] }}</button>
 
     <div class="task-actions" v-if="!selecting">
-      <button
-        type="button"
-        class="btn-icon"
-        title="查看创建与完成时间"
-        aria-label="查看任务详情"
-        aria-haspopup="menu"
-        @click.stop="openInfo"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.5" />
-          <path d="M8 7.2v3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-          <circle cx="8" cy="5.15" r="0.85" fill="currentColor" />
-        </svg>
-      </button>
       <button type="button" class="btn-icon danger" title="删除任务" aria-label="删除任务" @click.stop="remove">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M2.8 4.2h10.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -127,6 +114,9 @@ const dueOverdue = computed(() => !!dueText.value && overdue.value);
 const dueToday = computed(() => !!dueText.value && isDueTodayOpen(props.task) && !overdue.value);
 const shelved = computed(() => isShelved(props.task));
 const shelvedText = computed(() => formatIsoStamp(props.task.shelvedAt) || '—');
+// 已完成行内联展示创建/完成时间（替代原右侧信息图标弹层）
+const createdText = computed(() => formatIsoStamp(props.task.createdAt) || '—');
+const completedText = computed(() => formatIsoStamp(props.task.completedAt) || '—');
 
 function edit() {
   ui.openTaskModal(props.task.id);
@@ -146,10 +136,6 @@ function openPrio(e) {
 
 function openDue(e) {
   ui.openDueMenu(e.currentTarget, props.task.id);
-}
-
-function openInfo(e) {
-  ui.openInfoMenu(e.currentTarget, props.task.id);
 }
 
 /** Selection mode: any bare click on the row toggles selection. */
