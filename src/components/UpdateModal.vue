@@ -79,6 +79,7 @@ import {
   checkNativeUpdate,
   installNativeUpdate,
   relaunchAfterUpdate,
+  markUpdateSeen,
 } from '../store/update.js';
 import { copyText } from '../lib/clipboard.js';
 import { isTauri } from '../lib/tauri.js';
@@ -123,7 +124,10 @@ const receivedText = computed(() => formatBytes(native.received));
 watch(
   () => ui.state.updateModalOpen,
   (open) => {
-    if (!open || !isDesktop) return;
+    if (!open) return;
+    // Opening the dialog acknowledges the update — clears the 小红点.
+    markUpdateSeen();
+    if (!isDesktop) return;
     const busy =
       native.status === 'checking' ||
       native.status === 'downloading' ||

@@ -134,14 +134,14 @@ async function checkViaMirrors(fetchImpl, currentVersion) {
  * Fetch the latest GitHub release and compare it with the running version.
  * Resolves to { status: 'available'|'up-to-date'|'no-release'|'error',
  * latest?, reason?, stale? } — never rejects. Successful (or definitive)
- * outcomes stamp the 6h throttle clock; failures only stamp the 15min retry
- * clock so a boot offline doesn't burn the whole auto-check window. A cached
- * ETag is sent as If-None-Match — GitHub 304 answers don't count against the
- * rate limit. When the API gives no definitive answer (403/429 rate limit,
- * 5xx, hung or failed connection) the mirror chain (Atom feed, then the
- * jsDelivr tag list) takes over; if that fails too but a previous check left
- * a cached release, it is replayed flagged `stale` so the user still sees
- * last-known update info.
+ * outcomes stamp the auto-check clock (15min cadence); failures stamp the
+ * same-length retry clock so a boot offline doesn't stall the next attempt. A
+ * cached ETag is sent as If-None-Match — GitHub 304 answers don't count
+ * against the rate limit. When the API gives no definitive answer (403/429
+ * rate limit, 5xx, hung or failed connection) the mirror chain (Atom feed,
+ * then the jsDelivr tag list) takes over; if that fails too but a previous
+ * check left a cached release, it is replayed flagged `stale` so the user
+ * still sees last-known update info.
  */
 export async function checkForUpdates(opts = {}) {
   const fetchImpl = opts.fetch || (typeof fetch === 'function' ? fetch : null);
@@ -200,9 +200,9 @@ export async function checkForUpdates(opts = {}) {
 }
 
 /**
- * Auto checks run at most once per UPDATE_AUTO_CHECK_MS. A failed attempt
- * (failedAt) short of that window allows an earlier retry after
- * UPDATE_RETRY_MS, so transient network errors don't stall updates for hours.
+ * Auto checks run at most once per UPDATE_AUTO_CHECK_MS (15min — same cadence
+ * as the poll tick in main.js, so a long-open app re-checks continuously). A
+ * failed attempt (failedAt) re-allows after UPDATE_RETRY_MS.
  */
 export function shouldAutoCheck(now = Date.now()) {
   const raw = readCheckState();
@@ -227,6 +227,30 @@ export function markChecked(now = Date.now(), { ok = true, etag, cached } = {}) 
   } else {
     writeCheckState({ failedAt: new Date(now).toISOString() });
   }
+}
+
+/**
+ * Update-prompt acknowledgement stamps (same `work-todo.update.v1` record):
+ * `notifiedVersion` — the version the「发现新版本」toast has been shown for
+ * (once per version, however long the app stays open); `seenVersion` — the
+ * version whose update dialog the user has opened (clears the 小红点).
+ */
+export function getNotifiedVersion() {
+  return String(readCheckState().notifiedVersion || '');
+}
+
+export function markUpdateNotified(version) {
+  writeCheckState({ notifiedVersion: String(version || '') });
+}
+
+export function getSeenVersion() {
+  return String(readCheckState().seenVersion || '');
+}
+
+export function markUpdateSeen(version) {
+  const v = String(version || '');
+  // Seen implies notified — opening the dialog beats any pending toast.
+  writeCheckState({ seenVersion: v, notifiedVersion: v });
 }
 
 /** Open a URL with the system browser (desktop) or in a new tab (web). */

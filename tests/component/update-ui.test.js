@@ -211,6 +211,46 @@ describe('startup auto check', () => {
   });
 });
 
+describe('小红点 + toast 去重 (unseen update badge)', () => {
+  it('shows a red dot on 设置 and clears it once the update dialog opens', async () => {
+    mockFetch(200, NEWER);
+    await useUpdateCheck().autoCheck();
+    await flushPromises();
+    const dot = wrapper.find('#update-dot');
+    expect(dot.exists()).toBe(true);
+    expect(wrapper.find('#btn-settings').attributes('aria-label')).toContain('有新版本');
+
+    // toast 查看 opens the dialog — that acks the update and clears the dot
+    await wrapper.find('#toast').find('button').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('#update-modal').isVisible()).toBe(true);
+    expect(wrapper.find('#update-dot').exists()).toBe(false);
+    expect(wrapper.find('#btn-settings').attributes('aria-label')).toBe('打开设置');
+
+    await wrapper.find('#btn-close-update').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('#update-dot').exists()).toBe(false); // stays cleared
+  });
+
+  it('auto check toasts a new version only once — the dot keeps cueing', async () => {
+    mockFetch(200, NEWER);
+    await useUpdateCheck().autoCheck();
+    await flushPromises();
+    expect(wrapper.find('#toast').isVisible()).toBe(true);
+    ui.hideToast();
+
+    // Re-open the 15min throttle window for the next auto check (same version).
+    const rec = JSON.parse(localStorage.getItem('work-todo.update.v1'));
+    rec.lastCheckAt = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+    localStorage.setItem('work-todo.update.v1', JSON.stringify(rec));
+
+    await useUpdateCheck().autoCheck();
+    await flushPromises();
+    expect(wrapper.find('#toast').isVisible()).toBe(false); // no re-toast
+    expect(wrapper.find('#update-dot').exists()).toBe(true); // dot still cues
+  });
+});
+
 /* Desktop in-app install flow — window.__TAURI_INTERNALS__ stubbed before
  * mount so UpdateModal's isTauri() picks the desktop branch. The channel
  * events (Started/Progress/Finished) are fired through transformCallback

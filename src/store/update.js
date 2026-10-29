@@ -1,7 +1,14 @@
 /* work-todo — update-check state (reactive view for templates) + orchestration */
 
 import { reactive } from 'vue';
-import { getAppVersion, checkForUpdates, shouldAutoCheck, openDownload } from '../lib/update.js';
+import {
+  getAppVersion,
+  checkForUpdates,
+  shouldAutoCheck,
+  openDownload,
+  getSeenVersion,
+  markUpdateSeen as persistUpdateSeen,
+} from '../lib/update.js';
 import {
   nativeUpdaterCheck,
   nativeDownloadAndInstall,
@@ -16,6 +23,7 @@ export const updateState = reactive({
   latest: null, // { version, notes, url, publishedAt, downloadUrl }
   stale: false, // latest came from the last successful check — all sources are down now
   currentVersion: getAppVersion(),
+  seenVersion: getSeenVersion(), // last version whose dialog was opened (小红点 ack)
   // Native in-app update (desktop only; see lib/updater.js).
   native: {
     status: 'idle', // idle | checking | downloading | installing | ready | error
@@ -146,6 +154,26 @@ export function openLatestDownload() {
   return openDownload(updateState.latest);
 }
 
+/**
+ * True while a newer release exists the user has not opened the update dialog
+ * for — drives the 小红点 on the settings entry (sidebar + mobile drawer).
+ */
+export function hasUnseenUpdate() {
+  return (
+    updateState.status === 'available' &&
+    !!updateState.latest &&
+    updateState.latest.version !== updateState.seenVersion
+  );
+}
+
+/** Acknowledge the current update — call when the update dialog opens. */
+export function markUpdateSeen() {
+  const version = updateState.latest && updateState.latest.version;
+  if (!version) return;
+  updateState.seenVersion = version;
+  persistUpdateSeen(version);
+}
+
 /** Test hook: back to the fresh-boot state. */
 export function __resetUpdateStateForTests() {
   updateState.status = 'idle';
@@ -153,6 +181,7 @@ export function __resetUpdateStateForTests() {
   updateState.latest = null;
   updateState.stale = false;
   updateState.currentVersion = getAppVersion();
+  updateState.seenVersion = getSeenVersion();
   const n = updateState.native;
   n.status = 'idle';
   n.checked = false;

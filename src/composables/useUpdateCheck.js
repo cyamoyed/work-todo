@@ -2,7 +2,12 @@
 
 import { useUiStore } from '../store/ui.js';
 import { runUpdateCheck, updateState } from '../store/update.js';
-import { openExternal, RELEASES_PAGE_URL } from '../lib/update.js';
+import {
+  openExternal,
+  RELEASES_PAGE_URL,
+  getNotifiedVersion,
+  markUpdateNotified,
+} from '../lib/update.js';
 
 /** Failure copies keyed by checkForUpdates' error reason. */
 const FAILURE_NOTES = {
@@ -36,10 +41,14 @@ export function useUpdateCheck() {
   async function autoCheck() {
     const res = await runUpdateCheck();
     if (res && res.status === 'available') {
-      const staleNote = res.stale ? '（基于上次检查）' : '';
-      ui.showToast(`发现新版本 v${res.latest.version}${staleNote}`, '查看', () =>
-        ui.openUpdateModal(null)
-      );
+      // Toast once per version — afterwards the 小红点 on 设置 is the cue, so
+      // a long-open app doesn't re-toast every auto check.
+      const version = res.latest.version;
+      if (getNotifiedVersion() !== version) {
+        markUpdateNotified(version);
+        const staleNote = res.stale ? '（基于上次检查）' : '';
+        ui.showToast(`发现新版本 v${version}${staleNote}`, '查看', () => ui.openUpdateModal(null));
+      }
     }
     return res;
   }

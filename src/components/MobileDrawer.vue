@@ -35,6 +35,7 @@
           />
         </svg>
         <span>设置</span>
+        <i v-if="updateDot" class="update-dot" aria-hidden="true"></i>
       </button>
       <ThemeToggle />
     </div>
@@ -47,6 +48,7 @@ import { useRouter } from 'vue-router';
 import ThemeToggle from './ThemeToggle.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
+import { hasUnseenUpdate } from '../store/update.js';
 import { navCounts } from '../core/filters.js';
 
 const tasks = useTaskStore();
@@ -64,6 +66,9 @@ const navItems = [
 ];
 
 const counts = computed(() => navCounts(tasks.state.tasks));
+
+// 小红点：发现新版且尚未打开过更新弹窗
+const updateDot = computed(() => hasUnseenUpdate());
 
 function isActive(view) {
   return !ui.state.filters.projectId && ui.state.viewMode === view;

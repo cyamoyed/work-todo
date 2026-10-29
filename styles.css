@@ -352,6 +352,12 @@ kbd {
 }
 .side-settings:hover { background: var(--hover-side); color: var(--ink); }
 .side-settings.active { background: var(--side-active); color: var(--ink); font-weight: 550; }
+/* 小红点：发现新版且未查看过更新详情时挂在设置入口（侧栏 / 移动抽屉） */
+.side-settings, .drawer-settings { position: relative; }
+.update-dot {
+  position: absolute; top: 4px; right: 4px;
+  width: 6px; height: 6px; background: var(--danger);
+}
 
 /* —— Main —— */
 .main {

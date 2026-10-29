@@ -40,7 +40,7 @@
           type="button"
           id="btn-settings"
           class="side-settings"
-          aria-label="打开设置"
+          :aria-label="updateDot ? '打开设置（有新版本）' : '打开设置'"
           @click="openSettings"
         >
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -51,6 +51,7 @@
             />
           </svg>
           <span>设置</span>
+          <i v-if="updateDot" id="update-dot" class="update-dot" aria-hidden="true"></i>
         </button>
       </div>
     </div>
@@ -65,6 +66,7 @@ import ThemeToggle from './ThemeToggle.vue';
 import BrandMark from './BrandMark.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
+import { hasUnseenUpdate } from '../store/update.js';
 import { navCounts, projectStats } from '../core/filters.js';
 
 const tasks = useTaskStore();
@@ -82,6 +84,9 @@ const navItems = [
 ];
 
 const counts = computed(() => navCounts(tasks.state.tasks));
+
+// 小红点：发现新版且尚未打开过更新弹窗
+const updateDot = computed(() => hasUnseenUpdate());
 
 const progress = computed(() => {
   if (!ui.state.filters.projectId) return 0;

@@ -5,6 +5,10 @@ import {
   getAppVersion,
   shouldAutoCheck,
   markChecked,
+  getSeenVersion,
+  markUpdateSeen,
+  getNotifiedVersion,
+  markUpdateNotified,
   openExternal,
   openDownload,
   LATEST_RELEASE_URL,
@@ -243,7 +247,7 @@ describe('etag revalidation', () => {
 });
 
 describe('update-check throttle and retry backoff', () => {
-  it('a successful check stamps the 6h throttle clock', async () => {
+  it('a successful check stamps the auto-check clock', async () => {
     expect(shouldAutoCheck()).toBe(true);
     await checkForUpdates({ fetch: vi.fn(async () => jsonResponse(200, RELEASE)) });
     expect(shouldAutoCheck()).toBe(false);
@@ -265,7 +269,7 @@ describe('update-check throttle and retry backoff', () => {
     expect(shouldAutoCheck()).toBe(true);
   });
 
-  it('a successful retry re-opens the full 6h window', async () => {
+  it('a successful retry re-opens the full auto-check window', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-10T10:00:00Z'));
     await checkForUpdates({
@@ -294,6 +298,27 @@ describe('update-check throttle and retry backoff', () => {
   it('tolerates a corrupt throttle record', () => {
     localStorage.setItem(UPDATE_KEY, 'not-json');
     expect(shouldAutoCheck()).toBe(true);
+  });
+});
+
+describe('update-prompt acknowledgement stamps (toast 去重 / 小红点)', () => {
+  it('markUpdateSeen acks a version and implies notified', () => {
+    expect(getSeenVersion()).toBe('');
+    expect(getNotifiedVersion()).toBe('');
+    markUpdateSeen('9.9.9');
+    expect(getSeenVersion()).toBe('9.9.9');
+    expect(getNotifiedVersion()).toBe('9.9.9');
+  });
+
+  it('markUpdateNotified records the toast without acking the dot', () => {
+    markUpdateNotified('9.9.9');
+    expect(getNotifiedVersion()).toBe('9.9.9');
+    expect(getSeenVersion()).toBe('');
+  });
+
+  it('stamps persist in the update record', () => {
+    markUpdateSeen('1.2.3');
+    expect(JSON.parse(localStorage.getItem(UPDATE_KEY)).seenVersion).toBe('1.2.3');
   });
 });
 
