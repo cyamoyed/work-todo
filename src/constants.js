@@ -10,9 +10,14 @@ export const THEME_KEY = 'work-todo.theme.v1';
 export const THEME_SETTINGS = ['system', 'light', 'dark'];
 export const UPDATE_KEY = 'work-todo.update.v1';
 export const UPDATE_REPO = 'cyamoyed/work-todo';
-export const UPDATE_AUTO_CHECK_MS = 6 * 60 * 60 * 1000;
-// 检查失败（断网/限流）后的短退避：到点允许自动复查，不占用 6 小时节流窗口
+// 应用常驻期间的自动复查窗口：每 15 分钟查一次（ETag 命中 304 不占 GitHub API 配额）
+export const UPDATE_AUTO_CHECK_MS = 15 * 60 * 1000;
+// 检查失败（断网/限流）后的复查窗口：15 分钟后自动重试
 export const UPDATE_RETRY_MS = 15 * 60 * 1000;
+// 自动检查的轮询节拍（60s）：shouldAutoCheck 按上面的窗口把关。节拍取密是为了
+// 抵消「检查完成时间戳 vs 定时器起点」的漂移——15 分钟整的节拍会因每次检查的
+// 耗时累计被窗口边界挡掉，退化成隔次（30 分钟）才真正检查。
+export const UPDATE_POLL_TICK_MS = 60 * 1000;
 // 单次更新请求的 HTTP 超时：直连 GitHub 挂起时不无限等待，到点降级到镜像源
 export const UPDATE_CHECK_TIMEOUT_MS = 8000;
 export const SCHEMA_VERSION = 3;

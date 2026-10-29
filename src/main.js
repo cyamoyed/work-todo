@@ -15,7 +15,7 @@ import {
   startReminderLoop,
 } from './composables/useNotifications.js';
 import { useUpdateCheck } from './composables/useUpdateCheck.js';
-import { UPDATE_RETRY_MS } from './constants.js';
+import { UPDATE_POLL_TICK_MS } from './constants.js';
 
 useThemeStore().init();
 
@@ -81,9 +81,11 @@ setTimeout(() => notifyOverdue(tasks.state.tasks), 1200);
 startReminderLoop(() => tasks.state.tasks);
 
 // Update check: silent startup check, then re-check while the app stays open
-// (both throttled in lib/update.js — success opens the 6h window, failure the
-// 15min retry clock). Re-check when the network comes back after being offline.
+// (both windows in lib/update.js — success and failure alike reopen after
+// 15min; the 60s poll tick only calls shouldAutoCheck, so the app notices a
+// new release within ~15min of it being published). Re-check when the network
+// comes back after being offline.
 const updateCheck = useUpdateCheck();
 setTimeout(() => updateCheck.autoCheck(), 1800);
-setInterval(() => updateCheck.autoCheck(), UPDATE_RETRY_MS);
+setInterval(() => updateCheck.autoCheck(), UPDATE_POLL_TICK_MS);
 window.addEventListener('online', () => updateCheck.autoCheck());
