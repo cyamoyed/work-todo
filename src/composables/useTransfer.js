@@ -22,8 +22,10 @@ export function useTransfer() {
   const ui = useUiStore();
 
   function doExport() {
-    downloadExportFile(tasks.exportPayload(), exportFilename());
-    ui.showToast('已导出数据');
+    const filename = exportFilename();
+    downloadExportFile(tasks.exportPayload(), filename);
+    // 保存位置用中文描述：导出走系统默认下载，不展示绝对路径
+    ui.showToast(`已导出到下载目录（${filename}）`);
   }
 
   function importText(text) {

@@ -30,6 +30,19 @@ describe('export/import HTML anchors present', () => {
     expect(wrapper.find('#import-file').exists()).toBe(true); // has import-file
     expect(wrapper.find('#import-file').attributes('type')).toBe('file');
   });
+
+  it('导出 toast 说明保存到下载目录（中文描述，不带绝对路径）', async () => {
+    URL.createObjectURL = URL.createObjectURL || (() => 'blob:test');
+    URL.revokeObjectURL = URL.revokeObjectURL || (() => {});
+    await wrapper.find('#btn-settings').trigger('click');
+    await flushPromises();
+    await wrapper.find('#btn-export').trigger('click');
+    await flushPromises();
+    const toast = wrapper.find('#toast').text();
+    expect(toast).toContain('已导出到下载目录');
+    expect(toast).toMatch(/work-todo-\d{8}\.json/); // 文件名一并提示，便于定位
+    expect(toast).not.toContain(':\\'); // 不展示绝对路径
+  });
 });
 
 describe('mobile shell nodes', () => {
