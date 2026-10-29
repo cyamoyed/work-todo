@@ -124,8 +124,9 @@ work-todo/
 
 应用会检查 GitHub Releases：桌面端优先**应用内更新**（下载 + 安装 + 重启，全在应用内完成），不可用时引导到下载页；网页版行为一致地引导到下载页。
 
-- **检查入口**：启动后静默检查；应用常驻期间每 15 分钟复查一次（两个入口都受同一节流约束）；网络恢复（`online` 事件）时补查；侧栏底部「检查更新」随时手动检查；侧栏底部版本行常驻显示当前版本，发现新版时变为主题色并显示「有新版 vX.Y.Z」，点击可打开更新弹窗。
-- **节流与退避**：成功检查后 6 小时内不再自动检查（`UPDATE_AUTO_CHECK_MS`，时间戳存 `work-todo.update.v1`）；检查失败（断网 / 限流）不占用 6 小时窗口，15 分钟后（`UPDATE_RETRY_MS`）即可自动复查——开机断网不会把更新检测拖到 6 小时后。
+- **检查入口**：启动后静默检查；应用常驻期间每 15 分钟复查一次；网络恢复（`online` 事件）时补查；设置页「检查更新」随时手动检查；设置页版本行常驻显示当前版本，发现新版时变为主题色并显示「有新版 vX.Y.Z」，点击可打开更新弹窗。
+- **发现新版的提示**：自动检查发现新版时 toast「发现新版本 v…」**每个版本只弹一次**（`notifiedVersion` 标记）；侧栏底部「设置」按钮（移动端为抽屉里的「设置」）同时挂**小红点**，常驻到用户打开过更新弹窗为止（`seenVersion` 标记），之后重启也不会再弹 toast。两个标记与检查时间戳同存 `work-todo.update.v1`。
+- **节流与退避**：自动检查窗口 15 分钟（`UPDATE_AUTO_CHECK_MS`；失败重试窗口 `UPDATE_RETRY_MS` 同为 15 分钟，时间戳存 `work-todo.update.v1`）——断网 / 限流后 15 分钟自动复查，长开的应用每 15 分钟就能发现新发布。轮询节拍刻意取 60 秒（`UPDATE_POLL_TICK_MS`）：`shouldAutoCheck` 按窗口把关，密节拍抵消「检查完成时间戳 vs 定时器起点」的漂移（15 分钟整的节拍会被窗口边界挡掉、退化成隔次 30 分钟才真正检查）。
 - **版本来源**：`https://api.github.com/repos/cyamoyed/work-todo/releases/latest`（不含 draft / prerelease）。`tag_name` 形如 `v0.5.0`（可省略 `v`），与运行中版本比较，更新日志取 Release 正文（`body`，弹窗内按纯文本展示）。
   - **ETag 缓存**：成功响应的 ETag 与解析结果缓存在 `work-todo.update.v1`，下次检查带 `If-None-Match`；GitHub 返回 304 时不消耗 API 限额。
   - **镜像降级**：主源拿不到确定答案时（403/429 限流——未认证限额 60 次/小时/IP、共享出口 IP 容易触发；5xx；连接挂起或失败——请求带 8 秒超时 `UPDATE_CHECK_TIMEOUT_MS`）依序尝试镜像链：先读 `https://github.com/cyamoyed/work-todo/releases.atom`（普通网页，不走 API 限额），再读 jsDelivr tag 列表 `https://data.jsdelivr.com/v1/packages/gh/cyamoyed/work-todo`（CDN 分发，国内可达性好）。镜像只用来判断"最新版本号是多少"（jsDelivr 侧过滤 prerelease tag），下载目标一律钉在官方 Releases 页，不采信镜像给出的地址。全部失败才报「GitHub 请求受限」等错误（`network` / `rate-limited` / `http`，体现在 toast 文案）。
