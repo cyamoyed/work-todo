@@ -2,10 +2,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import TitleBarControls from '../../src/components/TitleBarControls.vue';
-import { isTauri } from '../../src/lib/tauri.js';
+import { isTauri, isMac } from '../../src/lib/tauri.js';
 
 vi.mock('../../src/lib/tauri.js', () => ({
   isTauri: vi.fn(() => true),
+  isMac: vi.fn(() => false),
   minimizeWindow: vi.fn(),
   toggleMaximizeWindow: vi.fn(),
   closeWindow: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock('../../src/lib/tauri.js', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   isTauri.mockReturnValue(true);
+  isMac.mockReturnValue(false);
 });
 
 describe('TitleBarControls', () => {
@@ -44,6 +46,13 @@ describe('TitleBarControls', () => {
 
   it('renders nothing outside Tauri (browser)', async () => {
     isTauri.mockReturnValue(false);
+    const wrapper = mount(TitleBarControls);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.win-controls').exists()).toBe(false);
+  });
+
+  it('renders nothing on macOS (native traffic lights)', async () => {
+    isMac.mockReturnValue(true);
     const wrapper = mount(TitleBarControls);
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.win-controls').exists()).toBe(false);

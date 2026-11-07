@@ -26,6 +26,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import {
   isTauri,
+  isMac,
   minimizeWindow,
   toggleMaximizeWindow,
   closeWindow,
@@ -33,7 +34,8 @@ import {
   onWindowResized,
 } from '../lib/tauri.js';
 
-const desktop = isTauri();
+// macOS 用系统红绿灯（tauri.macos.conf.json），只在其余桌面平台渲染自绘三键
+const desktop = isTauri() && !isMac();
 const maximized = ref(false);
 let unlisten = null;
 

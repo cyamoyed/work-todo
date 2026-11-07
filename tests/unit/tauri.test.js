@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   isTauri,
+  isMac,
   tauriInvoke,
   mirrorSaveTasks,
   bootstrapDesktopStorage,
@@ -43,6 +44,33 @@ function withTauri(invokeImpl) {
     __TAURI_INTERNALS__: { invoke: invokeImpl },
   };
 }
+
+describe('isMac', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('true on a macOS user agent', () => {
+    vi.stubGlobal(
+      'navigator',
+      { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)' }
+    );
+    expect(isMac()).toBe(true);
+  });
+
+  it('false on a Windows user agent', () => {
+    vi.stubGlobal(
+      'navigator',
+      { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' }
+    );
+    expect(isMac()).toBe(false);
+  });
+
+  it('false without navigator', () => {
+    vi.stubGlobal('navigator', undefined);
+    expect(isMac()).toBe(false);
+  });
+});
 
 describe('isTauri / tauriInvoke', () => {
   it('not Tauri without the globals', () => {

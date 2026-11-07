@@ -1,9 +1,16 @@
 /* work-todo — Tauri duck-typed bridge (no @tauri-apps/api dependency) */
 
 import { normalizeTask } from '../core/tasks.js';
+import { detectPlatform } from '../core/update.js';
 
 export function isTauri() {
   return typeof window !== 'undefined' && !!(window.__TAURI__ || window.__TAURI_INTERNALS__);
+}
+
+/** macOS 走原生红绿灯（tauri.macos.conf.json: titleBarStyle Overlay），
+ *  前端据此隐藏自绘窗口按钮并让位布局。UA 嗅探与更新包平台选择同源。 */
+export function isMac() {
+  return detectPlatform(typeof navigator !== 'undefined' ? navigator.userAgent : '') === 'mac';
 }
 
 /* 契约：无论桥接层状态如何都返回 Promise——invoke 同步抛错或返回非 Promise

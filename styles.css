@@ -391,6 +391,11 @@ kbd {
 .win-btn:hover { background: var(--line); color: var(--ink); }
 .win-btn.win-close:hover { background: var(--danger); color: #fff; }
 
+/* —— macOS 原生红绿灯（tauri.macos.conf.json: titleBarStyle Overlay）——
+   红绿灯叠在窗口左上角：宽屏时落在侧栏列上，侧栏顶部让位；
+   自绘 .win-controls 在 macOS 不渲染（TitleBarControls.vue）。 */
+.platform-mac .side { padding-top: 40px; }
+
 .search {
   flex: 1; max-width: 440px;
   display: flex; align-items: center; gap: 8px;
@@ -1109,6 +1114,8 @@ kbd {
   .side { display: none; }
   .brand-mobile { display: flex; align-items: center; gap: 6px; margin-right: 4px; }
   .top { padding: 10px 16px; }
+  /* macOS 红绿灯让位：窄屏下侧栏隐藏，.top 成为左上区域 */
+  .platform-mac .top { padding-left: 80px; }
   .body { padding: 16px 16px 88px; }
   .task-card {
     grid-template-columns: 22px minmax(0, 1fr);

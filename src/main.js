@@ -8,6 +8,7 @@ import { useUiStore } from './store/ui.js';
 import { useThemeStore } from './store/theme.js';
 import { buildWorkTodoFacade } from './lib/facade.js';
 import { createBackupNow } from './lib/backup.js';
+import { isMac } from './lib/tauri.js';
 import { initSync, bootSync, scheduleSync } from './lib/sync/engine.js';
 import {
   requestNotifyPermission,
@@ -18,6 +19,9 @@ import { useUpdateCheck } from './composables/useUpdateCheck.js';
 import { UPDATE_POLL_TICK_MS } from './constants.js';
 
 useThemeStore().init();
+
+// macOS 原生红绿灯占位：挂载前给 <html> 打标，CSS 据此让位（styles.css .platform-mac）
+document.documentElement.classList.toggle('platform-mac', isMac());
 
 const tasks = useTaskStore();
 const ui = useUiStore();
