@@ -6,6 +6,7 @@ import { createAppRouter } from './router/index.js';
 import { useTaskStore, onPersisted } from './store/tasks.js';
 import { useUiStore } from './store/ui.js';
 import { useThemeStore } from './store/theme.js';
+import { useAiStore } from './store/ai.js';
 import { buildWorkTodoFacade } from './lib/facade.js';
 import { createBackupNow } from './lib/backup.js';
 import { isMac, isTauri } from './lib/tauri.js';
@@ -19,6 +20,8 @@ import { useUpdateCheck } from './composables/useUpdateCheck.js';
 import { UPDATE_POLL_TICK_MS } from './constants.js';
 
 useThemeStore().init();
+const ai = useAiStore();
+ai.init();
 
 // macOS 原生红绿灯占位：挂载前给 <html> 打标，CSS 据此让位（styles.css .platform-mac）
 document.documentElement.classList.toggle('platform-mac', isMac());
@@ -80,6 +83,9 @@ tasks.bootstrapDesktop().then(() => {
 initSync({
   getPayload: () => tasks.exportPayload(),
   applyMerged: (tasksAll, projectsAll) => tasks.applySyncResult(tasksAll, projectsAll),
+  // AI 配置 blob：「同步 AI 配置」开启时随载荷上传/下发（未开启返回 null = 不参与）
+  getAiConfig: () => ai.exportSyncBlob(),
+  applyAiConfig: (blob) => ai.applySyncBlob(blob),
 });
 onPersisted(() => scheduleSync());
 bootSync();

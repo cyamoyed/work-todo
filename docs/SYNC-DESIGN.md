@@ -114,10 +114,17 @@ lastActionAt(e) = max(e.updatedAt, e.deletedAt || '')
 服务端只存**每用户一份 JSON blob**（即导出 payload 形状）+ 版本号：
 
 ```
-{ payload: { schemaVersion, exportedAt, app, tasks, projects }, rev: number }
+{ payload: { schemaVersion, exportedAt, app, tasks, projects, ai? }, rev: number }
 ```
 
 任务语义完全在客户端，服务端可以是任意能存取 JSON 的东西。
+
+`ai?` 是可选的 AI 配置 blob（`{ enabled, baseUrl, apiKey, model, updatedAt }`，OpenAI
+兼容接口三元组）：**仅当设备在 AI 设置里勾选「同步 AI 配置」时**随 push 携带、pull 应用；
+未勾选的设备既不携带也不应用（远端旧 blob 保留给其他开启的设备）。手动导出的文件
+**永不**携带该字段（密钥只经显式开启的同步通道上传）。blob 整包 LWW 以 `updatedAt`
+裁决（远端较新则落到本地，随后推送双方中较新的那份）；`syncAi` 开关本身是设备本地
+偏好，不在 blob 里、不随之传播。
 
 ### 5.2 单轮同步：pull → merge → push
 

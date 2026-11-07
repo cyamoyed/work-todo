@@ -78,6 +78,30 @@
       </div>
     </section>
 
+    <section class="settings-sec" aria-label="AI 识别">
+      <h4 class="settings-sec-title">AI 识别</h4>
+      <div class="settings-row">
+        <div class="settings-row-main">
+          <span class="settings-label">拖入文字生成标题</span>
+          <span class="settings-desc">拖入文本到窗口时 AI 拟标题，完整原文存入正文</span>
+        </div>
+        <button
+          type="button"
+          id="btn-ai-toggle"
+          class="btn sm"
+          :aria-pressed="aiOn"
+          @click="toggleAi"
+        >{{ aiOn ? '已开启' : '已关闭' }}</button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-main">
+          <span class="settings-label">服务配置</span>
+          <span class="settings-desc">OpenAI 兼容接口地址、密钥与模型</span>
+        </div>
+        <button type="button" id="btn-ai-config" class="btn sm" @click="openAi">配置</button>
+      </div>
+    </section>
+
     <section class="settings-sec" aria-label="关于">
       <h4 class="settings-sec-title">关于</h4>
       <div class="settings-row">
@@ -119,8 +143,11 @@ import { useTransfer } from '../composables/useTransfer.js';
 import { updateState } from '../store/update.js';
 import { isTauri, isAutostartEnabled, setAutostart } from '../lib/tauri.js';
 import { syncState, syncStatusText } from '../store/sync.js';
+import { useAiStore } from '../store/ai.js';
 
 const ui = useUiStore();
+const ai = useAiStore();
+ai.init();
 const { doExport } = useTransfer();
 const { checkNow } = useUpdateCheck();
 const desktop = isTauri();
@@ -149,6 +176,18 @@ async function toggleAutostart() {
 
 function close() {
   ui.closeSettingsModal();
+}
+
+/* —— AI 识别：开关与配置入口（配置存在 work-todo.ai.v1，store/ai.js 持有） —— */
+const aiOn = computed(() => ai.state.enabled);
+
+function toggleAi() {
+  ai.configure({ enabled: !ai.state.enabled });
+  ui.showToast(ai.state.enabled ? 'AI 识别已开启' : 'AI 识别已关闭');
+}
+
+function openAi() {
+  ui.openAiModal(document.getElementById('btn-ai-config'));
 }
 
 const hasUpdate = computed(() => updateState.status === 'available' && !!updateState.latest);

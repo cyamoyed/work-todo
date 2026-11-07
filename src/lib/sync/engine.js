@@ -39,6 +39,11 @@ let lastRunAt = 0;
 const listeners = new Set();
 let lifecycleWired = false;
 
+// AI 配置 blob 钩子（main.js 注入，读写 store/ai.js）：getAiConfig 返回 null
+// 表示本设备未开启「同步 AI 配置」，既不下发也不携带。
+let getAiConfig = null;
+let applyAiConfig = null;
+
 function makeProvider(kind, cfg) {
   if (kind === 'pocketbase') {
     return createPocketBaseProvider({ url: cfg.url, collection: cfg.collection });
@@ -83,6 +88,8 @@ export function onSyncStateChange(cb) {
 export function initSync(deps = {}) {
   getPayload = deps.getPayload || null;
   applyMerged = deps.applyMerged || null;
+  getAiConfig = deps.getAiConfig || null;
+  applyAiConfig = deps.applyAiConfig || null;
   if (!lifecycleWired && typeof window !== 'undefined') {
     lifecycleWired = true;
     window.addEventListener('online', () => {
@@ -304,10 +311,25 @@ async function runSyncCycle() {
       remotePayload,
       'merge'
     );
+    // AI 配置 blob：仅「同步 AI 配置」开启的设备参与。整包 LWW（updatedAt）：
+    // 远端更新则落到本地，随后推送双方中更新的那份（推送即传播）。
+    let pushAi = null;
+    if (getAiConfig && applyAiConfig) {
+      const localAi = getAiConfig();
+      if (localAi) {
+        const remoteAi = remotePayload.ai || null;
+        if (remoteAi && (remoteAi.updatedAt || '') > (localAi.updatedAt || '')) {
+          applyAiConfig(remoteAi);
+          pushAi = remoteAi;
+        } else {
+          pushAi = localAi;
+        }
+      }
+    }
     // Re-merge against the live store inside applyMerged — edits made while
     // this cycle was in flight must survive.
     applyMerged(merged.tasks, merged.projects);
-    const pushPayload = buildExportPayload(merged.tasks, merged.projects);
+    const pushPayload = buildExportPayload(merged.tasks, merged.projects, pushAi ? { ai: pushAi } : {});
     try {
       const res = await provider.push(session, pushPayload, remote.version);
       session.version = res.version;
@@ -325,8 +347,8 @@ async function runSyncCycle() {
 
 /** Remote payloads may be stale/foreign — normalize or drop. */
 function normalizeRemote(payload) {
-  if (!payload) return { tasks: [], projects: [] };
+  if (!payload) return { tasks: [], projects: [], ai: null };
   const parsed = parseImportPayload(payload);
-  if (!parsed.ok) return { tasks: [], projects: [] };
-  return { tasks: parsed.tasks, projects: parsed.projects };
+  if (!parsed.ok) return { tasks: [], projects: [], ai: null };
+  return { tasks: parsed.tasks, projects: parsed.projects, ai: parsed.ai || null };
 }

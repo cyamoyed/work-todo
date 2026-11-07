@@ -51,6 +51,7 @@
   <SettingsModal />
   <BackupModal />
   <SyncSettingsModal />
+  <AiSettingsModal />
   <UpdateModal />
   <ConfirmDialog />
   <MobileDrawer />
@@ -77,6 +78,7 @@ import ProjectModal from './components/ProjectModal.vue';
 import SettingsModal from './components/SettingsModal.vue';
 import BackupModal from './components/BackupModal.vue';
 import SyncSettingsModal from './components/SyncSettingsModal.vue';
+import AiSettingsModal from './components/AiSettingsModal.vue';
 import UpdateModal from './components/UpdateModal.vue';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 import MobileDrawer from './components/MobileDrawer.vue';

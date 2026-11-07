@@ -3,7 +3,9 @@
 import { onMounted, onUnmounted } from 'vue';
 import { useUiStore } from '../store/ui.js';
 
-function isTypingTarget(target) {
+/** 事件目标是否是打字区（输入框/文本域/可编辑元素）——全局快捷键与全局粘贴
+ *  共用：命中时让位原生输入行为。 */
+export function isTypingTarget(target) {
   const tag = (target && target.tagName ? target.tagName : '').toLowerCase();
   return (
     tag === 'input' ||

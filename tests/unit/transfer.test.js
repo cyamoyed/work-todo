@@ -123,3 +123,31 @@ describe('export payload shape', () => {
     expect(direct.exportedAt).toBe('2026-10-10T00:00:00.000Z');
   });
 });
+
+describe('ai blob in export/import payload', () => {
+  const BLOB = {
+    enabled: true,
+    baseUrl: 'https://ai.test/v1',
+    apiKey: 'sk',
+    model: 'm',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+
+  it('buildExportPayload carries ai only when explicitly passed', () => {
+    const without = buildExportPayload([], []);
+    expect('ai' in without).toBe(false); // 手动导出文件不带密钥
+    const withAi = buildExportPayload([], [], { ai: BLOB });
+    expect(withAi.ai).toEqual(BLOB);
+  });
+
+  it('parseImportPayload extracts a valid ai blob, drops invalid ones, tolerates absence', () => {
+    const ok = parseImportPayload({ schemaVersion: 4, tasks: [], projects: [], ai: BLOB });
+    expect(ok.ok).toBe(true);
+    expect(ok.ai).toEqual(BLOB);
+    const bad = parseImportPayload({ schemaVersion: 4, tasks: [], projects: [], ai: { baseUrl: 'x' } });
+    expect(bad.ok).toBe(true);
+    expect(bad.ai).toBe(null);
+    const absent = parseImportPayload({ schemaVersion: 4, tasks: [], projects: [] });
+    expect(absent.ai).toBe(null);
+  });
+});

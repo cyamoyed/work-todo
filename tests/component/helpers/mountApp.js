@@ -21,6 +21,7 @@ import { useTaskStore } from '../../../src/store/tasks.js';
 import { useUiStore } from '../../../src/store/ui.js';
 import { __resetUpdateStateForTests } from '../../../src/store/update.js';
 import { useThemeStore } from '../../../src/store/theme.js';
+import { useAiStore } from '../../../src/store/ai.js';
 import { __setStorageForTests } from '../../../src/lib/storage.js';
 
 // Mirror of the routes in src/router/index.js (hash → memory history).
@@ -63,6 +64,7 @@ export function resetState() {
   tasks.load();
   __resetUpdateStateForTests();
   useThemeStore().__resetForTests();
+  useAiStore().__resetForTests();
   ui.stopSelection();
   ui.setFilters({ ...DEFAULT_FILTERS });
   ui.setSortMode('due');
@@ -72,6 +74,8 @@ export function resetState() {
   ui.closeTaskModal();
   ui.closeProjectModal();
   ui.closeSettingsModal();
+  ui.closeSyncModal();
+  ui.closeAiModal();
   ui.closeUpdateModal();
   ui.closeConfirm();
   ui.closeDrawer();

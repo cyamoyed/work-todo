@@ -9,6 +9,12 @@ export const THEME_KEY = 'work-todo.theme.v1';
 /** Theme settings: 'system' (default, follows prefers-color-scheme) | 'light' | 'dark'. */
 export const THEME_SETTINGS = ['system', 'light', 'dark'];
 export const UPDATE_KEY = 'work-todo.update.v1';
+// AI 标题识别配置（OpenAI 兼容接口）：密钥仅存本机，不进导出/同步载荷
+export const AI_KEY = 'work-todo.ai.v1';
+// 单次 AI 标题请求的 HTTP 超时：到点放弃，任务保持首行标题兜底
+export const AI_TIMEOUT_MS = 12000;
+// 送 AI 的拖入原文截断上限（正文仍存全量原文，BODY_TEXT_MAX 预算兜底）
+export const AI_TEXT_MAX = 2000;
 export const UPDATE_REPO = 'cyamoyed/work-todo';
 // 应用常驻期间的自动复查窗口：每 15 分钟查一次（ETag 命中 304 不占 GitHub API 配额）
 export const UPDATE_AUTO_CHECK_MS = 15 * 60 * 1000;

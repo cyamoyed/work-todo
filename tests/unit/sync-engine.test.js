@@ -253,3 +253,72 @@ describe('scheduling', () => {
     expect(getSyncState().provider).toBe('webdav');
   });
 });
+
+describe('AI 配置 blob 同步', () => {
+  const LOCAL_BLOB = {
+    enabled: true,
+    baseUrl: 'https://old.test/v1',
+    apiKey: 'old',
+    model: 'm',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+  const REMOTE_BLOB = {
+    enabled: false,
+    baseUrl: 'https://new.test/v1',
+    apiKey: 'new',
+    model: 'm2',
+    updatedAt: '2026-02-01T00:00:00.000Z',
+  };
+
+  /** 重新注入 AI 钩子（initSync 只覆盖依赖，不影响已建立的循环）。 */
+  function wireAi(syncAi, blob) {
+    const appliedAi = [];
+    initSync({
+      getPayload: () => ({ tasks: local.tasks.map((t) => ({ ...t })), projects: [] }),
+      applyMerged: (tasks) => {
+        applied.push(tasks.map((t) => t.id));
+        local.tasks = tasks.map((t) => ({ ...t }));
+      },
+      getAiConfig: () => (syncAi ? blob : null),
+      applyAiConfig: (b) => appliedAi.push(b),
+    });
+    return appliedAi;
+  }
+
+  const lastPut = () => JSON.parse(fetchLog.filter((c) => c.method === 'PUT').pop().body);
+
+  it('远端 blob 较新 → 应用到本地并随推送传播', async () => {
+    const appliedAi = wireAi(true, LOCAL_BLOB);
+    await configure();
+    server.payload = { schemaVersion: 4, tasks: [], projects: [], ai: REMOTE_BLOB };
+    server.etag = '"r1"';
+    await syncNow();
+    expect(appliedAi).toEqual([REMOTE_BLOB]);
+    expect(lastPut().ai).toEqual(REMOTE_BLOB);
+  });
+
+  it('本地 blob 较新 → 不改写本地，推送携带本地 blob', async () => {
+    const appliedAi = wireAi(true, LOCAL_BLOB);
+    await configure();
+    server.payload = {
+      schemaVersion: 4,
+      tasks: [],
+      projects: [],
+      ai: { ...REMOTE_BLOB, updatedAt: '2025-01-01T00:00:00.000Z' },
+    };
+    server.etag = '"r1"';
+    await syncNow();
+    expect(appliedAi).toEqual([]);
+    expect(lastPut().ai).toEqual(LOCAL_BLOB);
+  });
+
+  it('未开启同步 AI（getAiConfig → null）→ 推送无 ai 字段，远端 blob 被忽略', async () => {
+    const appliedAi = wireAi(false, LOCAL_BLOB);
+    await configure();
+    server.payload = { schemaVersion: 4, tasks: [], projects: [], ai: REMOTE_BLOB };
+    server.etag = '"r1"';
+    await syncNow();
+    expect(appliedAi).toEqual([]);
+    expect('ai' in lastPut()).toBe(false);
+  });
+});

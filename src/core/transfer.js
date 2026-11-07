@@ -3,16 +3,23 @@
 import { SCHEMA_VERSION, TOMBSTONE_DAYS } from '../constants.js';
 import { normalizeTask, lastActionAt } from './tasks.js';
 import { normalizeProject } from './projects.js';
+import { normalizeAiPayload } from './ai.js';
 import { todayString } from './dates.js';
 
+/**
+ * 导出载荷 = 同步线格式。ai 仅在显式传入时携带（同步推送且「同步 AI 配置」
+ * 开启的场景）；手动导出文件不带密钥。
+ */
 export function buildExportPayload(tasks, projects, opts = {}) {
-  return {
+  const payload = {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: opts.now || new Date().toISOString(),
     app: 'work-todo',
     tasks: tasks.map((t) => ({ ...t })),
     projects: projects.map((p) => ({ ...p })),
   };
+  if (opts.ai) payload.ai = opts.ai;
+  return payload;
 }
 
 export function parseImportPayload(raw) {
@@ -56,7 +63,9 @@ export function parseImportPayload(raw) {
     const n = normalizeProject(item);
     if (n) cleanedProjects.push(n);
   }
-  return { ok: true, error: null, tasks: cleaned, projects: cleanedProjects };
+  // ai blob 随载荷穿透给同步引擎；手动导入路径（store.importPayload / useTransfer）
+  // 只取 tasks/projects，密钥不会因导入文件而改写本机配置。
+  return { ok: true, error: null, tasks: cleaned, projects: cleanedProjects, ai: normalizeAiPayload(data.ai) };
 }
 
 /**
