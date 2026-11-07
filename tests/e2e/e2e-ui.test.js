@@ -725,4 +725,33 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect(await page.locator('#nav .nav-item[data-view="week"]').getAttribute('class')).toContain('active');
     expect(await page.locator('#range-filter').count()).toBe(0); // main area never repeats range switching
   });
+
+  it('drop-to-create: external text drag onto the window creates a task', async () => {
+    await clearTasks();
+    await page.goto(BASE + '/#/all', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(80);
+
+    // 拖动中：合成 dragenter（真 DataTransfer）→ 全窗口浮层可见
+    await page.evaluate(() => {
+      const dt = new DataTransfer();
+      dt.setData('text/plain', '拖拽创建的任务\n第二行备注');
+      window.__dropDt = dt;
+      window.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    });
+    await page.waitForTimeout(50);
+    expect(await page.locator('#drop-overlay').isVisible()).toBe(true);
+
+    // 松手：drop → 建任务（首行标题/其余备注），浮层收起，toast 可撤销
+    await page.evaluate(() => {
+      window.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: window.__dropDt }));
+      delete window.__dropDt;
+    });
+    await page.waitForTimeout(80);
+    expect(await page.locator('#drop-overlay').isHidden()).toBe(true);
+    expect((await page.locator('#toast').textContent()) || '').toContain('已存入今天');
+
+    const raw = await page.evaluate(() => localStorage.getItem('work-todo.tasks.v1'));
+    const stored = JSON.parse(raw).filter((t) => !t.deletedAt);
+    expect(stored.some((t) => t.title === '拖拽创建的任务' && t.notes === '第二行备注')).toBe(true);
+  });
 });

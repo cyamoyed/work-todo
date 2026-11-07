@@ -7,6 +7,7 @@ import {
   PRIORITY_LABELS,
   TAGS_MAX,
   TAG_MAX,
+  TITLE_MAX,
 } from '../constants.js';
 import { nextDueDate } from './dates.js';
 
@@ -28,6 +29,17 @@ export function normalizeNotes(v) {
   if (v == null) return '';
   const s = String(v).trim();
   return s.length > NOTES_MAX ? s.slice(0, NOTES_MAX) : s;
+}
+
+/** 外部拖入文字 → 任务内容：首行做标题（TITLE_MAX 截断），其余行进备注。
+ *  无有效文字返回 null（调用方据此静默忽略）。 */
+export function parseDroppedText(raw) {
+  const lines = String(raw == null ? '' : raw)
+    .trim()
+    .split(/\r?\n/);
+  const title = (lines[0] || '').trim().slice(0, TITLE_MAX);
+  if (!title) return null;
+  return { title, notes: lines.slice(1).join('\n').trim() };
 }
 
 export function normalizeRepeat(v) {

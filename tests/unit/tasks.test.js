@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { STORAGE_KEY } from '../../src/constants.js';
 import { useTaskStore } from '../../src/store/tasks.js';
-import { isValidTask } from '../../src/core/tasks.js';
+import { isValidTask, parseDroppedText } from '../../src/core/tasks.js';
 
 const store = useTaskStore();
 
@@ -252,5 +252,45 @@ describe('saveTasks / loadTasks contract', () => {
   it('120-char title accepted', () => {
     const long = store.createTask({ title: 'x'.repeat(120) }, { id: 'long', now: '2026-10-03T09:00:00.000Z' });
     expect(long.title.length).toBe(120);
+  });
+});
+
+describe('parseDroppedText', () => {
+  it('single line → title only, notes empty', () => {
+    expect(parseDroppedText('  给客户发项目排期  ')).toEqual({
+      title: '给客户发项目排期',
+      notes: '',
+    });
+  });
+
+  it('multi line → first line title, rest joined as notes', () => {
+    expect(parseDroppedText('给客户发项目排期\n附上里程碑表格\n抄送老王')).toEqual({
+      title: '给客户发项目排期',
+      notes: '附上里程碑表格\n抄送老王',
+    });
+  });
+
+  it('CRLF line endings are normalized away', () => {
+    expect(parseDroppedText('标题一\r\n备注行')).toEqual({ title: '标题一', notes: '备注行' });
+  });
+
+  it('leading empty lines fall through to the first non-empty line', () => {
+    expect(parseDroppedText('\n\n 实际标题 \n备注')).toEqual({ title: '实际标题', notes: '备注' });
+  });
+
+  it('whitespace-only input → null', () => {
+    expect(parseDroppedText('   \n  \r\n')).toBe(null);
+  });
+
+  it('empty / missing input → null', () => {
+    expect(parseDroppedText('')).toBe(null);
+    expect(parseDroppedText(null)).toBe(null);
+    expect(parseDroppedText(undefined)).toBe(null);
+  });
+
+  it('title longer than TITLE_MAX is truncated to 120', () => {
+    const parsed = parseDroppedText(`${'x'.repeat(200)}\n备注`);
+    expect(parsed.title.length).toBe(120);
+    expect(parsed.notes).toBe('备注');
   });
 });

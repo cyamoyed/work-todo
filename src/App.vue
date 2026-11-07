@@ -59,6 +59,7 @@
   <DueMenu />
   <ProjectActionsMenu />
   <BatchBar />
+  <DropOverlay />
   <Toast />
 </template>
 
@@ -84,6 +85,7 @@ import PrioMenu from './components/PrioMenu.vue';
 import DueMenu from './components/DueMenu.vue';
 import ProjectActionsMenu from './components/ProjectActionsMenu.vue';
 import BatchBar from './components/BatchBar.vue';
+import DropOverlay from './components/DropOverlay.vue';
 import Toast from './components/Toast.vue';
 import { useTaskStore } from './store/tasks.js';
 import { useUiStore } from './store/ui.js';
