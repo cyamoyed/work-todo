@@ -47,11 +47,12 @@ describe('schema v3 normalize', () => {
     ).toBe('2026-02-01T00:00:00.000Z');
   });
 
-  it('SCHEMA_VERSION is 3 and import accepts 2/3 but not 4', () => {
-    expect(SCHEMA_VERSION).toBe(3);
+  it('SCHEMA_VERSION is 4 and import accepts 2/3/4 but not 5', () => {
+    expect(SCHEMA_VERSION).toBe(4);
     expect(parseImportPayload({ schemaVersion: 2, tasks: [] }).ok).toBe(true);
     expect(parseImportPayload({ schemaVersion: 3, tasks: [] }).ok).toBe(true);
-    expect(parseImportPayload({ schemaVersion: 4, tasks: [] }).ok).toBe(false);
+    expect(parseImportPayload({ schemaVersion: 4, tasks: [] }).ok).toBe(true);
+    expect(parseImportPayload({ schemaVersion: 5, tasks: [] }).ok).toBe(false);
     const parsed = parseImportPayload({
       schemaVersion: 3,
       tasks: [task({ deletedAt: '2026-02-01T00:00:00.000Z' })],

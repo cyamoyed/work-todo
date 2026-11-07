@@ -541,10 +541,10 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect(await page.locator('#quick-add-form button[type="submit"]').count()).toBe(0);
   });
 
-  it('notes field + search', async () => {
+  it('body field + search', async () => {
     await page.click('#btn-new');
     await page.fill('#field-title', '带备注任务');
-    await page.click('#btn-advanced'); // notes live in the advanced section
+    // 正文编辑器（首段沿用 #field-notes 钩子），不再藏在高级设置里
     await page.fill('#field-notes', '这是验收要点关键词');
     await page.click('#task-form button[type="submit"]');
     await page.waitForTimeout(50);
@@ -752,6 +752,45 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
 
     const raw = await page.evaluate(() => localStorage.getItem('work-todo.tasks.v1'));
     const stored = JSON.parse(raw).filter((t) => !t.deletedAt);
-    expect(stored.some((t) => t.title === '拖拽创建的任务' && t.notes === '第二行备注')).toBe(true);
+    const dropped = stored.find((t) => t.title === '拖拽创建的任务');
+    expect(dropped).toBeTruthy();
+    expect(dropped.body).toEqual([{ type: 'p', text: '第二行备注' }]);
+  });
+
+  it('drop-to-create: image drag creates a task with the image in body', async () => {
+    await clearTasks();
+    await page.goto(BASE + '/#/all', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(80);
+
+    await page.evaluate(() => {
+      // 画一个 8×8 纯色 PNG 作为拖入文件（真实走压缩管线 → data URL 入正文）
+      const canvas = document.createElement('canvas');
+      canvas.width = 8;
+      canvas.height = 8;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(0, 0, 8, 8);
+      return new Promise((resolve) => {
+        canvas.toBlob(async (blob) => {
+          const dt = new DataTransfer();
+          dt.items.add(new File([blob], '红块.png', { type: 'image/png' }));
+          window.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: dt }));
+          window.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+          resolve();
+        }, 'image/png');
+      });
+    });
+    await page.waitForTimeout(300);
+    expect(await page.locator('#drop-overlay').isHidden()).toBe(true);
+    expect((await page.locator('#toast').textContent()) || '').toContain('已存入今天');
+
+    const raw = await page.evaluate(() => localStorage.getItem('work-todo.tasks.v1'));
+    const stored = JSON.parse(raw).filter((t) => !t.deletedAt);
+    const created = stored.find((t) => t.title === '红块');
+    expect(created).toBeTruthy();
+    const img = (created.body || []).find((b) => b.type === 'img');
+    expect(img).toBeTruthy();
+    expect(img.src).toMatch(/^data:image\/(webp|jpeg|png);base64,/);
+    expect(img.src.length).toBeLessThan(300 * 1024);
   });
 });

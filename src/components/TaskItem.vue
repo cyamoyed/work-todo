@@ -29,12 +29,20 @@
         @keydown.enter.prevent="onTitleClick"
         @keydown.space.prevent="onTitleClick"
       >{{ task.title }}</h3>
-      <p class="task-notes" v-if="hasNote">
+      <p class="task-notes" v-if="hasBody">
         <template v-if="project && !ui.state.filters.projectId">
           <span class="proj-chip"><i :class="'dotc-' + projColorKey"></i>{{ project.name }}</span>
-          <span class="sep-dot" v-if="task.notes">·</span>
+          <span class="sep-dot" v-if="bodySummaryText || imgCount">·</span>
         </template>
-        <template v-if="task.notes">{{ task.notes }}</template>
+        <template v-if="bodySummaryText">{{ bodySummaryText }}</template>
+        <span v-if="imgCount" class="task-imgcount" :title="`正文含 ${imgCount} 张图片`">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3" />
+            <circle cx="5.8" cy="6.4" r="1.1" fill="currentColor" />
+            <path d="M2.5 11.5l3.2-3 2.6 2.3 2.4-2.1 2.8 2.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          {{ imgCount }} 图
+        </span>
       </p>
       <div class="task-tags" v-if="task.tags && task.tags.length">
         <span class="tag" v-for="tag in task.tags" :key="tag">{{ tag }}</span>
@@ -91,6 +99,7 @@ import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { formatDue, formatIsoStamp, isDueTodayOpen, isOverdue } from '../core/dates.js';
 import { isShelved } from '../core/tasks.js';
+import { bodySummary, countImages } from '../core/body.js';
 import { PRIORITY_LABELS, REPEAT_LABELS, STATUS_LABELS } from '../constants.js';
 
 const props = defineProps({
@@ -105,8 +114,16 @@ const selected = computed(() => ui.isSelected(props.task.id));
 
 const project = computed(() => (props.task.projectId ? tasks.getProject(props.task.projectId) : null));
 const projColorKey = computed(() => (project.value ? project.value.color : 'slate'));
-const hasNote = computed(() =>
-  (!!project.value && !ui.state.filters.projectId) || !!props.task.notes
+// 正文单行摘要 + 图片计数（备注字段迁移后恒空，仅作遗留兜底）
+const bodySummaryText = computed(
+  () => bodySummary(props.task.body) || props.task.notes || ''
+);
+const imgCount = computed(() => countImages(props.task.body));
+const hasBody = computed(
+  () =>
+    (!!project.value && !ui.state.filters.projectId) ||
+    !!bodySummaryText.value ||
+    imgCount.value > 0
 );
 const overdue = computed(() => isOverdue(props.task));
 const dueText = computed(() => formatDue(props.task));

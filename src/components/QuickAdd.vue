@@ -112,7 +112,7 @@ function submit() {
     priority: priority.value,
     dueDate,
     dueTime: null,
-    notes: '',
+    body: [],
     projectId: ui.state.filters.projectId || null,
   });
   title.value = '';

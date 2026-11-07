@@ -64,7 +64,7 @@ src-tauri/src/lib.rs      文件 I/O + 备份（薄壳，不变位）
 
 ---
 
-## 4. 数据模型演进（SCHEMA_VERSION 3）
+## 4. 数据模型演进（SCHEMA_VERSION 4）
 
 ### 4.1 软删除墓碑（tombstone）
 
@@ -95,8 +95,11 @@ lastActionAt(e) = max(e.updatedAt, e.deletedAt || '')
 | 版本 | 处理 |
 |------|------|
 | v2 及以下（无 `deletedAt`） | `normalizeTask`/`normalizeProject` 补 `deletedAt: null`，正常读入 |
-| v3 | 当前版本，`SCHEMA_VERSION = 3` |
-| 导入校验 | `schemaVersion` 允许 `1..3`，超出拒绝并提示 |
+| v3（`notes` 备注字段） | 当前版本，`SCHEMA_VERSION = 4` |
+| v4（`body` 图文正文） | 新版：`notes` 非空且 `body` 为空时自动迁移为正文首段（move 语义，notes 清空）；`body` 为块数组 `{type:'p',text} / {type:'img',src,w,h}`，图片为压缩后 data URL 内嵌 |
+| 导入校验 | `schemaVersion` 允许 `1..4`，超出拒绝并提示 |
+
+> **v4 同步门禁**：旧版应用（≤0.19.0）对 v4 载荷显式报「不支持的数据版本」并停止同步——可见失败优于静默剥数据（旧版 `normalizeTask` 白名单会剥掉 `body`，若不 bump 会造成跨设备图片静默丢失）。多端同步用户需全部升级。
 
 ### 4.4 项目删除语义（不变）
 

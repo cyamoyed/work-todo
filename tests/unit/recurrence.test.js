@@ -82,7 +82,8 @@ describe('export / import payload', () => {
     expect(typeof payload.exportedAt).toBe('string');
     expect(payload.exportedAt).toContain('T');
     expect(payload.tasks.length).toBe(2);
-    expect(payload.tasks.find((t) => t.title === '导出1').notes).toBe('n1');
+    expect(payload.tasks.find((t) => t.title === '导出1').notes).toBe('');
+    expect(payload.tasks.find((t) => t.title === '导出1').body).toEqual([{ type: 'p', text: 'n1' }]);
     expect(payload.tasks.find((t) => t.title === '导出1').dueTime).toBe('15:00');
     expect(store.exportFilename()).toMatch(/^work-todo-\d{8}\.json$/);
 

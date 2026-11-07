@@ -703,6 +703,11 @@ kbd {
   width: 6px; height: 6px; display: inline-block;
 }
 .task-notes .sep-dot { color: var(--line-input); margin: 0 4px; }
+.task-imgcount {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-left: 6px; font-size: 11px; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 .prio-dot { width: 6px; height: 6px; display: inline-block; }
 .prio-dot.prio-high { background: var(--danger); }
@@ -877,6 +882,46 @@ kbd {
 .field-error { margin-top: 5px; font-size: 12px; color: var(--danger); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .field-row > .field { margin: 0; }
+
+/* 正文富文本编辑器：单个 contenteditable 连续输入面，文字与图片按文档流动 */
+.body-editor { border: 1px solid var(--line-strong); background: var(--panel); }
+.body-editor:hover { border-color: var(--line-input); }
+.body-editor.drag-over { border-color: var(--accent); }
+.body-editor:focus-within { border-color: var(--focus-border); box-shadow: var(--focus-ring); }
+.body-rich {
+  min-height: 96px; padding: 10px 12px;
+  outline: none; cursor: text;
+  font-size: 13.5px; line-height: 1.65;
+  white-space: pre-wrap; word-break: break-word;
+}
+.body-rich p { margin: 0 0 6px; }
+.body-rich p:last-child { margin-bottom: 0; }
+.body-rich img {
+  display: block; max-width: min(100%, 360px); max-height: 260px;
+  margin: 6px 0; border: 1px solid var(--line-strong);
+  cursor: zoom-in; background: var(--panel);
+}
+.body-rich:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted); pointer-events: none;
+}
+.body-editor-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--line); padding: 4px 8px 4px 4px;
+}
+.body-insert { font-size: 12.5px; }
+.body-budget { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.body-budget.over { color: var(--danger); }
+.body-error { margin-top: 5px; }
+.lightbox {
+  position: fixed; inset: 0; z-index: 120; background: var(--backdrop);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  cursor: zoom-out;
+}
+.lightbox img {
+  max-width: 92vw; max-height: 88vh;
+  background: var(--panel); box-shadow: var(--shadow-pop);
+}
 
 /* Connected segmented control: one bordered track, hairline dividers. */
 .segmented {

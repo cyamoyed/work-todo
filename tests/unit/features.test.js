@@ -32,20 +32,25 @@ function visible() {
 }
 
 describe('notes field', () => {
-  it('stored / updatable / capped / legacy default', () => {
+  it('create migrates notes into body (move semantics) / patch notes stays legacy', () => {
     const t = store.createTask({ title: '带备注', notes: '  背景说明  ' });
-    expect(t.notes).toBe('背景说明');
+    expect(t.notes).toBe(''); // notes 迁移进正文后清空（单一真相）
+    expect(t.body).toEqual([{ type: 'p', text: '背景说明' }]);
+    // patch 层 notes 语义保留（遗留兼容），但会被下一次 load 的迁移收编
     const u = store.updateTask(t.id, { notes: 'updated notes' });
     expect(u.notes).toBe('updated notes');
     const long = store.createTask({ title: 'long', notes: 'x'.repeat(3000) });
-    expect(long.notes.length).toBe(NOTES_MAX);
+    expect(long.notes).toBe('');
+    expect(long.body.length).toBe(1);
+    expect(long.body[0].text.length).toBe(NOTES_MAX); // notes 先截到 2000 再迁移
     const old = normalizeTask({ id: '1', title: 'old', status: 'todo', priority: 'medium' });
     expect(old.notes).toBe('');
+    expect(old.body).toEqual([]);
   });
 });
 
 describe('search covers notes', () => {
-  it('search hits title OR notes', () => {
+  it('search hits title OR body OR notes', () => {
     store.createTask({ title: '标题A', notes: '包含关键词西游' });
     store.createTask({ title: '西游标题B', notes: '无' });
     store.createTask({ title: '无关', notes: '无' });

@@ -8,10 +8,10 @@
       id="search-input"
       :value="ui.state.filters.search"
       type="text"
-      placeholder="搜索任务或备注…"
+      placeholder="搜索任务或正文…"
       autocomplete="off"
       spellcheck="false"
-      aria-label="搜索任务标题与备注"
+      aria-label="搜索任务标题与正文"
       @input="onInput"
     />
     <button

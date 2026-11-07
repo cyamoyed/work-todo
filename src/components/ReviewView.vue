@@ -12,7 +12,7 @@
           <span class="status-toggle st-done" aria-hidden="true"></span>
           <div class="review-main">
             <div class="task-title">{{ t.title }}</div>
-            <div class="task-notes" v-if="t.notes">{{ t.notes }}</div>
+            <div class="task-notes" v-if="noteLine(t)">{{ noteLine(t) }}</div>
           </div>
           <span class="when">{{ clock(t.completedAt || t.updatedAt) }}</span>
         </div>
@@ -36,6 +36,7 @@ import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { reviewBlocks, visibleTasks } from '../core/filters.js';
 import { dayDiff, isoToLocalDateStr, pad2, parseDateStr, shortDay } from '../core/dates.js';
+import { bodySummary, countImages } from '../core/body.js';
 
 const tasks = useTaskStore();
 const ui = useUiStore();
@@ -79,5 +80,12 @@ function clock(iso) {
 
 function edit(id) {
   ui.openTaskModal(id);
+}
+
+/** 回顾行的正文摘要（首段 + 图片计数）。 */
+function noteLine(t) {
+  const summary = bodySummary(t.body) || t.notes || '';
+  const n = countImages(t.body);
+  return n ? `${summary ? summary + ' · ' : ''}${n} 图` : summary;
 }
 </script>

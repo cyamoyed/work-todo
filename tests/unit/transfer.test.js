@@ -71,7 +71,9 @@ describe('import merge / replace', () => {
     expect(r.added).toBe(1);
     expect(r.updated).toBe(1);
     expect(r.total).toBe(2);
-    expect(store.getTask(t.id).notes).toBe('remote');
+    // 旧载荷 notes 在 normalizeTask 迁移进正文（LWW 整对象替换后同样迁移）
+    expect(store.getTask(t.id).notes).toBe('');
+    expect(store.getTask(t.id).body).toEqual([{ type: 'p', text: 'remote' }]);
   });
 
   it('replace total/content; snapshot kept', () => {
@@ -105,11 +107,13 @@ describe('export payload shape', () => {
   it('schemaVersion / exportedAt / filename contract', () => {
     store.createTask({ title: '导出1', notes: 'n1', dueDate: '2026-12-01', dueTime: '15:00' });
     const payload = store.exportPayload();
-    expect(payload.schemaVersion).toBe(3);
+    expect(payload.schemaVersion).toBe(4);
     expect(typeof payload.exportedAt).toBe('string');
     expect(payload.exportedAt).toContain('T');
     expect(payload.tasks.length).toBe(1);
-    expect(payload.tasks[0].notes).toBe('n1');
+    // notes 随创建迁移进正文首段，字段本身清空
+    expect(payload.tasks[0].notes).toBe('');
+    expect(payload.tasks[0].body).toEqual([{ type: 'p', text: 'n1' }]);
     expect(/^work-todo-\d{8}\.json$/.test(exportFilename())).toBe(true);
     const parsed = parseImportPayload(JSON.stringify(payload));
     expect(parsed.ok).toBe(true);

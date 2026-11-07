@@ -39,6 +39,72 @@ describe('XSS payloads survive as data (not executed at data layer)', () => {
   }
 });
 
+describe('body blocks: XSS-as-data + structure injection', () => {
+  it('html/xss strings in paragraph blocks stored as plain text (render layer escapes)', () => {
+    const t = store.createTask({
+      title: 'x',
+      body: [
+        { type: 'p', text: '<script>alert(1)</script>' },
+        { type: 'p', text: '<img src=x onerror=alert(1)>' },
+      ],
+    });
+    expect(t.body.map((b) => b.text)).toEqual([
+      '<script>alert(1)</script>',
+      '<img src=x onerror=alert(1)>',
+    ]);
+    expect(store.getTask(t.id).body.map((b) => b.text)).toEqual([
+      '<script>alert(1)</script>',
+      '<img src=x onerror=alert(1)>',
+    ]);
+  });
+
+  it('img blocks only accept data: image URLs — remote/script src stripped', () => {
+    const WEBP = 'data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
+    const t = store.createTask({
+      title: 'x',
+      body: [
+        { type: 'img', src: 'https://evil.example/x.png' },
+        { type: 'img', src: 'javascript:alert(1)' },
+        { type: 'img', src: WEBP },
+      ],
+    });
+    expect(t.body.length).toBe(1);
+    expect(t.body[0].src).toBe(WEBP);
+  });
+
+  it('body block prototype pollution via localStorage JSON is neutralized', () => {
+    const raw = JSON.stringify([
+      {
+        id: 'x',
+        title: 'ok',
+        status: 'todo',
+        priority: 'medium',
+        body: [
+          { type: 'p', text: 'ok', __proto__: { isAdmin: true } },
+          { type: 'img', src: 'data:image/png;base64,AAAA', constructor: { prototype: { y: 1 } } },
+        ],
+      },
+    ]);
+    localStorage.setItem(STORAGE_KEY, raw);
+    const list = loadTasksFrom();
+    expect(list.length).toBe(1);
+    expect(({}).isAdmin).toBeUndefined();
+    expect(({}).y).toBeUndefined();
+    expect(list[0].body.length).toBe(2);
+    expect(list[0].body[0].isAdmin).toBeUndefined();
+  });
+
+  it('updateTask body patch cannot smuggle identity fields or pollute', () => {
+    const t = store.createTask({ title: 'base' });
+    const u = store.updateTask(t.id, {
+      body: [{ type: 'p', text: 'ok', id: 'hijack', __proto__: { z: 1 } }],
+    });
+    expect(u.body).toEqual([{ type: 'p', text: 'ok' }]);
+    expect(u.id).toBe(t.id);
+    expect(({}).z).toBeUndefined();
+  });
+});
+
 describe('title is trimmed but content preserved', () => {
   it('leading/trailing space trimmed', () => {
     expect(store.createTask({ title: '  <b>x</b>  ' }).title).toBe('<b>x</b>');

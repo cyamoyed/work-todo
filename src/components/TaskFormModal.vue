@@ -46,6 +46,8 @@
           <ProjectSelect v-model="form.projectId" />
         </div>
 
+        <BodyEditor v-model="form.body" :open="ui.state.taskModalOpen" />
+
         <button
           type="button"
           id="btn-advanced"
@@ -59,7 +61,7 @@
             <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           高级设置
-          <span class="adv-hint">状态 · 备注 · 标签 · 重复</span>
+          <span class="adv-hint">状态 · 标签 · 重复</span>
         </button>
 
         <div id="advanced-fields" v-show="advancedOpen">
@@ -77,11 +79,6 @@
             </div>
             <input type="hidden" id="field-status" name="status" :value="form.status" @input="form.status = $event.target.value" />
           </div>
-
-          <label class="field">
-            <span class="field-label">备注</span>
-            <textarea id="field-notes" name="notes" maxlength="2000" rows="3" placeholder="补充背景、链接或验收要点（可选）" v-model="form.notes"></textarea>
-          </label>
 
           <label class="field">
             <span class="field-label">标签</span>
@@ -125,6 +122,7 @@ import { useRouter } from 'vue-router';
 import CalendarPicker from './CalendarPicker.vue';
 import TimeSelect from './TimeSelect.vue';
 import ProjectSelect from './ProjectSelect.vue';
+import BodyEditor from './BodyEditor.vue';
 import { useTaskStore } from '../store/tasks.js';
 import { useUiStore } from '../store/ui.js';
 import { visibleTasks } from '../core/filters.js';
@@ -150,7 +148,7 @@ const repeats = [
 
 const form = reactive({
   title: '',
-  notes: '',
+  body: [],
   status: 'todo',
   priority: 'medium',
   projectId: '',
@@ -170,7 +168,7 @@ watch(
     const editing = ui.state.editingId ? tasks.getTask(ui.state.editingId) : null;
     if (editing) {
       form.title = editing.title;
-      form.notes = editing.notes || '';
+      form.body = (editing.body || []).map((b) => ({ ...b }));
       form.status = editing.status;
       form.priority = editing.priority;
       form.projectId = editing.projectId || '';
@@ -179,11 +177,10 @@ watch(
       form.tags = (editing.tags || []).join('，');
       form.repeat = editing.repeat || '';
       // editing something that already uses advanced fields → show them
-      advancedOpen.value =
-        !!form.notes || !!form.tags || !!form.repeat || form.status !== 'todo';
+      advancedOpen.value = !!form.tags || !!form.repeat || form.status !== 'todo';
     } else {
       form.title = '';
-      form.notes = '';
+      form.body = [];
       form.status = 'todo';
       form.priority = 'medium';
       form.projectId = ui.state.filters.projectId || '';
@@ -222,7 +219,7 @@ function submit() {
   }
   const payload = {
     title,
-    notes: form.notes,
+    body: form.body,
     status: form.status || 'todo',
     priority: form.priority || 'medium',
     projectId: form.projectId || null,

@@ -26,7 +26,7 @@
           ></button>
           <div class="task-main">
             <div class="task-title" @click="edit(t.id)">{{ t.title }}</div>
-            <div class="task-notes" v-if="t.notes">{{ t.notes }}</div>
+            <div class="task-notes" v-if="noteLine(t)">{{ noteLine(t) }}</div>
             <div class="task-tags" v-if="t.tags && t.tags.length">
               <span class="tag" v-for="tag in t.tags" :key="tag">{{ tag }}</span>
             </div>
@@ -68,6 +68,7 @@ import { useUiStore } from '../store/ui.js';
 import { useStatusChange } from '../composables/useStatusChange.js';
 import { groupDayline, visibleTasks, sortTasks } from '../core/filters.js';
 import { formatDue, isOverdue } from '../core/dates.js';
+import { bodySummary, countImages } from '../core/body.js';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../constants.js';
 
 const tasks = useTaskStore();
@@ -85,6 +86,13 @@ const searching = computed(() => ui.state.filters.search.trim().length > 0);
 
 function timeText(t) {
   return t.dueTime || (isOverdue(t) ? String(formatDue(t) || '') : '全天');
+}
+
+/** 日程行的正文摘要（首段 + 图片计数）。 */
+function noteLine(t) {
+  const summary = bodySummary(t.body) || t.notes || '';
+  const n = countImages(t.body);
+  return n ? `${summary ? summary + ' · ' : ''}${n} 图` : summary;
 }
 
 function edit(id) {

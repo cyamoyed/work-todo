@@ -15,8 +15,14 @@ import {
   buildNextOccurrence,
   softDeleteEntity,
   reviveEntity,
+  normalizeTask,
 } from '../core/tasks.js';
-import { createProjectData, applyProjectPatch, pickProjectColor } from '../core/projects.js';
+import {
+  createProjectData,
+  applyProjectPatch,
+  pickProjectColor,
+  normalizeProject,
+} from '../core/projects.js';
 import {
   mergeImportTasks,
   buildExportPayload,
@@ -335,11 +341,18 @@ export function useTaskStore() {
       persistTasks();
     },
 
-    /** Import payload ({tasks, projects} or array) in 'merge' | 'replace' mode. */
+    /** Import payload ({tasks, projects} or array) in 'merge' | 'replace' mode.
+     *  入参先过 normalizeTask/normalizeProject（合并本身是纯 LWW 不做白名单），
+     *  保证旧 notes 迁移与字段白名单对所有调用方一致生效。 */
     importPayload(incoming, mode = 'merge') {
+      const inTasks = Array.isArray(incoming) ? incoming : (incoming && incoming.tasks) || [];
+      const inProjects = Array.isArray(incoming) ? [] : (incoming && incoming.projects) || [];
       const result = mergeImportTasks(
         { tasks: allTasks(), projects: allProjects() },
-        incoming,
+        {
+          tasks: inTasks.map(normalizeTask).filter(Boolean),
+          projects: inProjects.map(normalizeProject).filter(Boolean),
+        },
         mode
       );
       const t = splitEntities(purgeDeleted(result.tasks));

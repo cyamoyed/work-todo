@@ -20,11 +20,18 @@ export const UPDATE_RETRY_MS = 15 * 60 * 1000;
 export const UPDATE_POLL_TICK_MS = 60 * 1000;
 // 单次更新请求的 HTTP 超时：直连 GitHub 挂起时不无限等待，到点降级到镜像源
 export const UPDATE_CHECK_TIMEOUT_MS = 8000;
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export const TOMBSTONE_DAYS = 30;
 export const DEFAULT_SYNC_COLLECTION = 'work_todo';
 export const NOTES_MAX = 2000;
 export const TITLE_MAX = 120;
+// 正文（body）块模型预算：文本总量 / 每任务图片数 / 单图压缩后字节 / 图片最长边 /
+// 单图 data URL 字符上限（防御层，200KB 图 ≈ 267K base64 字符 + 前缀）
+export const BODY_TEXT_MAX = 10000;
+export const IMAGES_MAX_PER_TASK = 9;
+export const IMAGE_MAX_BYTES = 200 * 1024;
+export const IMAGE_MAX_DIM = 1280;
+export const IMAGE_DATAURL_MAX = 300 * 1024;
 export const PROJECT_NAME_MAX = 40;
 export const UNDO_TOAST_MS = 15000;
 export const TAGS_MAX = 5;

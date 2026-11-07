@@ -256,26 +256,35 @@ describe('saveTasks / loadTasks contract', () => {
 });
 
 describe('parseDroppedText', () => {
-  it('single line → title only, notes empty', () => {
+  it('single line → title only, body empty', () => {
     expect(parseDroppedText('  给客户发项目排期  ')).toEqual({
       title: '给客户发项目排期',
-      notes: '',
+      body: [],
     });
   });
 
-  it('multi line → first line title, rest joined as notes', () => {
+  it('multi line → first line title, rest become body paragraphs', () => {
     expect(parseDroppedText('给客户发项目排期\n附上里程碑表格\n抄送老王')).toEqual({
       title: '给客户发项目排期',
-      notes: '附上里程碑表格\n抄送老王',
+      body: [
+        { type: 'p', text: '附上里程碑表格' },
+        { type: 'p', text: '抄送老王' },
+      ],
     });
   });
 
   it('CRLF line endings are normalized away', () => {
-    expect(parseDroppedText('标题一\r\n备注行')).toEqual({ title: '标题一', notes: '备注行' });
+    expect(parseDroppedText('标题一\r\n备注行')).toEqual({
+      title: '标题一',
+      body: [{ type: 'p', text: '备注行' }],
+    });
   });
 
   it('leading empty lines fall through to the first non-empty line', () => {
-    expect(parseDroppedText('\n\n 实际标题 \n备注')).toEqual({ title: '实际标题', notes: '备注' });
+    expect(parseDroppedText('\n\n 实际标题 \n备注')).toEqual({
+      title: '实际标题',
+      body: [{ type: 'p', text: '备注' }],
+    });
   });
 
   it('whitespace-only input → null', () => {
@@ -291,6 +300,6 @@ describe('parseDroppedText', () => {
   it('title longer than TITLE_MAX is truncated to 120', () => {
     const parsed = parseDroppedText(`${'x'.repeat(200)}\n备注`);
     expect(parsed.title.length).toBe(120);
-    expect(parsed.notes).toBe('备注');
+    expect(parsed.body).toEqual([{ type: 'p', text: '备注' }]);
   });
 });

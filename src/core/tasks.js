@@ -10,6 +10,7 @@ import {
   TITLE_MAX,
 } from '../constants.js';
 import { nextDueDate } from './dates.js';
+import { normalizeBody, bodyFromNotes } from './body.js';
 
 export function normalizeDueDate(v) {
   if (v == null || v === '') return null;
@@ -31,7 +32,7 @@ export function normalizeNotes(v) {
   return s.length > NOTES_MAX ? s.slice(0, NOTES_MAX) : s;
 }
 
-/** 外部拖入文字 → 任务内容：首行做标题（TITLE_MAX 截断），其余行进备注。
+/** 外部拖入文字 → 任务内容：首行做标题（TITLE_MAX 截断），其余行进正文段落。
  *  无有效文字返回 null（调用方据此静默忽略）。 */
 export function parseDroppedText(raw) {
   const lines = String(raw == null ? '' : raw)
@@ -39,7 +40,15 @@ export function parseDroppedText(raw) {
     .split(/\r?\n/);
   const title = (lines[0] || '').trim().slice(0, TITLE_MAX);
   if (!title) return null;
-  return { title, notes: lines.slice(1).join('\n').trim() };
+  return { title, body: bodyFromNotes(lines.slice(1).join('\n')) };
+}
+
+/** 拖入图片文件 → 任务标题：去扩展名的文件名，TITLE_MAX 截断；空名兜底。 */
+export function titleFromFile(name) {
+  const base = String(name == null ? '' : name)
+    .replace(/\.[a-z0-9]+$/i, '')
+    .trim();
+  return (base || '图片任务').slice(0, TITLE_MAX);
 }
 
 export function normalizeRepeat(v) {
@@ -91,9 +100,23 @@ export function isValidTask(t) {
   );
 }
 
+/**
+ * 备注迁移：body 为空且 notes 有值时移入正文首段。move 语义（notes 清空）：
+ * 幂等，且用户在新版清空正文后旧备注不会复活；回退旧版的应用因 schema v4
+ * 门禁本就无法再同步，notes 不再是可用通路。
+ */
+function resolveBodyAndNotes(rawBody, rawNotes) {
+  const notes = normalizeNotes(rawNotes);
+  const body = normalizeBody(rawBody);
+  if (body.length) return { body, notes: '' };
+  const migrated = bodyFromNotes(notes);
+  return migrated.length ? { body: migrated, notes: '' } : { body, notes };
+}
+
 export function normalizeTask(raw) {
   if (!isValidTask(raw)) return null;
   const status = raw.status;
+  const { body, notes } = resolveBodyAndNotes(raw.body, raw.notes);
   return {
     id: String(raw.id),
     title: String(raw.title),
@@ -101,7 +124,8 @@ export function normalizeTask(raw) {
     priority: raw.priority,
     dueDate: normalizeDueDate(raw.dueDate),
     dueTime: normalizeDueTime(raw.dueTime),
-    notes: normalizeNotes(raw.notes),
+    notes,
+    body,
     projectId: typeof raw.projectId === 'string' && raw.projectId ? raw.projectId : null,
     tags: normalizeTags(raw.tags),
     repeat: normalizeRepeat(raw.repeat),
@@ -143,11 +167,12 @@ export function reviveEntity(e, opts = {}) {
 
 /** Pure factory mirroring the original createTask payload shape. */
 export function createTaskData(
-  { title, status, priority, dueDate, dueTime, notes, projectId, tags, repeat },
+  { title, status, priority, dueDate, dueTime, notes, projectId, tags, repeat, body },
   opts = {}
 ) {
   const now = opts.now || new Date().toISOString();
   const st = status || 'todo';
+  const resolved = resolveBodyAndNotes(body, notes);
   return {
     id: opts.id || crypto.randomUUID(),
     title: title.trim(),
@@ -155,7 +180,8 @@ export function createTaskData(
     priority: priority || 'medium',
     dueDate: normalizeDueDate(dueDate),
     dueTime: normalizeDueTime(dueTime),
-    notes: normalizeNotes(notes),
+    notes: resolved.notes,
+    body: resolved.body,
     projectId: projectId || opts.defaultProjectId || null,
     tags: normalizeTags(tags),
     repeat: normalizeRepeat(repeat),
@@ -198,6 +224,7 @@ export function applyTaskPatch(prev, patch, opts = {}) {
     dueDate: 'dueDate' in patch ? normalizeDueDate(patch.dueDate) : prev.dueDate,
     dueTime: 'dueTime' in patch ? normalizeDueTime(patch.dueTime) : prev.dueTime,
     notes: 'notes' in patch ? normalizeNotes(patch.notes) : prev.notes,
+    body: 'body' in patch ? normalizeBody(patch.body) : prev.body,
     projectId: 'projectId' in patch
       ? (patch.projectId ? String(patch.projectId) : null)
       : prev.projectId,
@@ -223,6 +250,7 @@ export function buildNextOccurrence(task, opts = {}) {
     dueDate: nextDueDate(task),
     dueTime: task.dueTime,
     notes: task.notes,
+    body: normalizeBody(task.body),
     projectId: task.projectId,
     tags: task.tags ? task.tags.slice() : [],
     repeat: task.repeat,

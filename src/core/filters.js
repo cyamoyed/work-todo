@@ -2,6 +2,7 @@
 
 import { PRIORITY_RANK } from '../constants.js';
 import { isShelved } from './tasks.js';
+import { bodyText } from './body.js';
 import {
   addDays,
   dayDiff,
@@ -56,9 +57,10 @@ export function sortTasks(list, sortMode) {
 export function matchSearch(t, q) {
   if (!q) return true;
   const title = (t.title || '').toLowerCase();
-  const notes = (t.notes || '').toLowerCase();
+  const body = bodyText(t.body).toLowerCase();
+  const notes = (t.notes || '').toLowerCase(); // 遗留字段，迁移后恒为空，防御性保留
   const tags = (t.tags || []).join(' ').toLowerCase();
-  return title.includes(q) || notes.includes(q) || tags.includes(q);
+  return title.includes(q) || body.includes(q) || notes.includes(q) || tags.includes(q);
 }
 
 export function matchRange(t, filters) {
