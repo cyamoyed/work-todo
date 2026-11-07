@@ -8,7 +8,7 @@ import { useUiStore } from './store/ui.js';
 import { useThemeStore } from './store/theme.js';
 import { buildWorkTodoFacade } from './lib/facade.js';
 import { createBackupNow } from './lib/backup.js';
-import { isMac } from './lib/tauri.js';
+import { isMac, isTauri } from './lib/tauri.js';
 import { initSync, bootSync, scheduleSync } from './lib/sync/engine.js';
 import {
   requestNotifyPermission,
@@ -22,6 +22,11 @@ useThemeStore().init();
 
 // macOS 原生红绿灯占位：挂载前给 <html> 打标，CSS 据此让位（styles.css .platform-mac）
 document.documentElement.classList.toggle('platform-mac', isMac());
+
+// 桌面包禁用 WebView 默认右键菜单（行内自定义菜单如状态右键自带 prevent.stop，不受影响）；浏览器形态保留默认
+if (isTauri()) {
+  window.addEventListener('contextmenu', (e) => e.preventDefault());
+}
 
 const tasks = useTaskStore();
 const ui = useUiStore();
