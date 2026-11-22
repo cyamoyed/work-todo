@@ -58,9 +58,11 @@ const router = useRouter();
 const navItems = [
   { view: 'today', label: '今天' },
   { view: 'week', label: '本周' },
+  { view: 'overdue', label: '逾期' },
   { view: 'dayline', label: '日程' },
   { view: 'all', label: '全部' },
   { view: 'shelved', label: '搁置' },
+  { view: 'archive', label: '归档' },
   { view: 'done', label: '已完成' },
   { view: 'review', label: '本周回顾' },
 ];

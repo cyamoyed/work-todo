@@ -42,8 +42,16 @@
       type="button"
       class="btn sm"
       :disabled="!shelveableIds.length"
+      v-if="!archiveView"
       @click="toggleShelve"
     >{{ shelvedView ? '恢复' : '搁置' }}</button>
+
+    <button
+      type="button"
+      class="btn sm"
+      :disabled="!ids.length"
+      @click="toggleArchive"
+    >{{ archiveView ? '恢复' : '归档' }}</button>
 
     <button
       type="button"
@@ -108,6 +116,9 @@ const allOn = computed(
 /** 当前视图的搁置方向：普通视图批量搁置；「搁置」视图批量恢复。 */
 const shelvedView = computed(() => ui.state.filters.shelved === 'only');
 
+/** 当前视图的归档方向：「归档」视图批量恢复；其余视图批量归档（含已完成的收尾归档）。 */
+const archiveView = computed(() => ui.state.filters.archived === 'only');
+
 /** 可参与批量搁置/恢复的选中项：只动未完成任务（已完成不属于搁置流转）。 */
 const shelveableIds = computed(() =>
   ids.value.filter((id) => {
@@ -164,6 +175,18 @@ function toggleShelve() {
     picked,
     { shelvedAt: toShelve },
     toShelve ? `已搁置 ${picked.length} 项` : `已恢复 ${picked.length} 项`
+  );
+}
+
+function toggleArchive() {
+  ui.closeBatchMenu();
+  const picked = ids.value.slice();
+  if (!picked.length) return;
+  const toArchive = !archiveView.value;
+  applyBatch(
+    picked,
+    { archivedAt: toArchive },
+    toArchive ? `已归档 ${picked.length} 项` : `已恢复 ${picked.length} 项`
   );
 }
 

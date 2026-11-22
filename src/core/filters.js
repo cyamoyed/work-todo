@@ -1,7 +1,7 @@
 /* work-todo — pure filtering / sorting / grouping (no DOM / no Vue) */
 
 import { PRIORITY_RANK } from '../constants.js';
-import { isShelved } from './tasks.js';
+import { isShelved, isArchived } from './tasks.js';
 import { bodyText } from './body.js';
 import {
   addDays,
@@ -94,15 +94,25 @@ export function matchShelved(t, filters) {
   return only ? isShelved(t) : !isShelved(t);
 }
 
-/** 推进语义下的任务集：搁置任务不参与任何视图/统计（内部共用）。 */
+/**
+ * 归档分流：默认（active）把归档任务挡在所有推进视图之外；
+ * filters.archived === 'only'（「归档」视图）只看归档任务。
+ */
+export function matchArchived(t, filters) {
+  const only = filters.archived === 'only';
+  return only ? isArchived(t) : !isArchived(t);
+}
+
+/** 推进语义下的任务集：搁置/归档任务不参与任何视图/统计（内部共用）。 */
 function activeTasks(tasks) {
-  return tasks.filter((t) => !isShelved(t));
+  return tasks.filter((t) => !isShelved(t) && !isArchived(t));
 }
 
 export function visibleTasks(tasks, filters, sortMode) {
   const q = filters.search.trim().toLowerCase();
   const list = tasks.filter((t) => {
     if (!matchShelved(t, filters)) return false;
+    if (!matchArchived(t, filters)) return false;
     if (filters.status !== 'all' && t.status !== filters.status) return false;
     if (filters.priority !== 'all' && t.priority !== filters.priority) return false;
     if (!matchProject(t, filters)) return false;
@@ -124,11 +134,13 @@ export function navCounts(tasks) {
   return {
     today: active.filter((t) => isDueTodayOpen(t) || isOverdue(t)).length,
     week: active.filter((t) => t.status !== 'done' && (isThisWeek(t.dueDate) || isOverdue(t))).length,
+    overdue: active.filter((t) => isOverdue(t)).length,
     dayline: active.filter((t) => t.status !== 'done').length,
     all: active.length,
     done: active.filter((t) => t.status === 'done').length,
     review: active.filter((t) => isCompletedThisWeek(t)).length,
-    shelved: tasks.length - active.length,
+    shelved: tasks.filter((t) => isShelved(t) && !isArchived(t)).length,
+    archive: tasks.filter((t) => isArchived(t)).length,
   };
 }
 
@@ -184,6 +196,8 @@ export function listTitleFor(viewMode, filters, projects) {
   if (viewMode === 'review') return '本周回顾';
   if (viewMode === 'dayline') return '日程';
   if (viewMode === 'shelved') return '搁置';
+  if (viewMode === 'overdue') return '逾期';
+  if (viewMode === 'archive') return '归档';
   return '任务台账';
 }
 

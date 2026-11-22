@@ -34,7 +34,8 @@ function createdAfterDue(task) {
  * With a dueTime: one reminder 60 min ahead (catch-up until the time) and
  * one at the exact minute (catch-up within the grace window, same day only).
  * Without a dueTime: one 17:00 digest naming every still-open date-only task
- * due today. Shelved tasks (shelvedAt) are skipped. Returns [{ key, title,
+ * due today. Shelved (shelvedAt) and archived (archivedAt) tasks are skipped.
+ * Returns [{ key, title,
  * body }] — `key` dedupes in
  * work-todo.notified.v1 and embeds id/date/time so edits re-arm the reminder.
  */
@@ -44,8 +45,8 @@ export function computeDueReminders(tasks, now = new Date()) {
   const out = [];
   const dayTasks = [];
   for (const t of tasks || []) {
-    // 搁置的任务已暂缓推进：到期/提醒一并停掉，恢复后按新状态重新计算
-    if (!t || t.status === 'done' || t.shelvedAt || t.dueDate !== today) continue;
+    // 搁置/归档的任务已暂缓推进或收尾：到期/提醒一并停掉，恢复后按新状态重新计算
+    if (!t || t.status === 'done' || t.shelvedAt || t.archivedAt || t.dueDate !== today) continue;
     const dueMin = timeToMinutes(t.dueTime);
     if (dueMin == null) {
       dayTasks.push(t);

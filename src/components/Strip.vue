@@ -75,6 +75,7 @@ function defaultRange() {
   const vm = ui.state.viewMode;
   if (vm === 'today') return 'today';
   if (vm === 'week') return 'week';
+  if (vm === 'overdue') return 'overdue';
   return 'all';
 }
 </script>

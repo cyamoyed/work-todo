@@ -282,6 +282,19 @@ export function useTaskStore() {
       return this.batchUpdateTasks(ids, { shelvedAt: shelved }, opts);
     },
 
+    /**
+     * 归档 / 恢复单个任务（归档 = 收尾归档：从所有推进视图、统计与提醒中隐藏，
+     * 只在「归档」视图可见）。归档即脱离搁置（见 core applyTaskPatch）。
+     */
+    archiveTask(id, archived = true, opts = {}) {
+      return this.updateTask(id, { archivedAt: archived }, opts);
+    },
+
+    /** 批量归档 / 恢复（一次持久化）。 */
+    archiveTasks(ids, archived = true, opts = {}) {
+      return this.batchUpdateTasks(ids, { archivedAt: archived }, opts);
+    },
+
     /** Complete + clone next occurrence for recurring tasks. */
     cloneNextOccurrence(task, opts = {}) {
       const next = buildNextOccurrence(task, opts);

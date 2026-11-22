@@ -77,6 +77,10 @@ export function normalizeShelvedAt(v) {
   return typeof v === 'string' && v ? v : null;
 }
 
+export function normalizeArchivedAt(v) {
+  return typeof v === 'string' && v ? v : null;
+}
+
 /** 搁置（shelved）= 暂缓推进：任务从今天/本周/日程/全部等视图与提醒中隐藏，
  *  只在「搁置」视图可见，直到用户恢复。旧数据/旧载荷读入自动补 null。 */
 export function isShelved(t) {
@@ -85,6 +89,18 @@ export function isShelved(t) {
 
 /** shelvedAt 的 patch 语义：ISO 字符串原样保留；真值 → 记此刻；假值 → 清除。 */
 export function applyShelvedPatch(value, now) {
+  if (typeof value === 'string' && value) return value;
+  return value ? now : null;
+}
+
+/** 归档（archived）= 收尾归档：任务从所有推进视图、统计与提醒中隐藏，
+ *  只在「归档」视图可见，直到用户恢复。旧数据/旧载荷读入自动补 null。 */
+export function isArchived(t) {
+  return !!(t && typeof t.archivedAt === 'string' && t.archivedAt);
+}
+
+/** archivedAt 的 patch 语义与 shelvedAt 一致：字符串原样、真值记此刻、假值清除。 */
+export function applyArchivedPatch(value, now) {
   if (typeof value === 'string' && value) return value;
   return value ? now : null;
 }
@@ -130,6 +146,7 @@ export function normalizeTask(raw) {
     tags: normalizeTags(raw.tags),
     repeat: normalizeRepeat(raw.repeat),
     shelvedAt: normalizeShelvedAt(raw.shelvedAt),
+    archivedAt: normalizeArchivedAt(raw.archivedAt),
     completedAt: normalizeCompletedAt(status, raw.completedAt),
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : '',
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : '',
@@ -186,6 +203,7 @@ export function createTaskData(
     tags: normalizeTags(tags),
     repeat: normalizeRepeat(repeat),
     shelvedAt: null,
+    archivedAt: null,
     completedAt: normalizeCompletedAt(st, null),
     createdAt: now,
     updatedAt: now,
@@ -216,6 +234,10 @@ export function applyTaskPatch(prev, patch, opts = {}) {
       ? applyShelvedPatch(patch.shelvedAt, now)
       : normalizeShelvedAt(prev.shelvedAt);
   if (status === 'done' && !('shelvedAt' in patch)) shelvedAt = null;
+  // 归档与搁置互斥：归档是更强的收尾态，归档即脱离搁置；恢复不回搁置
+  const archivedAt =
+    'archivedAt' in patch ? applyArchivedPatch(patch.archivedAt, now) : normalizeArchivedAt(prev.archivedAt);
+  if (archivedAt) shelvedAt = null;
   return {
     ...prev,
     title: typeof patch.title === 'string' ? patch.title.trim() : prev.title,
@@ -231,6 +253,7 @@ export function applyTaskPatch(prev, patch, opts = {}) {
     tags: 'tags' in patch ? normalizeTags(patch.tags) : prev.tags,
     repeat: 'repeat' in patch ? normalizeRepeat(patch.repeat) : prev.repeat,
     shelvedAt,
+    archivedAt,
     completedAt,
     createdAt: prev.createdAt,
     updatedAt: now,
@@ -255,6 +278,7 @@ export function buildNextOccurrence(task, opts = {}) {
     tags: task.tags ? task.tags.slice() : [],
     repeat: task.repeat,
     shelvedAt: null,
+    archivedAt: null,
     completedAt: null,
     createdAt: now,
     updatedAt: now,

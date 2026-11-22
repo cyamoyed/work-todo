@@ -1155,8 +1155,12 @@ kbd {
 }
 /* 搁置：标题弱化 + 搁置时间徽标（只在「搁置」视图出现） */
 .task-shelved { margin-top: 4px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+/* 归档：标题弱化 + 归档时间徽标（只在「归档」视图出现） */
+.task-archived { margin-top: 4px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .task-times { margin-top: 4px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .task-card.is-shelved .task-title { color: var(--muted); }
+.task-card.is-archived .task-title { color: var(--muted); }
+.task-card.is-archived { opacity: 0.75; }
 
 .drawer-backdrop {
   position: fixed; inset: 0; background: var(--backdrop); z-index: 60;

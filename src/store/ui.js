@@ -8,7 +8,7 @@ import { useTaskStore } from './tasks.js';
 const PLAIN_TOAST_MS = 2800;
 
 const state = reactive({
-  viewMode: 'today', // today | week | dayline | all | done | review | project
+  viewMode: 'today', // today | week | dayline | all | overdue | shelved | archive | done | review | project
   filters: {
     status: 'all',
     priority: 'all',
@@ -17,6 +17,8 @@ const state = reactive({
     projectId: null,
     // active：默认，隐藏搁置任务；only：「搁置」视图，只看搁置任务（随视图切换，不持久化）
     shelved: 'active',
+    // active：默认，隐藏归档任务；only：「归档」视图，只看归档任务（随视图切换，不持久化）
+    archived: 'active',
   },
   sortMode: 'due',
   doneExpanded: false,
@@ -90,20 +92,22 @@ function positionMenu(menu, anchor, taskId) {
 
 /**
  * Single source of truth for view + filter sync — the legacy setView() semantics:
- * today/week/all → filters.range = view (status 'done' resets to 'all' unless resetStatus:false);
- * done → status:'done', range:'all'; dayline/review/project → range:'all';
- * shelved → filters.shelved:'only' (any other view → 'active', i.e. hide shelved tasks).
+ * today/week/all/overdue → filters.range = view (status 'done' resets to 'all' unless resetStatus:false);
+ * done → status:'done', range:'all'; dayline/review/project/archive → range:'all';
+ * shelved → filters.shelved:'only'; archive → filters.archived:'only'
+ * (any other view → 'active', i.e. hide shelved/archived tasks).
  */
 export function applyView(view, opts = {}) {
   state.viewMode = view;
-  // 「搁置」视图只看搁置任务；其余视图一律隐藏搁置任务
+  // 「搁置」视图只看搁置任务，「归档」视图只看归档任务；其余视图一律隐藏两者
   state.filters.shelved = view === 'shelved' ? 'only' : 'active';
+  state.filters.archived = view === 'archive' ? 'only' : 'active';
   if (view === 'project') {
     if (opts.projectId) state.filters.projectId = opts.projectId;
   } else {
     state.filters.projectId = opts.projectId || null;
   }
-  if (view === 'today' || view === 'week' || view === 'all') {
+  if (view === 'today' || view === 'week' || view === 'all' || view === 'overdue') {
     state.filters.range = view;
     if (state.filters.status === 'done' && opts.resetStatus !== false) {
       state.filters.status = 'all';
@@ -111,7 +115,7 @@ export function applyView(view, opts = {}) {
   } else if (view === 'done') {
     state.filters.status = 'done';
     state.filters.range = 'all';
-  } else if (view === 'dayline' || view === 'review' || view === 'project') {
+  } else if (view === 'dayline' || view === 'review' || view === 'project' || view === 'archive') {
     state.filters.range = 'all';
   }
   if (opts.status) state.filters.status = opts.status;

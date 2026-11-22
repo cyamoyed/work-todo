@@ -643,6 +643,117 @@ describe('e2e-ui (legacy behavior parity + SPA routing)', () => {
     expect(titles).toContain('keep-me');
   });
 
+  it('overdue view: nav entry lists overdue tasks only', async () => {
+    await clearTasks();
+    await page.goto(BASE + '/#/all', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(50);
+    await addTask({ title: 'overdue-one', status: 'todo', due: '2000-01-01' });
+    await addTask({ title: 'future-one', status: 'todo', due: '2099-01-01' });
+
+    expect(await page.locator('#nav-count-overdue').textContent()).toBe('1');
+    await page.locator('#nav [data-view="overdue"]').click();
+    await page.waitForTimeout(60);
+    expect(page.url()).toContain('#/overdue');
+    expect(await page.locator('#list-title').textContent()).toBe('逾期');
+    const titles = await page.locator('.task-title').allTextContents();
+    expect(titles).toEqual(['overdue-one']);
+    expect(await page.locator('.task-card.is-overdue').count()).toBe(1);
+
+    await page.locator('#nav [data-view="all"]').click();
+    await page.waitForTimeout(50);
+  });
+
+  it('archive: done row archives with one click, batch restore from the 归档 view', async () => {
+    await clearTasks();
+    await page.goto(BASE + '/#/done', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(50);
+    await addTask({ title: 'done-archive-me', status: 'done' });
+    await addTask({ title: 'done-keep-me', status: 'done' });
+
+    // 「已完成」视图行内一键归档
+    await page
+      .locator('.task-card', { hasText: 'done-archive-me' })
+      .locator('[aria-label="归档任务"]')
+      .click();
+    await page.waitForTimeout(60);
+    expect(await page.locator('#toast').textContent()).toContain('已归档');
+    expect(await page.locator('#nav-count-archive').textContent()).toBe('1');
+    expect(await page.locator('#nav-count-done').textContent()).toBe('1');
+
+    // 归档视图只列归档任务（含已完成，不折叠），行内可恢复
+    await page.locator('#nav [data-view="archive"]').click();
+    await page.waitForTimeout(60);
+    expect(page.url()).toContain('#/archive');
+    expect(await page.locator('#list-title').textContent()).toBe('归档');
+    let titles = await page.locator('.task-title').allTextContents();
+    expect(titles).toEqual(['done-archive-me']);
+    expect(await page.locator('.task-card.is-archived').count()).toBe(1);
+    expect(await page.locator('#done-toggle-bar').isHidden()).toBe(true);
+
+    await page
+      .locator('.task-card', { hasText: 'done-archive-me' })
+      .locator('[aria-label="取消归档"]')
+      .click();
+    await page.waitForTimeout(60);
+    expect(await page.locator('#toast').textContent()).toContain('已恢复');
+    expect(await page.locator('.task-card').count()).toBe(0);
+    expect(await page.locator('#nav-count-archive').textContent()).toBe('0');
+
+    // 恢复后的已完成任务回到「已完成」视图
+    await page.locator('#nav [data-view="done"]').click();
+    await page.waitForTimeout(60);
+    titles = await page.locator('.task-title').allTextContents();
+    expect(titles).toContain('done-archive-me');
+    expect(titles).toContain('done-keep-me');
+  });
+
+  it('archive: multi-select parks an open task in the 归档 view; batch restore brings it back', async () => {
+    await clearTasks();
+    await page.goto(BASE + '/#/all', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(50);
+    await addTask({ title: 'archive-me', status: 'todo' });
+    await addTask({ title: 'keep-me', status: 'todo' });
+
+    // 未完成行不提供行内归档按钮，走多选批量入口
+    expect(await page.locator('[aria-label="归档任务"]').count()).toBe(0);
+
+    await page
+      .locator('.task-card', { hasText: 'archive-me' })
+      .locator('.select-check')
+      .click();
+    await page.waitForTimeout(60);
+    await page.locator('#batch-bar .btn', { hasText: '归档' }).click();
+    await page.waitForTimeout(60);
+
+    let titles = await page.locator('.task-title').allTextContents();
+    expect(titles).not.toContain('archive-me');
+    expect(titles).toContain('keep-me');
+    expect(await page.locator('#toast').textContent()).toContain('已归档 1 项');
+    expect(await page.locator('#nav-count-archive').textContent()).toBe('1');
+    expect(await page.locator('#nav-count-all').textContent()).toBe('1');
+
+    await page.locator('#nav [data-view="archive"]').click();
+    await page.waitForTimeout(60);
+    titles = await page.locator('.task-title').allTextContents();
+    expect(titles).toEqual(['archive-me']);
+
+    await page
+      .locator('.task-card', { hasText: 'archive-me' })
+      .locator('.select-check')
+      .click();
+    await page.waitForTimeout(60);
+    await page.locator('#batch-bar .btn', { hasText: '恢复' }).click();
+    await page.waitForTimeout(60);
+    expect(await page.locator('#toast').textContent()).toContain('已恢复 1 项');
+    expect(await page.locator('.task-card').count()).toBe(0);
+
+    await page.locator('#nav [data-view="all"]').click();
+    await page.waitForTimeout(60);
+    titles = await page.locator('.task-title').allTextContents();
+    expect(titles).toContain('archive-me');
+    expect(titles).toContain('keep-me');
+  });
+
   it('console hygiene', async () => {
     expect(consoleErrors).toEqual([]);
   });

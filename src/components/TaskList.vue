@@ -14,6 +14,14 @@
           <h2>没有搁置的任务</h2>
           <p>多选后点「搁置」收进来的任务都在这里，随时可以批量恢复。</p>
         </template>
+        <template v-else-if="ui.state.filters.archived === 'only'">
+          <h2>没有归档的任务</h2>
+          <p>多选后点「归档」，或对已完成任务点归档按钮，收进来的任务都在这里，随时可以恢复。</p>
+        </template>
+        <template v-else-if="ui.state.viewMode === 'overdue'">
+          <h2>没有逾期的任务</h2>
+          <p>一切都在计划之内，继续保持。</p>
+        </template>
         <template v-else-if="ui.state.filters.projectId">
           <h2>这个项目里还没有任务</h2>
           <p>用上方输入框记一笔，会直接归入当前项目。</p>
@@ -25,12 +33,23 @@
         </template>
       </div>
       <TaskItem v-for="t in openList" :key="t.id" :task="t" />
-      <div id="done-toggle-bar" class="collapse-bar done-toggle-bar" :hidden="!doneList.length">
-        <button type="button" id="done-toggle" class="btn-pill" :hidden="!doneList.length" @click="toggleDone">
+      <!-- 归档视图是仓储视图：已完成不再折叠（openList 已含全部归档任务） -->
+      <div
+        id="done-toggle-bar"
+        class="collapse-bar done-toggle-bar"
+        :hidden="!doneList.length || archiveView"
+      >
+        <button
+          type="button"
+          id="done-toggle"
+          class="btn-pill"
+          :hidden="!doneList.length"
+          @click="toggleDone"
+        >
           {{ doneToggleLabel }}
         </button>
       </div>
-      <template v-if="ui.state.doneExpanded">
+      <template v-if="ui.state.doneExpanded && !archiveView">
         <TaskItem v-for="t in doneList" :key="t.id" :task="t" />
       </template>
     </template>
@@ -48,11 +67,15 @@ const tasks = useTaskStore();
 const ui = useUiStore();
 
 const viewMode = computed(() => ui.state.viewMode);
+const archiveView = computed(() => ui.state.filters.archived === 'only');
 const list = computed(() =>
   visibleTasks(tasks.state.tasks, ui.state.filters, ui.state.sortMode)
 );
 const doneList = computed(() => list.value.filter((t) => t.status === 'done'));
-const openList = computed(() => list.value.filter((t) => t.status !== 'done'));
+// 归档视图平铺全部归档任务（含已完成，不折叠）；其余视图只列未完成
+const openList = computed(() =>
+  archiveView.value ? list.value : list.value.filter((t) => t.status !== 'done')
+);
 const searching = computed(() => ui.state.filters.search.trim().length > 0);
 const doneToggleLabel = computed(() =>
   ui.state.doneExpanded ? '收起已完成' : `已完成 ${doneList.value.length} 项 · 展开`

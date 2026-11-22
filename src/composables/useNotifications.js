@@ -55,7 +55,7 @@ function sendSystemNotification(title, body) {
 
 export function notifyOverdue(tasks) {
   try {
-    const overdue = (tasks || []).filter((t) => !t.shelvedAt && isOverdue(t));
+    const overdue = (tasks || []).filter((t) => !t.shelvedAt && !t.archivedAt && isOverdue(t));
     if (!overdue.length) return;
     if (!canNotify()) return;
     const stamp = notifiedStamp();

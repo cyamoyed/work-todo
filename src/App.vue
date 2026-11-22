@@ -126,6 +126,10 @@ const listMeta = computed(() => {
   if (view === 'review') {
     return `本周完成 ${tasks.state.tasks.filter((t) => isCompletedThisWeek(t)).length} 项`;
   }
+  // 归档视图平铺全部归档任务（含已完成），meta 按全部可见数
+  if (ui.state.filters.archived === 'only') {
+    return `${visible.length} 项`;
+  }
   const done = visible.filter((t) => t.status === 'done');
   if (view === 'done') {
     return `${done.length} 项`;

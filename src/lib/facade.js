@@ -43,6 +43,7 @@ import {
   normalizeTags,
   normalizeShelvedAt,
   isShelved,
+  isArchived,
   createTaskData,
   applyTaskPatch,
   buildNextOccurrence,
@@ -83,6 +84,10 @@ export function buildWorkTodoFacade() {
     shelveTask: (id, shelved = true) => tasks.shelveTask(id, shelved),
     unshelveTask: (id) => tasks.shelveTask(id, false),
     isShelved,
+    // 归档：收尾归档（视图/统计/提醒中隐藏，只在「归档」视图可见）
+    archiveTask: (id, archived = true) => tasks.archiveTask(id, archived),
+    unarchiveTask: (id) => tasks.archiveTask(id, false),
+    isArchived,
     restoreTasks: (snapshot) => tasks.restoreTasks(snapshot),
     getTask: (id) => tasks.getTask(id),
     clearCompleted: () => ui.clearCompleted(),
